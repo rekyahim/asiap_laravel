@@ -93,15 +93,12 @@
                 <div class="d-flex gap-2 align-items-center flex-wrap">
                     {{-- Filter status (optional) --}}
                     <form method="GET" action="{{ route('pengguna.index') }}" class="d-flex gap-2 align-items-center">
-                        <input type="text" name="q" value="{{ request('q') }}"
-                            class="form-control form-control-sm search-input" placeholder="Cari username / nama / NIP">
+
                         <select name="status" class="form-select form-select-sm">
                             <option value="all" {{ request('status', 'all') === 'all' ? 'selected' : '' }}>Semua</option>
                             <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Aktif</option>
                             <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Nonaktif</option>
                         </select>
-                        <button class="btn btn-outline-secondary btn-sm" type="submit"><i class="bi bi-search"></i>
-                            Cari</button>
                     </form>
 
                     <button class="btn btn-brand btn-sm" data-bs-toggle="modal" data-bs-target="#modalCreateUser">
