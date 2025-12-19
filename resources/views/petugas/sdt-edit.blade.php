@@ -189,7 +189,8 @@
                                 {{ strtoupper($status->STATUS_PENYAMPAIAN ?? '') == 'TERSAMPAIKAN' ? 'selected' : '' }}>
                                 Tersampaikan</option>
                             <option value="TIDAK TERSAMPAIKAN"
-                                {{ strtoupper($status->STATUS_PENYAMPAIAN ?? '') == 'TIDAK TERSAMPAIKAN' ? 'selected' : '' }}>Tidak
+                                {{ strtoupper($status->STATUS_PENYAMPAIAN ?? '') == 'TIDAK TERSAMPAIKAN' ? 'selected' : '' }}>
+                                Tidak
                                 Tersampaikan</option>
                         </select>
                     </div>
@@ -197,8 +198,10 @@
                         <label class="form-label">Apakah NOP benar?</label>
                         <select name="NOP_BENAR" id="NOP_BENAR" class="form-select" required>
                             <option value="">— Pilih —</option>
-                            <option value="YA" {{ strtoupper($status->NOP_BENAR ?? '') == 'YA' ? 'selected' : '' }}>YA</option>
-                            <option value="TIDAK" {{ strtoupper($status->NOP_BENAR ?? '') == 'TIDAK' ? 'selected' : '' }}>TIDAK
+                            <option value="YA" {{ strtoupper($status->NOP_BENAR ?? '') == 'YA' ? 'selected' : '' }}>YA
+                            </option>
+                            <option value="TIDAK" {{ strtoupper($status->NOP_BENAR ?? '') == 'TIDAK' ? 'selected' : '' }}>
+                                TIDAK
                             </option>
                         </select>
                     </div>
@@ -244,13 +247,17 @@
                         <select name="STATUS_OP" class="form-select" required>
                             <option value="">-- Pilih Status OP --</option>
                             <option value="Belum Diproses Petugas"
-                                {{ ($status->STATUS_OP ?? '') == 'Belum Diproses Petugas' ? 'selected' : '' }}>Belum Diproses
+                                {{ ($status->STATUS_OP ?? '') == 'Belum Diproses Petugas' ? 'selected' : '' }}>Belum
+                                Diproses
                                 Petugas</option>
-                            <option value="Ditemukan" {{ ($status->STATUS_OP ?? '') == 'Ditemukan' ? 'selected' : '' }}>Ditemukan
+                            <option value="Ditemukan" {{ ($status->STATUS_OP ?? '') == 'Ditemukan' ? 'selected' : '' }}>
+                                Ditemukan
                             </option>
                             <option value="Tidak Ditemukan"
-                                {{ ($status->STATUS_OP ?? '') == 'Tidak Ditemukan' ? 'selected' : '' }}>Tidak Ditemukan</option>
-                            <option value="Sudah Dijual" {{ ($status->STATUS_OP ?? '') == 'Sudah Dijual' ? 'selected' : '' }}>
+                                {{ ($status->STATUS_OP ?? '') == 'Tidak Ditemukan' ? 'selected' : '' }}>Tidak Ditemukan
+                            </option>
+                            <option value="Sudah Dijual"
+                                {{ ($status->STATUS_OP ?? '') == 'Sudah Dijual' ? 'selected' : '' }}>
                                 Sudah Dijual</option>
 
                         </select>
@@ -275,13 +282,17 @@
                         <select name="STATUS_WP" class="form-select" required>
                             <option value="">-- Pilih Status WP -- </option>
                             <option value="Belum Diproses Petugas"
-                                {{ ($status->STATUS_WP ?? '') == 'Belum Diproses Petugas' ? 'selected' : '' }}>Belum Diproses
+                                {{ ($status->STATUS_WP ?? '') == 'Belum Diproses Petugas' ? 'selected' : '' }}>Belum
+                                Diproses
                                 Petugas</option>
-                            <option value="Ditemukan" {{ ($status->STATUS_WP ?? '') == 'Ditemukan' ? 'selected' : '' }}>Ditemukan
+                            <option value="Ditemukan" {{ ($status->STATUS_WP ?? '') == 'Ditemukan' ? 'selected' : '' }}>
+                                Ditemukan
                             </option>
                             <option value="Tidak Ditemukan"
-                                {{ ($status->STATUS_WP ?? '') == 'Tidak Ditemukan' ? 'selected' : '' }}>Tidak Ditemukan</option>
-                            <option value="Luar Kota" {{ ($status->STATUS_WP ?? '') == 'Luar Kota' ? 'selected' : '' }}>Luar Kota
+                                {{ ($status->STATUS_WP ?? '') == 'Tidak Ditemukan' ? 'selected' : '' }}>Tidak Ditemukan
+                            </option>
+                            <option value="Luar Kota" {{ ($status->STATUS_WP ?? '') == 'Luar Kota' ? 'selected' : '' }}>
+                                Luar Kota
                             </option>
 
                         </select>
@@ -639,27 +650,44 @@
             }
 
             function requestBrowserLocation() {
+                // UBAH KONFIGURASI DI SINI
                 const options = {
-                    enableHighAccuracy: true,
-                    timeout: 8000,
-                    maximumAge: 0
+                    enableHighAccuracy: false, // Ubah ke false agar bisa pakai Wi-Fi/Triangulasi seluler (lebih cepat & jarang timeout)
+                    timeout: 15000, // Naikkan ke 15 detik
+                    maximumAge: 10000 // Boleh pakai cache lokasi 10 detik terakhir
                 };
 
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
-                        const inputElement = document.getElementById('coordDisplay');
-                        inputElement.value = pos.coords.latitude + ',' + pos.coords.longitude;
+                        // BERHASIL
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        const akurasi = pos.coords.accuracy; // Cek akurasi (dalam meter)
 
-                        console.log("GPS Location:", pos.coords.latitude, pos.coords.longitude);
-                        // Success logic here
+                        const inputElement = document.getElementById('coordDisplay');
+                        const hiddenInput = document.getElementById(
+                            'KOORDINAT_OP'); // Pastikan ini terisi juga untuk dikirim ke server
+
+                        const coordString = `${lat},${lng}`;
+
+                        // Update UI
+                        if (inputElement) inputElement.value = coordString;
+                        if (hiddenInput) hiddenInput.value = coordString;
+
+                        console.log(`GPS Success. Accuracy: ${akurasi} meters`);
                     },
                     (err) => {
-                        if (err.code === err.PERMISSION_DENIED) {
-                            console.error("User denied location.");
-                            alert("You denied location access. The page will reload to try again.");
-                            location.reload(); // Refresh as requested
-                        } else {
-                            console.warn("GPS failed or timed out. Falling back to IP Geolocation...");
+                        // GAGAL
+                        console.warn(`ERROR(${err.code}): ${err.message}`);
+
+                        if (err.code === 1) { // PERMISSION_DENIED
+                            alert("Izin lokasi ditolak. Mohon aktifkan izin lokasi di pengaturan browser.");
+                            // location.reload(); // Opsional
+                        } else if (err.code === 3) { // TIMEOUT
+                            console.warn("GPS Timeout. Mencoba fallback ke IP Location...");
+                            getIpLocation();
+                        } else { // POSITION_UNAVAILABLE
+                            console.warn("Posisi tidak tersedia. Mencoba fallback ke IP Location...");
                             getIpLocation();
                         }
                     },
