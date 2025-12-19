@@ -3604,6 +3604,7 @@
         },
         {
             "name": "psy/psysh",
+<<<<<<< HEAD
             "version": "v0.12.18",
             "source": {
                 "type": "git",
@@ -3614,6 +3615,18 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/bobthecow/psysh/zipball/ddff0ac01beddc251786fe70367cd8bbdb258196",
                 "reference": "ddff0ac01beddc251786fe70367cd8bbdb258196",
+=======
+            "version": "v0.12.17",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bobthecow/psysh.git",
+                "reference": "85fbbd9f3064e157fc21fe4362b2b5c19f2ea631"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bobthecow/psysh/zipball/85fbbd9f3064e157fc21fe4362b2b5c19f2ea631",
+                "reference": "85fbbd9f3064e157fc21fe4362b2b5c19f2ea631",
+>>>>>>> 4d821709a700cd5ebbc96e53ce765306dba92bbd
                 "shasum": ""
             },
             "require": {

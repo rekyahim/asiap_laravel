@@ -4,183 +4,169 @@
 @section('breadcrumb', 'Petugas / Detail Data')
 
 @section('content')
-    <style>
-        .detail-grid .label {
-            color: #64748b;
-            min-width: 180px
-        }
+<style>
+    /* ... (Style tetap sama) ... */
+    .card-clean{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 26px rgba(2,6,23,.08)}
 
-        .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 12px
-        }
+    .map-container {
+        width: 100%;
+        max-width: 350px;
+        height: 180px;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+    }
+    .map-container iframe {
+        display: block;
+    }
+    .riwayat-card {
+        padding: 15px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 20px; /* Jarak antar kolom riwayat/card */
+        background-color: #f9fafb;
+    }
+</style>
 
-        .photo-grid a {
-            display: block;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            overflow: hidden
-        }
-
-        .photo-grid img {
-            width: 100%;
-            height: 160px;
-            object-fit: cover;
-            display: block
-        }
-
-        .card-clean {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            box-shadow: 0 10px 26px rgba(2, 6, 23, .08)
-        }
-        
-    </style>
-
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <h2 class="mb-0">Detail SDT</h2>
-        <div class="d-flex gap-2">
-            <a href="{{ $return ?: url()->previous() }}" class="btn btn-light">
-                ← Kembali
-            </a>
-        </div>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="mb-0">Detail SDT</h2>
+    <div class="d-flex gap-2">
+        <a href="{{ $return ?: url()->previous() }}" class="btn btn-light">
+            ← Kembali
+        </a>
     </div>
+</div>
 
-    {{-- ===== DATA UTAMA ===== --}}
-    <div class="card-clean p-3 mb-3">
-        <div class="row g-3 detail-grid">
-            <div class="col-lg-6">
-                <div class="d-flex mb-2">
-                    <div class="label">ID</div>
-                    <div class="ms-3 fw-semibold">#{{ $row->ID }}</div>
-                </div>
-                <div class="d-flex mb-2">
-                    <div class="label">NOP</div>
-                    <div class="ms-3">{{ $row->NOP }}</div>
-                </div>
-                <div class="d-flex mb-2">
-                    <div class="label">Tahun</div>
-                    <div class="ms-3">{{ $row->TAHUN }}</div>
-                </div>
-                <div class="d-flex mb-2">
-                    <div class="label">Nama WP</div>
-                    <div class="ms-3">{{ $row->NAMA_WP }}</div>
-                </div>
-                <div class="d-flex mb-2">
-                    <div class="label">Alamat OP</div>
-                    <div class="ms-3">{{ $row->ALAMAT_OP }}</div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="d-flex mb-2">
-                    <div class="label">Status Penyampaian</div>
-                    <div class="ms-3">{{ $row->STATUS_PENYAMPAIAN ?? '-' }}</div>
-                </div>
-                <div class="d-flex mb-2">
-                    <div class="label">Status OP</div>
-                    <div class="ms-3">{{ $row->STATUS_OP ?? '-' }}</div>
-                </div>
-                <div class="d-flex mb-2">
-                    <div class="label">Status WP</div>
-                    <div class="ms-3">{{ $row->STATUS_WP ?? '-' }}</div>
-                </div>
-                <div class="d-flex mb-2">
-                    <div class="label">Nama Penerima</div>
-                    <div class="ms-3">{{ $row->NAMA_PENERIMA ?? '-' }}</div>
-                </div>
-                <div class="d-flex mb-2">
-                    <div class="label">HP Penerima</div>
-                    <div class="ms-3">{{ $row->HP_PENERIMA ?? '-' }}</div>
-                </div>
-            </div>
-            <div class="col-12">
-                <div class="d-flex mb-1">
-                    <div class="label">Keterangan Petugas</div>
-                    <div class="ms-3">{{ $row->KETERANGAN_PETUGAS ?: '—' }}</div>
-                </div>
-                <div class="small text-muted ms-lg-0 mt-1">
-                    Terakhir diubah: {{ optional($row->UPDATED_AT)->format('d-m-Y H:i') }}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- ===== FOTO EVIDENCE ===== --}}
-    <div class="card-clean p-3 mb-4">
-        <h5 class="mb-3">Foto Evidence</h5>
-        @if (count($photos))
-            <div class="photo-grid">
-                @foreach ($photos as $src)
-                    <a href="{{ $src }}" target="_blank" rel="noopener">
-                        <img src="{{ $src }}" alt="Evidence">
-                    </a>
-                @endforeach
-            </div>
-        @else
-            <div class="text-muted">Tidak ada foto.</div>
-        @endif
-    </div>
-
-    {{-- ===== DATA KONFIRMASI PETUGAS + PETA ===== --}}
-    @if (isset($konfirmasi))
-        <div class="card-clean p-3">
-            <h5 class="mb-3">Data Konfirmasi Petugas</h5>
-            <div class="row gy-2 gx-4">
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Petugas</small>
-                    <span class="fw-semibold text-dark">{{ $konfirmasi->petugas->NAMA ?? '—' }}</span>
-                </div>
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Status OP</small>
-                    <span class="fw-semibold">{{ $konfirmasi->STATUS_OP ?? '—' }}</span>
-                </div>
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Status WP</small>
-                    <span class="fw-semibold">{{ $konfirmasi->STATUS_WP ?? '—' }}</span>
-                </div>
-                <div class="col-md-3">
-                    <small class="text-muted d-block">NOP Benar</small>
-                    <span class="fw-semibold">{{ $konfirmasi->NOP_BENAR ?? '—' }}</span>
-                </div>
-
-                <div class="col-md-6">
-                    <small class="text-muted d-block">Koordinat Lokasi</small>
-                    @if (!empty($konfirmasi->KOORDINAT_OP))
-                        <a href="https://www.google.com/maps?q={{ $konfirmasi->KOORDINAT_OP }}" target="_blank"
-                            class="fw-semibold text-primary">
-                            {{ $konfirmasi->KOORDINAT_OP }}
-                        </a>
-
-                        {{-- 🗺️ Embed Google Maps --}}
-                        @php
-                            [$lat, $lng] = explode(',', $konfirmasi->KOORDINAT_OP);
-                        @endphp
-                        <div class="mt-2" style="border-radius: 10px; overflow: hidden;">
-                            <iframe width="100%" height="300" frameborder="0" style="border:0"
-                                referrerpolicy="no-referrer-when-downgrade"
-                                src="https://www.google.com/maps?q={{ trim($lat) }},{{ trim($lng) }}&hl=id&z=17&output=embed"
-                                allowfullscreen>
-                            </iframe>
-                        </div>
+{{-- ===== DATA DASAR SDT (FIXED HEADER) ===== --}}
+<div class="card-clean p-3 mb-4">
+    <h5 class="mb-3">Informasi Utama SDT</h5>
+    <table class="table table-bordered table-sm mb-0">
+        <tbody>
+            {{-- Data Statis --}}
+            <tr>
+                <th>ID</th>
+                <td>#{{ $row->ID }}</td>
+                <th>NOP</th>
+                <td>{{ $row->NOP }}</td>
+            </tr>
+            <tr>
+                <th>Tahun</th>
+                <td>{{ $row->TAHUN }}</td>
+                <th>Nama WP</th>
+                <td>{{ $row->NAMA_WP }}</td>
+            </tr>
+            <tr>
+                <th>Alamat OP</th>
+                <td colspan="3">{{ $row->ALAMAT_OP }}</td>
+            </tr>
+            {{-- Foto Evidence diambil dari yang terbaru --}}
+            <tr>
+                <th>Foto Evidence</th>
+                <td colspan="3">
+                    @if(count($photos))
+                        @foreach($photos as $src)
+                            <a href="{{ $src }}" target="_blank">
+                                <img src="{{ $src }}" alt="Evidence" style="height:50px; margin-right:5px; object-fit:cover; border-radius:4px;">
+                            </a>
+                        @endforeach
                     @else
-                        <span class="text-muted">—</span>
+                        <span class="text-muted">Tidak ada foto.</span>
                     @endif
-                </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
 
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Tanggal Penyampaian</small>
-                    <span class="fw-semibold">
-                        {{ $konfirmasi->TGL_PENYAMPAIAN ? date('d M Y H:i', strtotime($konfirmasi->TGL_PENYAMPAIAN)) : '—' }}
-                    </span>
-                </div>
+{{-- ===== RIWAYAT PENGISIAN DATA PETUGAS (Kolom Berurutan) ===== --}}
+<div class="mb-4">
+    <h5 class="mb-3">Riwayat Pengisian Petugas (Urut Terbaru ke Lama)</h5>
 
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Keterangan Petugas</small>
-                    <span class="fw-semibold">{{ $konfirmasi->KETERANGAN_PETUGAS ?? '—' }}</span>
-                </div>
-            </div>
-        </div>
+    {{-- FUNGSI UNTUK MERENDER SATU BLOK RIWAYAT --}}
+    @php
+    $renderRiwayatBlock = function($data, $is_latest) use ($row) {
+        // Fallback untuk NAMA_PETUGAS jika tidak ada di objek $data
+        $petugasNama = $data->petugas->NAMA ?? '—';
+        $statusBadge = $is_latest ? '<span class="badge bg-primary">AKTIF</span>' : '';
+        $borderClass = $is_latest ? 'border-primary' : '';
+        $cardTitle = $is_latest ? 'Input Terbaru' : 'Input Sebelumnya (Tahun: ' . ($data->TAHUN ?? '—') . ')';
+
+        // Tentukan data yang digunakan
+        $statusPenyampaian = $data->STATUS_PENYAMPAIAN ?? $row->STATUS_PENYAMPAIAN ?? '-';
+        $statusOP = $data->STATUS_OP ?? '-';
+        $statusWP = $data->STATUS_WP ?? '-';
+        $namaPenerima = $data->NAMA_PENERIMA ?? '-';
+        $hpPenerima = $data->HP_PENERIMA ?? '-';
+        $keteranganPetugas = $data->KETERANGAN_PETUGAS ?: '—';
+        $tglPenyampaian = $data->TGL_PENYAMPAIAN ? date('d M Y H:i', strtotime($data->TGL_PENYAMPAIAN)) : '—';
+        $koordinatOP = $data->KOORDINAT_OP ?? null;
+        $nopBenar = $data->NOP_BENAR ?? '—';
+
+        echo "<div class='riwayat-card $borderClass'>";
+            echo "<div class='d-flex justify-content-between align-items-start'>";
+                echo "<h6 class='mb-2'>**$cardTitle**</h6>";
+                echo $statusBadge;
+            echo "</div>";
+
+            echo "<table class='table table-sm mb-2'>";
+                echo "<tr>";
+                    echo "<th style='width: 25%'>Petugas (Yang Input)</th>";
+                    echo "<td colspan='3'>";
+                        echo "<strong>$petugasNama</strong> <span class='text-muted'>(NOP Benar: $nopBenar)</span>";
+                    echo "</td>";
+                echo "</tr>";
+                echo "<tr>";
+                    echo "<th>Status Penyampaian</th>";
+                    echo "<td>$statusPenyampaian</td>";
+                    echo "<th>Status OP/WP</th>";
+                    echo "<td>$statusOP/$statusWP</td>";
+                echo "</tr>";
+                echo "<tr>";
+                    echo "<th>Nama / HP Penerima</th>";
+                    echo "<td colspan='3'>$namaPenerima / $hpPenerima</td>";
+                echo "</tr>";
+                echo "<tr>";
+                    echo "<th>Keterangan Petugas</th>";
+                    echo "<td colspan='3'>$keteranganPetugas</td>";
+                echo "</tr>";
+                echo "<tr>";
+                    echo "<th>Terakhir Diubah / Tgl Input</th>";
+                    echo "<td colspan='3'>$tglPenyampaian</td>";
+                echo "</tr>";
+            echo "</table>";
+
+            // PETA LOKASI
+            if ($koordinatOP) {
+                [$lat, $lng] = explode(',', $koordinatOP);
+                echo "<div class='map-container'>";
+                    echo "<iframe width='100%' height='180' frameborder='0' style='border:0' referrerpolicy='no-referrer-when-downgrade' src='https://www.google.com/maps?q=" . trim($lat) . "," . trim($lng) . "&hl=id&z=17&output=embed' allowfullscreen></iframe>";
+                echo "</div>";
+                echo "<p class='mt-1 small mb-0'>Koordinat: <a href='https://www.google.com/maps?q=$koordinatOP' target='_blank'>$koordinatOP</a></p>";
+            } else {
+                echo "<span class='text-muted small'>Tidak ada data koordinat pada input ini.</span>";
+            }
+        echo "</div>";
+    };
+
+
+    @endphp
+
+    {{-- A. RIWAYAT TERBARU ($konfirmasi) --}}
+    @if(isset($konfirmasi))
+        {{ $renderRiwayatBlock($konfirmasi, true) }}
     @endif
+
+    {{-- B. RIWAYAT SEBELUMNYA ($lastTwoPetugas) --}}
+    @if(isset($lastTwoPetugas) && count($lastTwoPetugas))
+        @foreach($lastTwoPetugas as $p)
+            {{ $renderRiwayatBlock($p, false) }}
+        @endforeach
+    @endif
+
+    @if(!isset($konfirmasi) && (!isset($lastTwoPetugas) || count($lastTwoPetugas) == 0))
+        <p class="text-muted">Belum ada riwayat pengisian petugas untuk SDT ini.</p>
+    @endif
+</div>
+
 @endsection
