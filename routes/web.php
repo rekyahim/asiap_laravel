@@ -5,6 +5,7 @@
 | CONTROLLERS
 |--------------------------------------------------------------------------
 */
+
 use App\Http\Controllers\ApiPenggunaController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HakAksesController;
@@ -39,6 +40,7 @@ use Spatie\Activitylog\Models\Activity;
 | AUTH (Tanpa Middleware)
 |--------------------------------------------------------------------------
 */
+
 Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -65,7 +67,7 @@ Route::middleware(AuthOnly::class)->group(function () {
 Route::middleware(AuthOnly::class)->group(function () {
 
     // Dashboard
-    Route::get('/', fn() => view('dashboard'))->name('dashboard');
+    Route::get('/', fn () => view('dashboard'))->name('dashboard');
 
     /*
     |--------------------------------------------------------------------------
@@ -246,13 +248,15 @@ Route::middleware(AuthOnly::class)->group(function () {
         | LEGACY ROUTES (TIDAK DIUBAH)
         |--------------------------------------------------------------------------
         */
-        Route::get('/koor/sdt/{id}/detail', fn($id) => redirect()->route('sdt.detail', $id))
+        Route::get('/koor/sdt/{id}/detail', fn ($id) => redirect()->route('sdt.detail', $id))
             ->whereNumber('id');
 
         Route::delete('/koor/sdt/{id}', [SdtController::class, 'destroy'])
             ->name('sdt.destroy.legacy')->whereNumber('id');
 
-        Route::get('/koor/sdt/{id}/edit', fn($id) =>
+        Route::get(
+            '/koor/sdt/{id}/edit',
+            fn ($id) =>
             redirect()->route('sdt.index', ['openEdit' => $id])
         )->name('sdt.edit')->whereNumber('id');
 
@@ -320,5 +324,4 @@ Route::middleware(AuthOnly::class)->group(function () {
         Route::get('api/nop/search', [PetugasSdtController::class, 'searchNOP'])
             ->name('api.nop');
     });
-
 });
