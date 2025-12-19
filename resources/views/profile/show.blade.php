@@ -172,7 +172,7 @@
                     </div>
 
                     <div class="modal-body">
-                        <label class="form-label fw-semibold">Pilih Foto Baru (Maks. 2MB)</label>
+                        <label class="form-label fw-semibold">Foto harus berformat JPG, JPEG, dan PNG</label>
                         <input type="file" name="foto" class="form-control" accept="image/*" required>
                     </div>
 

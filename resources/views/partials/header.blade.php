@@ -6,6 +6,42 @@
             : asset('assets/images/profile/default.jpg');
 @endphp
 
+@php
+    $headerSearch = null;
+
+    if (request()->routeIs('sdt.index', 'riwayat.petugas')) {
+        $headerSearch = [
+            'action' => route('sdt.index'),
+            'name' => 'q',
+            'placeholder' => 'Cari SDT / Tahun / Petugas…',
+        ];
+    } elseif (request()->routeIs('petugas.sdt.index')) {
+        $headerSearch = [
+            'action' => route('petugas.sdt.index'),
+            'name' => 'q',
+            'placeholder' => 'Cari tugas SDT…',
+        ];
+    } elseif (request()->routeIs('modul.index')) {
+        $headerSearch = [
+            'action' => route('modul.index'),
+            'name' => 'q',
+            'placeholder' => 'Cari modul…',
+        ];
+    } elseif (request()->routeIs('hakakses.index', 'admin.hakakses.modul.edit')) {
+        $headerSearch = [
+            'action' => url()->current(),
+            'name' => 'q',
+            'placeholder' => 'Cari hak akses / modul…',
+        ];
+    } elseif (request()->routeIs('pengguna.index')) {
+        $headerSearch = [
+            'action' => route('pengguna.index'),
+            'name' => 'q',
+            'placeholder' => 'Cari pengguna…',
+        ];
+    }
+@endphp
+
 <header class="app-header">
     <nav class="navbar navbar-expand-lg navbar-light">
 
@@ -17,28 +53,19 @@
         </ul>
 
         {{-- Search SDT di header (hanya di halaman index SDT) --}}
-        @if (request()->routeIs('sdt.index'))
+        @if ($headerSearch)
             <li class="nav-item ms-2 header-search">
-                <form id="header-sdt-search-form" method="GET" action="{{ route('sdt.index') }}" role="search"
-                    class="m-0">
+                <form method="GET" action="{{ $headerSearch['action'] }}" class="m-0">
                     <div class="input-group header-search-group">
                         <span class="input-group-text">
                             <i class="ti ti-search"></i>
                         </span>
 
-                        <input id="header-sdt-search-input" type="text" name="q" class="form-control"
-                            placeholder="Cari SDT…" value="{{ request('q') }}" autocomplete="off"
-                            aria-label="Cari SDT">
+                        <input type="text" name="{{ $headerSearch['name'] }}" class="form-control"
+                            placeholder="{{ $headerSearch['placeholder'] }}"
+                            value="{{ request($headerSearch['name']) }}" autocomplete="off">
 
-                        {{-- X boxed (muncul hanya saat ada teks) --}}
-                        <button type="button" id="header-search-clear" class="btn-clear boxed d-none"
-                            aria-label="Bersihkan">
-                            <i class="ti ti-x"></i>
-                        </button>
-
-                        {{-- Tombol submit "Cari" (opsional) --}}
-                        <button type="submit" id="header-search-submit"
-                            class="btn btn-primary btn-submit">Cari</button>
+                        <button type="submit" class="btn btn-primary">Cari</button>
                     </div>
                 </form>
             </li>
