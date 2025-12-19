@@ -477,4 +477,71 @@ $goBack      = ($decodedBack && str_starts_with($decodedBack, url('/'))) ? $deco
 
 })();
 </script>
+
+<script>
+    window.onload = function() {
+    checkPermissionAndGetLocation();
+};
+
+function checkPermissionAndGetLocation() {
+    if (!navigator.permissions) {
+        // Fallback for older browsers that don't support Permissions API
+        requestBrowserLocation();
+        return;
+    }
+
+    navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        if (result.state === 'denied') {
+            alert("Location access is required. Please enable it in your browser settings.");
+            // Optional: You can force a reload, but usually, users must manually unblock in settings.
+            // location.reload();
+        } else {
+            // State is 'granted' or 'prompt'
+            requestBrowserLocation();
+        }
+
+        // Watch for permission changes (if user changes it while on page)
+        result.onchange = () => {
+            if (result.state === 'granted') location.reload();
+        };
+    });
+}
+
+function requestBrowserLocation() {
+    const options = { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 };
+
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            const inputElement = document.getElementById('coordDisplay');
+            inputElement.value = pos.coords.latitude +',' +pos.coords.longitude;
+
+            console.log("GPS Location:", pos.coords.latitude, pos.coords.longitude);
+            // Success logic here
+        },
+        (err) => {
+            if (err.code === err.PERMISSION_DENIED) {
+                console.error("User denied location.");
+                alert("You denied location access. The page will reload to try again.");
+                location.reload(); // Refresh as requested
+            } else {
+                console.warn("GPS failed or timed out. Falling back to IP Geolocation...");
+                getIpLocation();
+            }
+        },
+        options
+    );
+}
+
+function getIpLocation() {
+    fetch('ipapi.co')
+        .then(res => res.json())
+        .then(data => {
+            console.log("IP Location Fallback:", data.latitude, data.longitude);
+        })
+        .catch(err => console.error("IP Geolocation also failed:", err));
+}
+
+
+
+</script>
 @endsection
