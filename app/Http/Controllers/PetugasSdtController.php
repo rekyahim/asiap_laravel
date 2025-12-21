@@ -52,10 +52,10 @@ class PetugasSdtController extends Controller
         /* ============================================================
         QUERY TABEL (MENGIKUTI FILTER)
         MENGGUNAKAN with('latestStatus') UNTUK PERFORMA
-    ============================================================ */
+        ============================================================ */
         //perbaiki
 
-        $query = DtSdt::where('ID_SDT', $id)->where('PETUGAS_SDT', $user_id)->with('latestStatus');
+        $query = DtSdt::where('ID_SDT', $id)->where('PETUGAS_SDT', $user_id)->with('latestStatus', 'sdt');
 
         if ($req->filled('nop')) {
             $query->where('NOP', 'like', "%{$req->nop}%");
@@ -70,13 +70,16 @@ class PetugasSdtController extends Controller
         // harus pakai ID Petugas
         $rows = $query->orderBy('ID')->paginate(20)->withQueryString();
 
+
+
         // ==== HITUNG EXPIRED UNTUK TOMBOL UPDATE ====
         foreach ($rows as $row) {
             $status = $row->latestStatus;
-
-            if ($status && $status->updated_at) {
+            $sdt = $row->sdt;
+            $row->expired = '2'; //belum
+            if ($status && $status->create_at) {
                 // 1. Define the past date (e.g., from a database)
-                $past_date_string = $status->updated_at;
+                $past_date_string = $status->create_at;
 
                 // 2. Convert dates to timestamps
                 $past_timestamp = strtotime($past_date_string);
@@ -91,22 +94,34 @@ class PetugasSdtController extends Controller
                 // 5. Compare the difference
                 if ($difference_seconds > $six_hours_in_seconds) {
                     $row->expired = '1'; //udh expired
-                } else {
-                    $row->expired = '2'; //belum
                 }
-            } else {
-                $row->expired = '2';
             }
-            //$row->expired = $status && $status->updated_at ? now()->diffInHours($status->updated_at) >= 6 : false;
 
+            if ($sdt && $sdt->TGL_SELESAI) {
+                // 1. Define the past date (e.g., from a database)
+                $past_date_string = $sdt->TGL_SELESAI;
 
+                // 2. Convert dates to timestamps
+                $past_timestamp = strtotime($past_date_string);
+                $now_timestamp = time(); // or strtotime('now')
 
+                // 3. Calculate the difference in seconds
+                $difference_seconds = $now_timestamp - $past_timestamp;
 
+                // 4. Define the 6-hour threshold in seconds (6 hours * 60 minutes * 60 seconds)
+                $six_hours_in_seconds = 6 * 60 * 60; // 21600 seconds
 
+                // 5. Compare the difference
+                if ($difference_seconds > $six_hours_in_seconds) {
+                    $row->expired = '1'; //udh expired
+                }
+            }
         }
+
+
         /* ============================================================
         DATA KO (TIDAK TERPENGARUH FILTER)
-    ============================================================ */
+        ============================================================ */
         $dataKO = DtSdt::where('ID_SDT', $id)
             ->where('ALAMAT_OP', 'LIKE', 'KO%')
             ->where('PETUGAS_SDT', $user_id)
@@ -117,7 +132,7 @@ class PetugasSdtController extends Controller
 
         /* ============================================================
         DATA NOP (UNTUK MODAL PILIH NOP)
-    ============================================================ */
+        ============================================================ */
         $dataNOP = DtSdt::where('ID_SDT', $id)
             ->where('PETUGAS_SDT', $user_id)
             ->whereNotNull('NOP')
@@ -128,7 +143,7 @@ class PetugasSdtController extends Controller
 
         /* ============================================================
         TOTAL NOP & TERSAMPAIKAN (UNTUK SUMMARY KPI)
-    ============================================================ */
+            ============================================================ */
         $totalNOP = DtSdt::where('ID_SDT', $id)
             ->where('PETUGAS_SDT', $user_id)
             ->whereNotNull('NOP')
@@ -146,7 +161,7 @@ class PetugasSdtController extends Controller
 
         /* ============================================================
         SUMMARY (KPI)
-    ============================================================ */
+            ============================================================ */
         $summary = [
             'total' => $totalNOP,
             'tersampaikan' => $tersampaikan,
@@ -156,7 +171,7 @@ class PetugasSdtController extends Controller
 
         /* ============================================================
         TOTAL BIAYA
-    ============================================================ */
+            ============================================================ */
         $totalBiaya = DtSdt::where('ID_SDT', $id)
             ->where('PETUGAS_SDT', $user_id)
             ->whereIn('ALAMAT_OP', $dataKO->pluck('ALAMAT_OP'))
@@ -164,7 +179,7 @@ class PetugasSdtController extends Controller
 
         /* ============================================================
         RETURN KE VIEW
-    ============================================================ */
+         ============================================================ */
         return view('petugas.sdt-detail', compact(
             'sdt',
             'rows',
@@ -458,7 +473,7 @@ class PetugasSdtController extends Controller
             ]);
         }
 
-        $row->update(['STATUS' => $statusPenyampaian]);
+        //$row->update(['STATUS' => $statusPenyampaian]);
 
         return redirect()
             ->route('petugas.sdt.detail', $row->ID_SDT)

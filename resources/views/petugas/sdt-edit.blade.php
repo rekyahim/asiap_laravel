@@ -273,7 +273,7 @@
                                 {{ strtoupper($status->STATUS_PENYAMPAIAN ?? '') == 'TERSAMPAIKAN' || ($status->STATUS_PENYAMPAIAN ?? '') == '1' ? 'selected' : '' }}>
                                 Tersampaikan</option>
                             <option value="TIDAK TERSAMPAIKAN"
-                                {{ strtoupper($status->STATUS_PENYAMPAIAN ?? '') == 'TIDAK TERSAMPAIKAN' || ($status->STATUS_PENYAMPAIAN ?? '') == '2' ? 'selected' : '' }}>
+                                {{ strtoupper($status->STATUS_PENYAMPAIAN ?? '') == 'TIDAK TERSAMPAIKAN' || ($status->STATUS_PENYAMPAIAN ?? '') == '0' ? 'selected' : '' }}>
                                 Tidak Tersampaikan</option>
                         </select>
                     </div>
@@ -357,7 +357,7 @@
 
                 <div class="col-12 mt-3">
                     <label class="form-label">Keterangan</label>
-                    <textarea name="KETERANGAN_PETUGAS" class="form-control" rows="3" placeholder="Masukkan keterangan tambahan...">{{ old('KETERANGAN_PETUGAS', $status->KETERANGAN_PETUGAS ?? '') }}</textarea>
+                    <textarea name="KETERANGAN" class="form-control" rows="3" placeholder="Masukkan keterangan tambahan...">{{ old('KETERANGAN_PETUGAS', $status->KETERANGAN_PETUGAS ?? '') }}</textarea>
                 </div>
 
                 <div class="mt-4">
