@@ -228,8 +228,8 @@
         }
 
         /* =========================================
-                                                                                                               MOBILE CARD VIEW TRANSFORMATION (MAGIC)
-                                                                                                               ========================================= */
+                                                                                                                                               MOBILE CARD VIEW TRANSFORMATION (MAGIC)
+                                                                                                                                               ========================================= */
         @media (max-width: 768px) {
             .page-sdt-detail {
                 padding: 15px;
