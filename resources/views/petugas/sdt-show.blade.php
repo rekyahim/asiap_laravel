@@ -11,31 +11,12 @@
             border-radius: 16px;
             box-shadow: 0 10px 26px rgba(2, 6, 23, .08);
             overflow: hidden;
-            /* Mencegah konten keluar dari border radius */
         }
 
-        /* PERBAIKAN RESPONSIF TABEL & MAP */
-        .table-fixed-layout {
-            table-layout: fixed;
-            /* Kunci lebar kolom agar tidak meledak di mobile */
-            width: 100%;
-        }
-
-        .table-fixed-layout th,
-        .table-fixed-layout td {
-            word-wrap: break-word;
-            /* Paksa text panjang turun ke bawah */
-            white-space: normal;
-            vertical-align: top;
-        }
-
-        /* Container Map yang Responsif */
+        /* Container Map */
         .map-container {
             width: 100%;
-            max-width: 100%;
-            /* Pastikan tidak lebih dari container induk */
             height: 300px;
-            /* Tinggi default desktop */
             border-radius: 8px;
             overflow: hidden;
             margin-top: 10px;
@@ -57,20 +38,32 @@
             border-radius: 8px;
             margin-bottom: 20px;
             background-color: #f9fafb;
-            /* Pastikan riwayat card juga menangani overflow */
-            overflow-wrap: break-word;
         }
 
-        /* Tweak khusus Mobile (HP) */
+        /* Helper untuk lebar kolom tabel agar proporsional (Desktop) */
+        .col-label {
+            width: 15%;
+            white-space: nowrap;
+            background-color: #f8f9fa;
+        }
+
+        .col-value {
+            width: 35%;
+        }
+
         @media (max-width: 768px) {
             .map-container {
                 height: 200px;
-                /* Peta lebih pendek di HP agar proporsional */
             }
 
-            .table-fixed-layout th {
-                width: 35%;
-                /* Atur lebar label kolom di HP */
+            /* Di HP, biarkan lebar otomatis agar tidak sempit */
+            .col-label {
+                width: auto;
+                white-space: normal;
+            }
+
+            .col-value {
+                width: auto;
             }
         }
     </style>
@@ -84,26 +77,24 @@
         </div>
     </div>
 
-    {{-- ===== BAGIAN 1: DATA DASAR SDT (FIXED HEADER) ===== --}}
+    {{-- ===== BAGIAN 1: DATA DASAR SDT ===== --}}
     <div class="card-clean p-3 mb-4">
         <h5 class="mb-3">Informasi Utama SDT</h5>
 
-        {{-- Gunakan table-responsive untuk safety extra di layar sangat kecil --}}
         <div class="table-responsive">
-            <table class="table table-bordered table-sm mb-0 table-fixed-layout">
+            <table class="table table-bordered table-sm mb-0">
                 <tbody>
-                    {{-- Data Statis --}}
                     <tr>
-                        <th>ID</th>
-                        <td>#{{ $row->ID }}</td>
-                        <th>NOP</th>
-                        <td>{{ $row->NOP }}</td>
+                        <th class="col-label">ID</th>
+                        <td class="col-value">#{{ $row->ID }}</td>
+                        <th class="col-label">NOP</th>
+                        <td class="col-value">{{ $row->NOP }}</td>
                     </tr>
                     <tr>
-                        <th>Tahun</th>
-                        <td>{{ $row->TAHUN }}</td>
-                        <th>Nama WP</th>
-                        <td>{{ $row->NAMA_WP }}</td>
+                        <th class="col-label">Tahun</th>
+                        <td class="col-value">{{ $row->TAHUN }}</td>
+                        <th class="col-label">Nama WP</th>
+                        <td class="col-value">{{ $row->NAMA_WP }}</td>
                     </tr>
                     <tr>
                         <th>Alamat OP</th>
@@ -204,12 +195,25 @@
                         <th>Foto Evidence</th>
                         <td colspan="3">
                             @if (isset($photos) && count($photos))
-                                @foreach ($photos as $src)
-                                    <a href="{{ $src }}" target="_blank">
-                                        <img src="{{ $src }}" alt="Evidence"
-                                            style="height:100px; margin-right:5px; object-fit:cover; border-radius:4px; border:1px solid #ddd;">
-                                    </a>
-                                @endforeach
+                                <div class="d-flex flex-wrap gap-3">
+                                    @foreach ($photos as $index => $src)
+                                        <div class="text-center p-2 border rounded bg-light">
+                                            {{-- 1. Gambar Preview (Klik untuk Zoom/Tab Baru) --}}
+                                            <a href="{{ $src }}" target="_blank" class="d-block mb-2">
+                                                <img src="{{ $src }}" alt="Evidence"
+                                                    style="height:120px; width: auto; object-fit:cover; border-radius:4px; border:1px solid #ddd;">
+                                            </a>
+
+                                            {{-- 2. Tombol Download --}}
+                                            {{-- Atribut 'download' memaksa browser mengunduh file (jika didukung server) --}}
+                                            <a href="{{ $src }}"
+                                                download="evidence-{{ $row->ID }}-{{ $index + 1 }}"
+                                                class="btn btn-sm btn-primary w-100" target="_blank">
+                                                <i class="fas fa-download"></i> Unduh
+                                            </a>
+                                        </div>
+                                    @endforeach
+                                </div>
                             @else
                                 <span class="text-muted">Tidak ada foto.</span>
                             @endif
@@ -220,113 +224,110 @@
         </div>
     </div>
 
-    {{-- ===== BAGIAN 2: RIWAYAT PENGISIAN (History Loop) ===== --}}
+    {{-- ===== BAGIAN 2: RIWAYAT PENGISIAN (Refactored Loop) ===== --}}
     <div class="mb-4">
         <h5 class="mb-3">Riwayat Pengisian Petugas (Urut Terbaru ke Lama)</h5>
 
         @php
-            // Definisi Closure untuk Render Item Riwayat
-            $renderRiwayatBlock = function ($data, $is_latest) use ($row) {
-                // Siapkan variabel agar tidak error undefined
-                $petugasNama = $data->petugas->NAMA ?? '—';
-                $statusBadge = $is_latest
-                    ? '<span class="badge bg-primary">AKTIF (TERBARU)</span>'
-                    : '<span class="badge bg-secondary">ARSIP LAMA</span>';
-                $borderClass = $is_latest ? 'border-primary shadow-sm' : '';
-                $cardTitle = $is_latest ? 'Input Terbaru' : 'Input Sebelumnya (Tahun: ' . ($data->TAHUN ?? '—') . ')';
+            // Gabungkan data terbaru ($konfirmasi) dan history ($lastTwoPetugas) jadi satu array
+            // Supaya kita bisa meloop dengan rapi menggunakan HTML standar (bukan echo)
+            $historyData = [];
 
-                $statusPenyampaian = $data->STATUS_PENYAMPAIAN ?? ($row->STATUS_PENYAMPAIAN ?? '-');
-                $statusOP = $data->STATUS_OP ?? '-';
-                $statusWP = $data->STATUS_WP ?? '-';
-                $namaPenerima = $data->NAMA_PENERIMA ?? '-';
-                $hpPenerima = $data->HP_PENERIMA ?? '-';
-                $keteranganPetugas = $data->KETERANGAN_PETUGAS ?: '—';
-                $tglPenyampaian = $data->TGL_PENYAMPAIAN ? date('d M Y H:i', strtotime($data->TGL_PENYAMPAIAN)) : '—';
-                $koordinatOP = $data->KOORDINAT_OP ?? null;
-                $nopBenar = $data->NOP_BENAR ?? '—';
+            // 1. Masukkan Data Terbaru (Jika ada)
+            if (isset($konfirmasi)) {
+                // Tambahkan properti custom 'is_latest' on the fly
+                $konfirmasi->is_latest = true;
+                $historyData[] = $konfirmasi;
+            }
 
-                // Render HTML
-                echo "<div class='riwayat-card $borderClass'>";
-                echo "<div class='d-flex justify-content-between align-items-center mb-2'>";
-                echo "<h6 class='mb-0 fw-bold'>$cardTitle</h6>";
-                echo $statusBadge;
-                echo '</div>';
-
-                // Gunakan table-responsive juga di sini
-                echo "<div class='table-responsive'>";
-                echo "<table class='table table-sm mb-2 table-fixed-layout'>";
-
-                echo '<tr>';
-                echo "<th style='width: 30%'>Petugas</th>";
-                echo "<td colspan='3'><strong>$petugasNama</strong> <span class='text-muted small'>(NOP Benar: $nopBenar)</span></td>";
-                echo '</tr>';
-
-                echo '<tr>';
-                echo '<th>Status Penyampaian</th>';
-                echo "<td>$statusPenyampaian</td>";
-                echo '<th>Status OP/WP</th>';
-                echo "<td>$statusOP / $statusWP</td>";
-                echo '</tr>';
-
-                echo '<tr>';
-                echo '<th>Penerima / HP</th>';
-                echo "<td colspan='3'>$namaPenerima / $hpPenerima</td>";
-                echo '</tr>';
-
-                echo '<tr>';
-                echo '<th>Keterangan</th>';
-                echo "<td colspan='3'>$keteranganPetugas</td>";
-                echo '</tr>';
-
-                echo '<tr>';
-                echo '<th>Tgl Input</th>';
-                echo "<td colspan='3'>$tglPenyampaian</td>";
-                echo '</tr>';
-                echo '</table>';
-                echo '</div>'; // end table-responsive
-
-                // Render Map Riwayat
-                if ($koordinatOP) {
-                    [$lat, $lng] = explode(',', $koordinatOP);
-                    $lat = trim($lat);
-                    $lng = trim($lng);
-
-                    if ($lat && $lng) {
-                        echo "<div class='map-container'>";
-                        echo "<iframe src='https://maps.google.com/maps?q={$lat},{$lng}&hl=id&z=17&output=embed' referrerpolicy='no-referrer-when-downgrade' allowfullscreen></iframe>";
-                        echo '</div>';
-                        echo "<p class='mt-1 small mb-0'><i class='fas fa-map-marker-alt'></i> Koordinat: <a href='https://www.google.com/maps?q={$lat},{$lng}' target='_blank'>$koordinatOP</a></p>";
-                    } else {
-                        echo "<span class='text-danger small'>Format koordinat rusak.</span>";
-                    }
-                } else {
-                    echo "<span class='text-muted small'>Tidak ada data koordinat.</span>";
+            // 2. Masukkan Data Lama (Jika ada)
+            if (isset($lastTwoPetugas) && count($lastTwoPetugas)) {
+                foreach ($lastTwoPetugas as $p) {
+                    $p->is_latest = false;
+                    $historyData[] = $p;
                 }
-
-                echo '</div>'; // end riwayat-card
-            };
+            }
         @endphp
 
-        {{-- LOOPING RIWAYAT --}}
+        {{-- Loop Blade Standar (Rapi tanpa Echo) --}}
+        @forelse($historyData as $data)
+            <div class="riwayat-card {{ $data->is_latest ? 'border-primary shadow-sm' : '' }}">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0 fw-bold">
+                        {{ $data->is_latest ? 'Input Terbaru' : 'Input Sebelumnya (Tahun: ' . ($data->TAHUN ?? '—') . ')' }}
+                    </h6>
+                    @if ($data->is_latest)
+                        <span class="badge bg-primary">AKTIF (TERBARU)</span>
+                    @else
+                        <span class="badge bg-secondary">ARSIP LAMA</span>
+                    @endif
+                </div>
 
-        {{-- 1. Riwayat Terbaru (Data Utama saat ini) --}}
-        @if (isset($konfirmasi))
-            {{ $renderRiwayatBlock($konfirmasi, true) }}
-        @endif
+                <div class="table-responsive">
+                    <table class="table table-sm mb-2">
+                        <tr>
+                            <th style="width: 30%">Petugas</th>
+                            <td colspan="3">
+                                <strong>{{ $data->petugas->NAMA ?? '—' }}</strong>
+                                <span class="text-muted small">(NOP Benar: {{ $data->NOP_BENAR ?? '—' }})</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Status Penyampaian</th>
+                            <td>{{ $data->STATUS_PENYAMPAIAN ?? ($row->STATUS_PENYAMPAIAN ?? '-') }}</td>
+                            <th>Status OP/WP</th>
+                            <td>{{ $data->STATUS_OP ?? '-' }} / {{ $data->STATUS_WP ?? '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Penerima / HP</th>
+                            <td colspan="3">{{ $data->NAMA_PENERIMA ?? '-' }} / {{ $data->HP_PENERIMA ?? '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Keterangan</th>
+                            <td colspan="3">{{ $data->KETERANGAN_PETUGAS ?: '—' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tgl Input</th>
+                            <td colspan="3">
+                                {{ $data->TGL_PENYAMPAIAN ? date('d M Y H:i', strtotime($data->TGL_PENYAMPAIAN)) : '—' }}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
 
-        {{-- 2. Riwayat Sebelumnya --}}
-        @if (isset($lastTwoPetugas) && count($lastTwoPetugas))
-            @foreach ($lastTwoPetugas as $p)
-                {{ $renderRiwayatBlock($p, false) }}
-            @endforeach
-        @endif
+                {{-- Map Riwayat --}}
+                @if (!empty($data->KOORDINAT_OP))
+                    @php
+                        $hParts = explode(',', $data->KOORDINAT_OP);
+                        $hLat = trim($hParts[0] ?? '');
+                        $hLng = trim($hParts[1] ?? '');
+                    @endphp
 
-        {{-- 3. State Kosong --}}
-        @if (!isset($konfirmasi) && (!isset($lastTwoPetugas) || count($lastTwoPetugas) == 0))
+                    @if ($hLat && $hLng)
+                        <div class="map-container">
+                            <iframe
+                                src="https://maps.google.com/maps?q={{ $hLat }},{{ $hLng }}&hl=id&z=17&output=embed"
+                                referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+                        </div>
+                        <p class="mt-1 small mb-0">
+                            <i class="fas fa-map-marker-alt"></i> Koordinat:
+                            <a href="https://www.google.com/maps?q={{ $hLat }},{{ $hLng }}"
+                                target="_blank">
+                                {{ $data->KOORDINAT_OP }}
+                            </a>
+                        </p>
+                    @else
+                        <span class="text-danger small">Format koordinat rusak.</span>
+                    @endif
+                @else
+                    <span class="text-muted small">Tidak ada data koordinat.</span>
+                @endif
+            </div>
+        @empty
             <div class="alert alert-secondary text-center">
                 Belum ada riwayat pengisian petugas untuk SDT ini.
             </div>
-        @endif
+        @endforelse
     </div>
 
 @endsection
