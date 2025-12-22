@@ -17,6 +17,7 @@ class DtSdt extends Model
 
     protected $fillable = [
         'ID_SDT',
+        'PENGGUNA_ID',
         'STATUS',
         'NOP',
         'TAHUN',
@@ -101,7 +102,7 @@ class DtSdt extends Model
     protected static function booted()
     {
         static::addGlobalScope('active', function (Builder $query) {
-            $query->where('STATUS', 1);
+            $query->where('dt_sdt.STATUS', 1);
         });
     }
 
@@ -121,6 +122,10 @@ class DtSdt extends Model
     public function sdt()
     {
         return $this->belongsTo(Sdt::class, 'ID_SDT', 'ID');
+    }
+    public function pengguna()
+    {
+        return $this->belongsTo(\App\Models\Pengguna::class, 'PENGGUNA_ID', 'ID');
     }
 
     /** Riwayat status penyampaian */
