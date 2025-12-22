@@ -59,10 +59,10 @@ class DtSdt extends Model
 
     // Ambil status terakhir (paling penting)
     public function latestStatus()
-{
-    return $this->hasOne(StatusPenyampaian::class, 'ID_DT_SDT', 'ID')
-                ->latest('updated_at');
-}
+    {
+        return $this->hasOne(StatusPenyampaian::class, 'ID_DT_SDT', 'ID')
+            ->latest('id');
+    }
 
     /* ==========================================================
        HELPER: CEK EXPIRED 6 JAM

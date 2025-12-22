@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -46,7 +47,8 @@ class Sdt extends Model
             ->useLogName('sdt')
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $event) =>
+            ->setDescriptionForEvent(
+                fn (string $event) =>
                 $this->activityDescription($event)
             );
     }
@@ -88,7 +90,8 @@ class Sdt extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('active', function (Builder $q) {
-            $q->where('STATUS', 1);
+            // PERBAIKAN: Tambahkan 'sdt.' agar tidak ambigu saat di-join
+            $q->where('sdt.STATUS', 1);
         });
 
         static::creating(function (self $m) {
@@ -155,8 +158,8 @@ class Sdt extends Model
 
         return collect($details)
             ->pluck('PETUGAS_SDT')
-            ->filter(fn($v) => filled($v))
-            ->map(fn($v) => trim((string) $v))
+            ->filter(fn ($v) => filled($v))
+            ->map(fn ($v) => trim((string) $v))
             ->unique()
             ->sort()
             ->values();
