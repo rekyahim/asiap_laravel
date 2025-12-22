@@ -909,7 +909,7 @@
                 return (
                     (row.nop && row.nop.toLowerCase().includes(s)) ||
                     (row.tahun && row.tahun.toLowerCase().includes(s)) ||
-                    (row.petugas && row.petugas.toLowerCase().includes(s)) ||
+                    (row.petugas_nama && row.petugas_nama.toLowerCase().includes(s)) ||
 
                     // 🔍 Tambahan pencarian ALAMAT OP & WP
                     (row.alamat_op && row.alamat_op.toLowerCase().includes(s)) ||
@@ -922,9 +922,10 @@
                 let rows = RAW_ROWS.filter(r => matchesQuery(r, QUERY));
                 if (ACTIVE) {
                     rows = rows.filter(r =>
-                        norm(r.petugas).toLowerCase() === norm(ACTIVE).toLowerCase()
+                        norm(r.petugas_nama).toLowerCase() === norm(ACTIVE).toLowerCase()
                     );
                 }
+
 
                 const frag = document.createDocumentFragment();
 
@@ -954,7 +955,7 @@
                 <button type="button"
                     class="btn btn-sm ${btnClass} btn-edit-row"
                     data-row-id="${r.id}"
-                    data-current="${(r.petugas || '').replace(/"/g,'&quot;')}"
+data-current="${(r.petugas_nama || '').replace(/"/g,'&quot;')}"
                     ${disabled}
                     title="${title}">
                     ${icon}
@@ -963,7 +964,9 @@
 
             <td><code>${r.nop ?? '-'}</code></td>
             <td>${r.tahun ?? '-'}</td>
-            <td>${r.petugas ?? '-'}</td>
+<td data-pengguna-id="${r.pengguna_id ?? ''}">
+    ${r.petugas_nama ?? '-'}
+</td>
 
             <td>${r.alamat_op ?? '-'}</td>
             <td>${r.blok_kav_no_op ?? '-'}</td>
@@ -1046,7 +1049,7 @@
             function computeCounts(rows) {
                 const map = {};
                 rows.forEach(r => {
-                    const k = norm(r.petugas);
+                    const k = norm(r.petugas_nama);
                     if (!k) return;
                     map[k] = (map[k] || 0) + 1;
                 });
@@ -1069,18 +1072,22 @@
                 };
                 elPets.appendChild(all);
 
-                MASTER_PETUGAS.forEach(nm => {
+                MASTER_PETUGAS.forEach(p => {
+                    const nm = p.nama;
                     const isActive = norm(ACTIVE).toLowerCase() === nm.toLowerCase();
+                    const jml = counts[nm] || 0;
+
                     const b = document.createElement('button');
                     b.type = 'button';
                     b.className = 'petugas-btn ' + (isActive ? 'active' : '');
-                    const jml = counts[nm] || 0;
                     b.textContent = jml ? `${nm} (${jml})` : nm;
+
                     b.onclick = () => {
                         ACTIVE = isActive ? null : nm;
                         renderPetugasList();
                         renderRows();
                     };
+
                     elPets.appendChild(b);
                 });
             }
@@ -1115,9 +1122,16 @@
                             elSelesai.textContent = data.selesai || '-';
 
                             RAW_ROWS = data.rows || [];
-                            MASTER_PETUGAS = (data.petugas || []).filter(Boolean).map(s => s.trim())
-                                .filter((v, i, a) => a.indexOf(v) === i)
-                                .sort((a, b) => a.localeCompare(b, 'id', {
+                            MASTER_PETUGAS = (data.petugas || [])
+                                .filter(p => p && p.nama)
+                                .map(p => ({
+                                    id: p.id,
+                                    nama: p.nama.trim()
+                                }))
+                                .filter((v, i, a) =>
+                                    a.findIndex(x => x.nama.toLowerCase() === v.nama.toLowerCase()) === i
+                                )
+                                .sort((a, b) => a.nama.localeCompare(b.nama, 'id', {
                                     sensitivity: 'base'
                                 }));
 
@@ -1696,7 +1710,7 @@
 
                     fd.set('NOP', nop);
                     fd.set('TAHUN', tahun);
-                    fd.set('NAMA_PETUGAS', pet);
+                    fd.set('PENGGUNA_ID', pet); // pet = ID dari select2
 
                     fetch(formManual.action, {
                             method: 'POST',
@@ -1847,11 +1861,11 @@
                     }
 
                     const fd = new FormData();
-                    fd.append("petugas", val);
+                    fd.append("pengguna_id", val); // ini ID
                     fd.append("_token", document.querySelector('meta[name="csrf-token"]')
                         .content);
 
-                    let res = await fetch(`/koor/sdt/${rowId}/save-petugas`, {
+                    let res = await fetch(`/koor/sdt/${rowId}/savePetugas`, {
 
 
                         method: "POST",

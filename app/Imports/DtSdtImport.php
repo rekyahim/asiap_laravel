@@ -41,13 +41,12 @@ class DtSdtImport implements ToCollection, WithHeadingRow
         $excelPetugasLines = [];
 
         foreach ($rows as $idx => $row) {
-            $line = $idx + 2; // baris asli excel
+            $line = $idx + 2;
 
             $nm = $row['nama_petugas'] ?? $row['petugas'] ?? $row['petugas_sdt'] ?? null;
 
             if ($nm !== null && trim($nm) !== '') {
-                $nmLower = mb_strtolower(trim((string) $nm), 'UTF-8');
-
+                $nmLower                     = mb_strtolower(trim((string) $nm), 'UTF-8');
                 $excelPetugas[]              = $nmLower;
                 $excelPetugasLines[$nmLower] = $line;
             }
@@ -69,7 +68,6 @@ class DtSdtImport implements ToCollection, WithHeadingRow
             $missing  = array_values(array_diff($excelPetugas, array_keys($validSet)));
 
             if (! empty($missing)) {
-
                 $msgs = [];
                 foreach ($missing as $m) {
                     $baris  = $excelPetugasLines[$m] ?? '?';
@@ -80,8 +78,18 @@ class DtSdtImport implements ToCollection, WithHeadingRow
                     'row_errors' => $msgs,
                 ])->errorBag('import');
             }
-
         }
+
+        // =====================================================
+        // 🔥 MAP NAMA PETUGAS → PENGGUNA_ID (TAMBAHAN UTAMA)
+        // =====================================================
+        $petugasMap = Pengguna::query()
+            ->selectRaw('LOWER(pengguna.NAMA) AS ln, pengguna.ID')
+            ->join('hak_akses', 'hak_akses.ID', '=', 'pengguna.HAKAKSES_ID')
+            ->whereRaw('LOWER(hak_akses.HAKAKSES) = "petugas"')
+            ->where('pengguna.STATUS', 1)
+            ->pluck('ID', 'ln')
+            ->toArray();
 
         // ============================
         //  PARSING & INSERT DETAIL
@@ -133,8 +141,9 @@ class DtSdtImport implements ToCollection, WithHeadingRow
                 empty(trim($row['alamat_wp'] ?? '')) &&
                 empty(trim($row['alamat_op'] ?? ''))
             ) {
-                continue; // jangan validasi baris kosong
+                continue;
             }
+
             $r = [];
             foreach ($map as $excelKey => $dbCol) {
                 if ($row->has($excelKey)) {
@@ -145,54 +154,28 @@ class DtSdtImport implements ToCollection, WithHeadingRow
             $petugas = $r['PETUGAS_SDT'] ?? '';
             $nopRaw  = trim($r['NOP'] ?? '');
 
-// VALIDASI FORMAT NOP FIX (XX.XX.XXX.XXX.XXX-XXXX.X)
+            // VALIDASI FORMAT NOP
             if (! preg_match('/^\d{2}\.\d{2}\.\d{3}\.\d{3}\.\d{3}-\d{4}\.\d$/', $nopRaw)) {
                 $rowErrors[] = "Baris Ke - {$line}: NOP berikut '{$nopRaw}' tidak valid. Format NOP harus seperti ini 14.71.020.002.014-1701.0";
                 continue;
             }
 
-// Setelah valid → baru normalisasi ke angka saja
             $nop   = $this->normalizeNop($nopRaw);
             $tahun = $r['TAHUN'] ?? '';
 
-            $allCols = array_filter($r, fn($v) => trim($v) !== '');
-            if (empty($allCols)) {
+            if ($petugas === '' || $nop === '' || $tahun === '') {
+                $rowErrors[] = "Baris Ke - {$line}: kolom (NAMA PETUGAS, NOP, TAHUN PAJAK) tidak boleh kosong.";
                 continue;
             }
 
-            $missingCols = [];
-            if ($petugas === '') {
-                $missingCols[] = 'NAMA PETUGAS';
-            }
+            // =====================================
+            // 🔥 RESOLVE PENGGUNA_ID (INTI FIX)
+            // =====================================
+            $petugasLower = mb_strtolower(trim($petugas), 'UTF-8');
+            $penggunaId   = $petugasMap[$petugasLower] ?? null;
 
-            if ($nop === '') {
-                $missingCols[] = 'NOP';
-            }
-
-            if ($tahun === '') {
-                $missingCols[] = 'TAHUN PAJAK';
-            }
-
-            if ($missingCols) {
-                $rowErrors[] = "Baris Ke - {$line}: kolom (" . implode(', ', $missingCols) . ") tidak boleh kosong.";
-                continue;
-            }
-
-            $detailCols = [
-                'ALAMAT_OP', 'BLOK_KAV_NO_OP', 'RT_OP', 'RW_OP', 'KEL_OP', 'KEC_OP',
-                'NAMA_WP', 'ALAMAT_WP', 'BLOK_KAV_NO_WP', 'RT_WP', 'RW_WP', 'KEL_WP', 'KOTA_WP',
-                'JATUH_TEMPO', 'TERHUTANG', 'PENGURANGAN', 'PBB_HARUS_DIBAYAR',
-            ];
-
-            $hasDetail = collect($detailCols)->contains(fn($c) => ! empty($r[$c] ?? ''));
-
-            if (! $hasDetail) {
-                $rowErrors[] = "Baris Ke - {$line}: kolom (ALAMAT OP, NAMA WP, dst.) tidak boleh semua kosong.";
-                continue;
-            }
-
-            if (! ctype_digit($tahun) || strlen($tahun) !== 4) {
-                $rowErrors[] = "Baris Ke - {$line}: TAHUN PAJAK harus 4 digit angka.";
+            if (! $penggunaId) {
+                $rowErrors[] = "Baris Ke - {$line}: Petugas '{$petugas}' tidak ditemukan.";
                 continue;
             }
 
@@ -220,14 +203,11 @@ class DtSdtImport implements ToCollection, WithHeadingRow
                 $r['JATUH_TEMPO'] = null;
             }
 
-            $filtered           = array_intersect_key($r, array_flip($actualCols));
-            $filtered['ID_SDT'] = $this->sdtId;
-            $filtered['NOP']    = $nop;
-
-            // ============================================
-            // TAMBAHKAN KD_UNIT KE SETIAP DETAIL BARIS
-            // ============================================
-            $filtered['KD_UNIT'] = $this->kdUnit;
+            $filtered                = array_intersect_key($r, array_flip($actualCols));
+            $filtered['ID_SDT']      = $this->sdtId;
+            $filtered['NOP']         = $nop;
+            $filtered['PENGGUNA_ID'] = $penggunaId;
+            $filtered['KD_UNIT']     = $this->kdUnit;
 
             $out[] = $filtered;
         }
