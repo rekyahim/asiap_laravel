@@ -40,19 +40,31 @@
             font-weight: 600;
         }
 
+        /* Responsive Table adjustments */
         .table td,
         .table th {
             vertical-align: middle;
             white-space: nowrap;
+            padding: 0.75rem;
         }
 
-        .search-input {
-            min-width: 260px;
-        }
-
-        @media (max-width: 720px) {
-            .search-input {
-                min-width: 140px;
+        /* Mobile Optimization */
+        @media (max-width: 768px) {
+            .card-header {
+                padding: 0.75rem;
+            }
+            .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            .btn-sm-mobile {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.875rem;
+            }
+            /* Mencegah tabel terlalu lebar */
+            .table-responsive {
+                border-radius: 8px;
+                border: 1px solid var(--border);
             }
         }
 
@@ -85,29 +97,31 @@
 
     <div class="container-fluid">
         <div class="card shadow-sm mb-4">
-            <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
-                <div class="d-flex align-items-center gap-3">
-                    <h6 class="mb-0">Manajemen Pengguna</h6>
-                </div>
+            <div class="card-header">
+                <div class="row g-3 align-items-center">
+                    <div class="col-12 col-md-6">
+                        <h6 class="mb-0 text-center text-md-start">Manajemen Pengguna</h6>
+                    </div>
 
-                <div class="d-flex gap-2 align-items-center flex-wrap">
-                    {{-- Filter status (optional) --}}
-                    <form method="GET" action="{{ route('pengguna.index') }}" class="d-flex gap-2 align-items-center">
+                    <div class="col-12 col-md-6">
+                        <div class="d-flex gap-2 justify-content-center justify-content-md-end flex-wrap">
+                            <form method="GET" action="{{ route('pengguna.index') }}" class="d-flex gap-2 align-items-center">
+                                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+                                    <option value="all" {{ request('status', 'all') === 'all' ? 'selected' : '' }}>Semua Status</option>
+                                    <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Aktif</option>
+                                    <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Nonaktif</option>
+                                </select>
+                            </form>
 
-                        <select name="status" class="form-select form-select-sm">
-                            <option value="all" {{ request('status', 'all') === 'all' ? 'selected' : '' }}>Semua</option>
-                            <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>Aktif</option>
-                            <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>Nonaktif</option>
-                        </select>
-                    </form>
-
-                    <button class="btn btn-brand btn-sm" data-bs-toggle="modal" data-bs-target="#modalCreateUser">
-                        <i class="bi bi-person-plus me-1"></i> Tambah
-                    </button>
+                            <button class="btn btn-brand btn-sm" data-bs-toggle="modal" data-bs-target="#modalCreateUser">
+                                <i class="bi bi-person-plus me-1"></i> Tambah
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card-body p-3">
+            <div class="card-body p-2 p-md-3">
                 {{-- Flash messages --}}
                 @if (session('success'))
                     <div class="alert alert-success py-2 mb-3"><i class="bi bi-check2-circle me-1"></i>
@@ -121,21 +135,18 @@
                 @if (session('created_user'))
                     @php $nu = session('created_user'); @endphp
                     <div class="alert alert-info mb-3">
-                        <div class="fw-semibold">Pengguna dibuat</div>
-                        <div>Username: <span class="mono">{{ $nu['USERNAME'] }}</span></div>
-                        <div>Password awal: <span class="mono" id="nu-pass">{{ $nu['INITIAL_PASSWORD'] }}</span>
-                            <button class="btn btn-sm btn-outline-secondary ms-2"
+                        <div class="fw-semibold small">Pengguna dibuat:</div>
+                        <div class="small">Username: <span class="mono">{{ $nu['USERNAME'] }}</span></div>
+                        <div class="small">Pass: <span class="mono" id="nu-pass">{{ $nu['INITIAL_PASSWORD'] }}</span>
+                            <button class="btn btn-sm btn-outline-secondary p-0 px-1 ms-1"
                                 onclick="navigator.clipboard.writeText(document.getElementById('nu-pass').textContent)">Copy</button>
                         </div>
-                        <small class="text-muted">Password awal default: <span class="mono">123456</span>. Wajib diganti
-                            saat login pertama.</small>
                     </div>
                 @endif
 
                 @if ($errors->any())
-                    <div class="alert alert-danger mb-3">
-                        <div class="fw-semibold mb-1"><i class="bi bi-exclamation-triangle me-1"></i> Validasi gagal</div>
-                        <ul class="mb-0 ps-3">
+                    <div class="alert alert-danger mb-3 py-2">
+                        <ul class="mb-0 ps-3 small">
                             @foreach ($errors->all() as $e)
                                 <li>{{ $e }}</li>
                             @endforeach
@@ -148,118 +159,92 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th style="width:64px">ID</th>
+                                <th style="width:50px">ID</th>
                                 <th>Username</th>
                                 <th>Nama</th>
                                 <th>Jabatan</th>
                                 <th>NIP</th>
-                                <!-- <th>KD_UNIT</th> -->
                                 <th>Unit</th>
                                 <th>Status</th>
-                                <th style="min-width:220px">Hak Akses</th>
-                                <th>Password Awal</th>
-                                <th style="min-width:220px">Aksi</th>
+                                <th style="min-width:200px">Hak Akses</th>
+                                <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($users as $u)
                                 <tr>
-                                    <td class="text-muted">{{ $u->ID }}</td>
+                                    <td class="text-muted small">{{ $u->ID }}</td>
                                     <td class="fw-semibold">{{ $u->USERNAME }}</td>
-                                    <td>{{ $u->NAMA }}</td>
-                                    <td>{{ $u->JABATAN ?? '—' }}</td>
-                                    <td>{{ $u->NIP ?: '—' }}</td>
-                                    <!-- <td>{{ $u->KD_UNIT ?: '—' }}</td> -->
-                                    <td>{{ $u->NAMA_UNIT ?: '—' }}</td>
+                                    <td class="small">{{ $u->NAMA }}</td>
+                                    <td class="small">{{ $u->JABATAN ?? '—' }}</td>
+                                    <td class="small">{{ $u->NIP ?: '—' }}</td>
+                                    <td class="small text-wrap" style="min-width: 150px;">{{ $u->NAMA_UNIT ?: '—' }}</td>
 
-                                    {{-- Status badge --}}
                                     <td>
                                         @if ($u->STATUS == 1)
-                                            <span class="badge bg-success"><i class="bi bi-check2-circle me-1"></i>
-                                                Aktif</span>
+                                            <span class="badge bg-success">Aktif</span>
                                         @else
-                                            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>
-                                                Nonaktif</span>
+                                            <span class="badge bg-danger">Nonaktif</span>
                                         @endif
                                     </td>
 
-                                    {{-- Hak akses inline form --}}
                                     <td>
                                         <form method="POST" action="{{ route('pengguna.hakakses.update', $u->ID) }}"
-                                            class="d-flex gap-2 align-items-center">
+                                            class="d-flex gap-1 align-items-center">
                                             @csrf @method('PATCH')
                                             <select name="hakakses_id" class="form-select form-select-sm"
-                                                style="min-width:160px">
-                                                <option value="">— Tidak ada —</option>
+                                                style="min-width:130px; font-size: 0.8rem;">
+                                                <option value="">— Pilih —</option>
                                                 @foreach ($roles as $r)
                                                     <option value="{{ $r->ID }}" @selected((int) $u->HAKAKSES_ID === (int) $r->ID)>
                                                         {{ $r->HAKAKSES }}</option>
                                                 @endforeach
                                             </select>
-                                            <button class="btn btn-sm btn-primary">Simpan</button>
-
+                                            <button class="btn btn-sm btn-primary btn-sm-mobile">Simpan</button>
                                         </form>
                                     </td>
 
-                                    <td class="mono">{{ $u->INITIAL_PASSWORD ?: '—' }}</td>
-
-                                    {{-- Aksi (Edit, Reset, Nonaktifkan) --}}
-                                    <td class="align-middle text-center">
-                                        <div class="aksi-btns d-flex align-items-center gap-2">
-
-                                            {{-- Ubah --}}
-                                            <button type="button" class="btn btn-primary btn-icon" data-bs-toggle="modal"
+                                    <td>
+                                        <div class="aksi-btns d-flex align-items-center gap-1">
+                                            <button type="button" class="btn btn-primary btn-icon btn-sm" data-bs-toggle="modal"
                                                 data-bs-target="#modalEditUser" data-id="{{ $u->ID }}"
                                                 data-username="{{ $u->USERNAME }}" data-nama="{{ $u->NAMA }}"
                                                 data-jabatan="{{ $u->JABATAN }}" data-nip="{{ $u->NIP }}"
-                                                data-kd_unit="{{ $u->KD_UNIT }}" aria-label="Ubah" title="Ubah Pengguna">
+                                                data-kd_unit="{{ $u->KD_UNIT }}" title="Ubah">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
 
-
-                                            {{-- Reset Password --}}
                                             <form action="{{ route('pengguna.reset', $u->ID) }}" method="POST"
-                                                onsubmit="return confirm('Reset password pengguna ini?')">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="btn btn-warning btn-icon"
-                                                    aria-label="Reset Password" title="Reset Password">
+                                                onsubmit="return confirm('Reset password?')">
+                                                @csrf @method('PATCH')
+                                                <button type="submit" class="btn btn-warning btn-icon btn-sm" title="Reset">
                                                     <i class="bi bi-arrow-repeat"></i>
                                                 </button>
                                             </form>
 
-                                            {{-- Nonaktif / Aktifkan --}}
                                             @if ($u->STATUS == 1)
-                                                {{-- Nonaktifkan --}}
                                                 <form action="{{ route('pengguna.destroy', $u->ID) }}" method="POST"
-                                                    onsubmit="return confirm('Nonaktifkan pengguna ini?')">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <button type="submit" class="btn btn-danger btn-icon"
-                                                        aria-label="Nonaktifkan" title="Nonaktifkan Pengguna">
+                                                    onsubmit="return confirm('Nonaktifkan?')">
+                                                    @csrf @method('PATCH')
+                                                    <button type="submit" class="btn btn-danger btn-icon btn-sm" title="Nonaktifkan">
                                                         <i class="bi bi-person-x"></i>
                                                     </button>
                                                 </form>
                                             @else
-                                                {{-- Aktifkan --}}
                                                 <form action="{{ route('pengguna.activate', $u->ID) }}" method="POST"
-                                                    onsubmit="return confirm('Aktifkan pengguna ini?')">
+                                                    onsubmit="return confirm('Aktifkan?')">
                                                     @csrf
-                                                    <button type="submit" class="btn btn-success btn-icon"
-                                                        aria-label="Aktifkan" title="Aktifkan Pengguna">
+                                                    <button type="submit" class="btn btn-success btn-icon btn-sm" title="Aktifkan">
                                                         <i class="bi bi-person-check"></i>
                                                     </button>
                                                 </form>
                                             @endif
-
                                         </div>
                                     </td>
-
-
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="text-center text-muted py-4">Belum ada data.</td>
+                                    <td colspan="9" class="text-center text-muted py-4 small">Belum ada data.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -269,122 +254,105 @@
                 {{-- Pagination --}}
                 @if ($users->hasPages())
                     <div class="mt-3 d-flex justify-content-center">
-                        {{ $users->onEachSide(1)->links() }}
+                        {{ $users->onEachSide(0)->links() }}
                     </div>
                 @endif
             </div>
         </div>
     </div>
 
-    {{-- =========================
-       Modal CREATE
-     ========================= --}}
+    {{-- MODAL CREATE (Mobile Optimized) --}}
     <div class="modal fade" id="modalCreateUser" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form class="modal-content" method="POST" action="{{ route('pengguna.store') }}">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Tambah Pengguna</h5>
+                    <h6 class="modal-title"><i class="bi bi-person-plus me-2"></i>Tambah Pengguna</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Username <span class="text-danger">*</span></label>
-                        <input name="USERNAME" class="form-control" required maxlength="100" placeholder="mis. jdoe">
-                        <div class="form-text">huruf kecil, angka, titik, minus, atau underscore</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Nama <span class="text-danger">*</span></label>
-                        <input name="NAMA" class="form-control" required maxlength="255">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Jabatan <span class="text-danger">*</span></label>
-                        <select name="JABATAN" class="form-select" required>
-                            <option value="">— Pilih —</option>
-                            <option value="PNS">PNS</option>
-                            <option value="NON PNS">NON PNS</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">NIP</label>
-                        <input name="NIP" class="form-control" maxlength="50">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Unit <span class="text-danger">*</span></label>
-                        <select name="KD_UNIT" class="form-select" required>
-                            <option value="">— Pilih Unit —</option>
-                            @foreach ($units as $code => $name)
-                                <option value="{{ $code }}">{{ $name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Hak Akses</label>
-                        <select name="HAKAKSES_ID" class="form-select">
-                            <option value="">— Tidak ada —</option>
-                            @foreach ($roles as $r)
-                                <option value="{{ $r->ID }}">{{ $r->HAKAKSES }}</option>
-                            @endforeach
-                        </select>
-                        <div class="form-text">Password awal otomatis: <span class="mono">123456</span>.</div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Username <span class="text-danger">*</span></label>
+                            <input name="USERNAME" class="form-control form-control-sm" required placeholder="jdoe">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Nama <span class="text-danger">*</span></label>
+                            <input name="NAMA" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Jabatan <span class="text-danger">*</span></label>
+                            <select name="JABATAN" class="form-select form-select-sm" required>
+                                <option value="">— Pilih —</option>
+                                <option value="PNS">PNS</option>
+                                <option value="NON PNS">NON PNS</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">NIP</label>
+                            <input name="NIP" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Unit <span class="text-danger">*</span></label>
+                            <select name="KD_UNIT" class="form-select form-select-sm" required>
+                                <option value="">— Pilih Unit —</option>
+                                @foreach ($units as $code => $name)
+                                    <option value="{{ $code }}">{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Hak Akses</label>
+                            <select name="HAKAKSES_ID" class="form-select form-select-sm">
+                                <option value="">— Tidak ada —</option>
+                                @foreach ($roles as $r)
+                                    <option value="{{ $r->ID }}">{{ $r->HAKAKSES }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                 </div>
-
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-brand"><i class="bi bi-check-circle me-1"></i>Simpan</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-sm btn-brand">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    {{-- =========================
-       Modal EDIT
-     ========================= --}}
+    {{-- MODAL EDIT (Mobile Optimized) --}}
     <div class="modal fade" id="modalEditUser" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered">
             <form class="modal-content" method="POST" id="editUserForm">
                 @csrf @method('PATCH')
-
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Edit Pengguna</h5>
+                    <h6 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Edit Pengguna</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Username</label>
-                            <input name="USERNAME" id="edit_username" class="form-control" required maxlength="100">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small">Username</label>
+                            <input name="USERNAME" id="edit_username" class="form-control form-control-sm" required>
                         </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Nama</label>
-                            <input name="NAMA" id="edit_nama" class="form-control" required maxlength="255">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold small">Nama</label>
+                            <input name="NAMA" id="edit_nama" class="form-control form-control-sm" required>
                         </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Jabatan</label>
-                            <select name="JABATAN" id="edit_jabatan" class="form-select" required>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">Jabatan</label>
+                            <select name="JABATAN" id="edit_jabatan" class="form-select form-select-sm" required>
                                 <option value="PNS">PNS</option>
                                 <option value="NON PNS">NON PNS</option>
                             </select>
                         </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">NIP</label>
-                            <input name="NIP" id="edit_nip" class="form-control" maxlength="50">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">NIP</label>
+                            <input name="NIP" id="edit_nip" class="form-control form-control-sm">
                         </div>
-
-                        <div class="col-md-12">
-                            <label class="form-label fw-semibold">Unit</label>
-                            <select name="KD_UNIT" id="edit_kdunit" class="form-select">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Unit</label>
+                            <select name="KD_UNIT" id="edit_kdunit" class="form-select form-select-sm">
                                 <option value="">— Pilih Unit —</option>
                                 @foreach ($units as $code => $name)
                                     <option value="{{ $code }}">{{ $name }}</option>
@@ -393,40 +361,31 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-brand"><i class="bi bi-check-circle me-1"></i>Simpan
-                        Perubahan</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-sm btn-brand">Update</button>
                 </div>
             </form>
         </div>
     </div>
 
-    {{-- Script: autofill modal edit --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const editModal = document.getElementById('modalEditUser');
-
             editModal?.addEventListener('show.bs.modal', event => {
                 const btn = event.relatedTarget;
                 const id = btn.getAttribute('data-id');
-
                 document.getElementById('edit_username').value = btn.getAttribute('data-username') || '';
-                document.getElementById('edit_nama').value = (btn.getAttribute('data-nama') || '');
+                document.getElementById('edit_nama').value = btn.getAttribute('data-nama') || '';
                 document.getElementById('edit_jabatan').value = btn.getAttribute('data-jabatan') || 'PNS';
                 document.getElementById('edit_nip').value = btn.getAttribute('data-nip') || '';
                 document.getElementById('edit_kdunit').value = btn.getAttribute('data-kd_unit') || '';
-
-                const form = document.getElementById('editUserForm');
-                form.action = "{{ url('/admin/pengguna') }}/" + id;
+                document.getElementById('editUserForm').action = "{{ url('/admin/pengguna') }}/" + id;
             });
+            
+            // Tooltip Init
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"], [title]');
+            [...tooltipTriggerList].map(t => new bootstrap.Tooltip(t));
         });
     </script>
-
-    <script>
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"], [title]');
-        [...tooltipTriggerList].map(t => new bootstrap.Tooltip(t));
-    </script>
-
 @endsection
