@@ -401,7 +401,7 @@
                             } else {
                                 // PERBAIKAN: Tambahkan titik koma (;) di akhir baris ini
                                 $okPeny =
-                                    '<span class="icon no">!</span> <span class="badge-soft">TIDAK TERSAMPAIKAN</span>';
+                                    '<span class="icon ok">✓</span> <span class="badge-soft">TIDAK TERSAMPAIKAN</span>';
                             }
                         } else {
                             $okPeny = '<span class="icon no">✕</span> <span class="badge-soft">BELUM DIPROSES</span>';
@@ -788,7 +788,7 @@ flex-wrap: wrap;
                                     } else {
                                         // PERBAIKAN: Tambahkan titik koma (;) di akhir baris ini
                                         $okPeny =
-                                            '<span class="icon no">!</span> <span class="badge-soft">TIDAK TERSAMPAIKAN</span>';
+                                            '<span class="icon ok">✓</span> <span class="badge-soft">TIDAK TERSAMPAIKAN</span>';
                                     }
                                 } else {
                                     $okPeny =
