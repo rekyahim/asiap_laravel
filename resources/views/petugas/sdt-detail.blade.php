@@ -126,7 +126,6 @@
             gap: 6px;
             cursor: not-allowed;
             pointer-events: none;
-            /* Mencegah klik */
         }
 
         .btn-compact {
@@ -203,12 +202,14 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
+            /* Table layout fixed tetap direkomendasikan agar lebar kolom terkontrol */
             table-layout: fixed;
         }
 
         /* LEBAR KOLOM */
         .col-no {
             width: 50px;
+
         }
 
         .col-nama {
@@ -220,23 +221,21 @@
         }
 
         .col-nop {
-            width: 10%;
+            width: 29%;
         }
 
         .col-status {
-            width: 12%;
+            width: 9%;
         }
 
         .col-prog {
-            width: 10%;
+            width: 15%;
         }
 
         .col-aksi {
             width: 15%;
-            min-width: 140px;
+            min-width: 200px;
         }
-
-        /* Perlebar sedikit */
 
         .tbl thead th {
             position: sticky;
@@ -269,18 +268,21 @@
         .tbl tbody td {
             padding: var(--td) calc(var(--td) + 2px);
             border-bottom: 1px solid var(--line);
-            vertical-align: middle;
             color: #334155;
             font-size: clamp(.82rem, 1vw, .95rem);
-            line-height: 1.35;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            line-height: 1.4;
+
+            /* PERBAIKAN: Izinkan text wrapping */
+            white-space: normal;
+            vertical-align: top;
+            /* Agar teks mulai dari atas sel */
+            word-wrap: break-word;
+            /* Pecah kata jika terlalu panjang */
         }
 
         .tbl tbody td.col-aksi {
-            overflow: visible;
-            text-overflow: clip;
+            vertical-align: middle;
+            /* Tombol aksi tetap di tengah vertikal */
         }
 
         /* Alignment Body Desktop */
@@ -321,6 +323,7 @@
             background: #f3f4f6;
             color: #334155;
             white-space: nowrap;
+            /* Chip tetap satu baris */
         }
 
         .chip .dot {
@@ -337,6 +340,9 @@
             font-size: .7rem;
             font-weight: 700;
             letter-spacing: 0.3px;
+            display: inline-block;
+            /* Agar padding berfungsi baik saat wrap */
+            white-space: nowrap;
         }
 
         .bg-soft-blue {
@@ -351,8 +357,6 @@
 
         .bg-soft-red {
             background: #fef2f2;
-            color: var(--warn);
-            /* Merah kekuningan/oranye lebih enak dilihat */
             color: #b91c1c;
         }
 
@@ -365,11 +369,11 @@
             display: flex;
             gap: 6px;
             justify-content: flex-end;
+            flex-wrap: wrap;
+            /* Izinkan tombol turun ke bawah jika sempit */
         }
 
-        /* =========================================
-                   MOBILE CARD VIEW TRANSFORMATION
-                   ========================================= */
+        /* =========================================MOBILE CARD VIEW TRANSFORMATION========================================= */
         @media (max-width: 768px) {
             .page-sdt-detail {
                 margin-top: 0;
@@ -427,6 +431,7 @@
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                /* Kembali ke center di mobile card */
                 text-align: right !important;
                 padding: 8px 0;
                 border-bottom: 1px dashed #f1f5f9;
@@ -462,6 +467,9 @@
                 border-bottom: 2px solid #f1f5f9 !important;
                 margin-bottom: 5px;
                 padding-bottom: 12px !important;
+                display: block !important;
+                /* Nama WP di mobile blok sendiri */
+                text-align: left !important;
             }
 
             .col-nama::before {
@@ -539,13 +547,13 @@
                         <thead>
                             <tr>
                                 <th style="width: 50px; text-align:center;">No</th>
-                                <th>NOP</th>
-                                <th style="text-align:center;">Tahun</th>
+                                <th width="18%">NOP</th>
+                                <th style="text-align:center;" width="7%">Tahun</th>
                                 <th>Nama WP</th>
-                                <th>Status Penyampaian</th>
+                                <th width="16%">Status Penyampaian</th>
                                 <th>Status OP</th>
                                 <th>Status WP</th>
-                                <th style="text-align:right;">Aksi</th>
+                                <th style="text-align:right;" width="17%">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -604,8 +612,9 @@
 
                                     <td data-label="Tahun" style="text-align:center;">{{ $r->TAHUN }}</td>
 
+                                    {{-- Hapus Str::limit agar teks full --}}
                                     <td data-label="Nama WP">
-                                        {{ Str::limit($r->NAMA_WP ?: '—', 20) }}
+                                        {{ $r->NAMA_WP ?: '—' }}
                                     </td>
 
                                     <td data-label="Penyampaian">{!! $badgePeny !!}</td>
