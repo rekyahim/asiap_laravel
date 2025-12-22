@@ -3,63 +3,77 @@
 @section('title', 'Petugas / Detail SDT')
 @section('breadcrumb', 'Petugas / Detail SDT')
 
-@push('styles')
+@section('content')
+
+    @php
+        $hasFilter = request()->filled('nop') || request()->filled('tahun') || request()->filled('nama');
+        $progress = $summary['progress'] ?? 0;
+        $progressFmt = rtrim(rtrim(number_format($progress, 2, '.', ''), '0'), '.');
+    @endphp
+
     <style>
+        /* ========== Design Tokens & Scaling ========== */
         :root {
-            --bg: #f5f7fa;
-            --card: #ffffff;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --line: #e5e7eb;
-            --accent: #3b82f6;
+            --bg: #f5f7fb;
+            --card: #fff;
+            --line: #e6e8ec;
+            --text: #0f172a;
+            --muted: #64748b;
+            --accent: #2563eb;
             --accent-2: #1d4ed8;
             --ok: #16a34a;
-            --danger: #ef4444;
-            --radius: 16px;
-            --radius-sm: 8px;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --ok-2: #34d399;
+            --warn: #f59e0b;
+            --info: #06b6d4;
+            --r-lg: 18px;
+            --shadow: 0 10px 26px rgba(2, 6, 23, .10);
+            --px: clamp(12px, 2vw, 20px);
+            --py: clamp(10px, 1.4vw, 16px);
+            --th: clamp(9px, 1.2vw, 12px);
+            --td: clamp(10px, 1.3vw, 14px);
         }
 
-        /* CONTAINER */
+        /* ========== Layout & Card ========== */
         .page-sdt-detail {
+            margin-top: 4px;
             background: var(--bg);
-            border-radius: var(--radius);
-            padding: 24px;
-            margin-top: 15px;
+            border-radius: 22px;
+            padding: var(--px);
         }
 
-        /* CARD CLEAN */
         .card-clean {
             background: var(--card);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            overflow: hidden;
             border: 1px solid var(--line);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            overflow: hidden
         }
 
-        /* HEADER */
-        .card-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--line);
+        .card-clean .card-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            background: #fff;
+            justify-content: flex-start;
+            padding: var(--py) 26px;
+            border-bottom: 1px solid var(--line);
+            background:
+                radial-gradient(80% 140% at 100% 0%, rgba(37, 99, 235, .05) 0%, #fff 60%),
+                linear-gradient(180deg, #fff, #f8fafc);
         }
 
         .page-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-            color: var(--text);
             margin: 0;
+            color: var(--text);
+            font-weight: 800;
+            letter-spacing: .2px;
+            font-size: clamp(1rem, 1.1vw + .85rem, 1.25rem)
         }
 
-        /* BUTTONS */
+        /* ========== Buttons ========== */
         .btn-ghost {
             background: #fff;
             border: 1px solid var(--line);
             padding: .4rem .8rem;
-            border-radius: var(--radius-sm);
+            border-radius: 8px;
             font-weight: 600;
             color: var(--muted);
             transition: .2s;
@@ -80,7 +94,7 @@
             background: linear-gradient(135deg, var(--accent), var(--accent-2));
             border: none;
             color: #fff;
-            border-radius: var(--radius-sm);
+            border-radius: 8px;
             padding: .4rem .8rem;
             font-weight: 600;
             font-size: .8rem;
@@ -96,6 +110,23 @@
             transform: translateY(-1px);
             box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
             color: white;
+        }
+
+        /* Tombol Disabled (Expired) */
+        .btn-disabled {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            color: #94a3b8;
+            border-radius: 8px;
+            padding: .4rem .8rem;
+            font-weight: 600;
+            font-size: .8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: not-allowed;
+            pointer-events: none;
+            /* Mencegah klik */
         }
 
         .btn-compact {
@@ -161,38 +192,145 @@
 
         /* TABLE BASE STYLES */
         .table-wrap {
-            border-radius: var(--radius-sm);
-            background: #fff;
-            margin-top: 0;
             border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #fff;
+            overflow: auto;
             width: 100%;
         }
 
-        table.tbl {
+        .tbl {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
         }
 
-        thead th {
-            background: #f8fafc;
-            padding: 12px 16px;
-            font-weight: 700;
-            font-size: .75rem;
-            color: var(--muted);
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--line);
-            text-align: left;
+        /* LEBAR KOLOM */
+        .col-no {
+            width: 50px;
         }
 
-        tbody td {
-            padding: 12px 16px;
-            font-size: .8rem;
+        .col-nama {
+            width: 25%;
+        }
+
+        .col-date {
+            width: 13%;
+        }
+
+        .col-nop {
+            width: 10%;
+        }
+
+        .col-status {
+            width: 12%;
+        }
+
+        .col-prog {
+            width: 10%;
+        }
+
+        .col-aksi {
+            width: 15%;
+            min-width: 140px;
+        }
+
+        /* Perlebar sedikit */
+
+        .tbl thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: linear-gradient(180deg, #f8fafc, #eef2ff);
             color: var(--text);
+            border-bottom: 1px solid var(--line);
+            font-weight: 800;
+            letter-spacing: .2px;
+            text-transform: uppercase;
+            padding: var(--th) calc(var(--th) + 2px);
+            font-size: clamp(.78rem, .9vw, .84rem);
             text-align: left;
+        }
+
+        /* Alignment Header Desktop */
+        .tbl thead th.col-no,
+        .tbl thead th.col-nop {
+            text-align: right;
+        }
+
+        .tbl thead th.col-date,
+        .tbl thead th.col-status,
+        .tbl thead th.col-prog,
+        .tbl thead th.col-aksi {
+            text-align: center;
+        }
+
+        .tbl tbody td {
+            padding: var(--td) calc(var(--td) + 2px);
             border-bottom: 1px solid var(--line);
             vertical-align: middle;
+            color: #334155;
+            font-size: clamp(.82rem, 1vw, .95rem);
+            line-height: 1.35;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
+        .tbl tbody td.col-aksi {
+            overflow: visible;
+            text-overflow: clip;
+        }
+
+        /* Alignment Body Desktop */
+        .tbl tbody td.col-no,
+        .tbl tbody td.col-nop {
+            text-align: right;
+        }
+
+        .tbl tbody td.col-date,
+        .tbl tbody td.col-status,
+        .tbl tbody td.col-prog,
+        .tbl tbody td.col-aksi {
+            text-align: center;
+        }
+
+        .tbl tbody tr:nth-child(even) {
+            background: #fcfdff;
+        }
+
+        .tbl tbody tr:hover {
+            background: #f6f8ff;
+        }
+
+        .mono {
+            font-family: ui-monospace, Menlo, monospace;
+        }
+
+        /* ========== Components (Chip & Progress) ========== */
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            padding: .3rem .62rem;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            font-size: .78rem;
+            font-weight: 700;
+            background: #f3f4f6;
+            color: #334155;
+            white-space: nowrap;
+        }
+
+        .chip .dot {
+            width: .44rem;
+            height: .44rem;
+            border-radius: 999px;
+            background: #9ca3af;
+        }
+
+        /* Badge Soft */
         .badge-soft {
             padding: 4px 8px;
             border-radius: 6px;
@@ -213,7 +351,9 @@
 
         .bg-soft-red {
             background: #fef2f2;
-            color: var(--danger);
+            color: var(--warn);
+            /* Merah kekuningan/oranye lebih enak dilihat */
+            color: #b91c1c;
         }
 
         .bg-soft-gray {
@@ -228,15 +368,14 @@
         }
 
         /* =========================================
-                                                                                                                                               MOBILE CARD VIEW TRANSFORMATION (MAGIC)
-                                                                                                                                               ========================================= */
+                   MOBILE CARD VIEW TRANSFORMATION
+                   ========================================= */
         @media (max-width: 768px) {
             .page-sdt-detail {
+                margin-top: 0;
                 padding: 15px;
-                margin-top: 10px;
             }
 
-            /* Header Stack */
             .card-header {
                 flex-direction: column;
                 align-items: flex-start;
@@ -250,79 +389,86 @@
             }
 
             .btn-ghost,
-            .btn-blue {
+            .btn-blue,
+            .btn-disabled {
                 justify-content: center;
                 width: 100%;
             }
 
-            /* HIDE Table Header */
+            .table-wrap {
+                border: none;
+                background: transparent;
+                overflow: visible;
+            }
+
+            .tbl {
+                display: block;
+            }
+
             .tbl thead {
                 display: none;
             }
 
-            /* Table Row jadi Card */
+            .tbl tbody {
+                display: block;
+            }
+
             .tbl tbody tr {
                 display: block;
                 margin-bottom: 15px;
-                border: 1px solid var(--line);
-                border-radius: 12px;
                 background: #fff;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-                padding: 10px;
+                border: 1px solid var(--line);
+                border-radius: 16px;
+                padding: 16px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
             }
 
-            /* Table Cell jadi Baris dalam Card */
             .tbl tbody td {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                text-align: right;
-                padding: 10px 5px;
-                border-bottom: 1px dashed #eee;
-                font-size: 0.85rem;
+                text-align: right !important;
+                padding: 8px 0;
+                border-bottom: 1px dashed #f1f5f9;
+                width: 100% !important;
+                box-sizing: border-box;
+                white-space: normal;
+                height: auto;
+                overflow: visible;
             }
 
             .tbl tbody td:last-child {
                 border-bottom: none;
                 padding-top: 15px;
                 justify-content: center;
-                /* Tombol aksi di tengah */
+                margin-top: 5px;
             }
 
-            /* CSS Trick: Ambil Judul dari atribut data-label */
             .tbl tbody td::before {
                 content: attr(data-label);
+                font-size: 0.75rem;
                 font-weight: 700;
-                color: var(--muted);
                 text-transform: uppercase;
-                font-size: 0.7rem;
-                text-align: left;
+                color: var(--muted);
                 margin-right: 15px;
+                text-align: left;
+                min-width: 90px;
             }
 
-            /* Styling khusus kolom tertentu di mobile */
-            .td-nop {
-                font-weight: bold;
+            .col-nama {
+                font-weight: 700;
                 color: var(--accent);
-                font-family: monospace;
                 font-size: 1rem !important;
+                border-bottom: 2px solid #f1f5f9 !important;
+                margin-bottom: 5px;
+                padding-bottom: 12px !important;
             }
 
-            .table-wrap {
-                border: none;
-                background: transparent;
+            .col-nama::before {
+                display: none;
             }
         }
     </style>
-@endpush
-
-@section('content')
-
-    @php
-        $hasFilter = request()->filled('nop') || request()->filled('tahun') || request()->filled('nama');
-        $progress = $summary['progress'] ?? 0;
-        $progressFmt = rtrim(rtrim(number_format($progress, 2, '.', ''), '0'), '.');
-    @endphp
 
     <div class="page-sdt-detail">
         <div class="card-clean">
@@ -405,8 +551,8 @@
                         <tbody>
                             @forelse($rows as $i => $r)
                                 @php
+                                    // 1. Status Penyampaian
                                     $status = $r->latestStatus->STATUS_PENYAMPAIAN ?? null;
-
                                     if ($status == '1') {
                                         $badgePeny =
                                             '<span class="badge-soft bg-soft-green"><i class="bi bi-check-circle me-1"></i> TERSAMPAIKAN</span>';
@@ -417,35 +563,39 @@
                                         $badgePeny = '<span class="badge-soft bg-soft-gray">BELUM DIPROSES</span>';
                                     }
 
-                                    $statusOP = $r->latestStatus->STATUS_OP ?? null;
-                                    $statusWP = $r->latestStatus->STATUS_WP ?? null;
+                                    // 2. Mapping Status OP
+                                    $valOP = $r->latestStatus->STATUS_OP ?? null;
+                                    if ($valOP == 1) {
+                                        $statusOP = 'Belum Diproses Petugas';
+                                    } elseif ($valOP == 2) {
+                                        $statusOP = 'Ditemukan';
+                                    } elseif ($valOP == 3) {
+                                        $statusOP = 'Tidak Ditemukan';
+                                    } elseif ($valOP == 4) {
+                                        $statusOP = 'Sudah Dijual';
+                                    } else {
+                                        $statusOP = '-';
+                                    }
 
-                                    if ($statusWP == 1 || $statusWP === '1') {
+                                    // 3. Mapping Status WP
+                                    $valWP = $r->latestStatus->STATUS_WP ?? null;
+                                    if ($valWP == 1) {
                                         $statusWP = 'Belum Diproses Petugas';
-                                    } elseif ($statusWP == 2 || $statusWP === '2') {
+                                    } elseif ($valWP == 2) {
                                         $statusWP = 'Ditemukan';
-                                    } elseif ($statusWP == 3 || $statusWP === '3') {
+                                    } elseif ($valWP == 3) {
                                         $statusWP = 'Tidak Ditemukan';
-                                    } elseif ($statusWP == 4 || $statusWP === '4') {
+                                    } elseif ($valWP == 4) {
                                         $statusWP = 'Luar Kota';
                                     } else {
                                         $statusWP = '-';
                                     }
 
-                                    if ($statusOP == 1 || $statusOP === '1') {
-                                        $statusOP = 'Belum Diproses Petugas';
-                                    } elseif ($statusOP == 2 || $statusOP === '2') {
-                                        $statusOP = 'Ditemukan';
-                                    } elseif ($statusOP == 3 || $statusOP === '3') {
-                                        $statusOP = 'Tidak Ditemukan';
-                                    } elseif ($statusOP == 4 || $statusOP === '4') {
-                                        $statusOP = 'Luar Kota';
-                                    } else {
-                                        $statusOP = '-';
-                                    }
+                                    // 4. Cek Expired
+                                    $isExpired = isset($r->expired) && $r->expired == 1;
                                 @endphp
+
                                 <tr>
-                                    {{-- PERHATIKAN: data-label="..." ditambahkan di sini --}}
                                     <td data-label="No" style="text-align:center;">{{ $rows->firstItem() + $i }}</td>
 
                                     <td data-label="NOP" class="td-nop" style="font-family:monospace; font-weight:600;">
@@ -468,17 +618,24 @@
                                         <span class="badge-soft bg-soft-gray">{{ $statusWP }}</span>
                                     </td>
 
-                                    {{-- Kolom Aksi tidak butuh label di mobile, kita styling beda --}}
                                     <td data-label="">
                                         <div class="td-actions">
                                             <a href="{{ route('petugas.sdt.show', ['id' => $r->ID, 'return' => request()->fullUrl()]) }}"
                                                 class="btn-ghost btn-compact" title="Lihat Detail">
                                                 <i class="bi bi-eye"></i> Detail
                                             </a>
-                                            <a href="{{ route('petugas.sdt.edit', ['id' => $r->ID, 'back' => request()->fullUrl()]) }}"
-                                                class="btn-blue btn-compact" title="Update Data">
-                                                <i class="bi bi-pencil"></i> Update
-                                            </a>
+
+                                            {{-- LOGIKA TOMBOL EXPIRED --}}
+                                            @if ($isExpired)
+                                                <span class="btn-disabled btn-compact">
+                                                    <i class="bi bi-lock-fill"></i> Expired
+                                                </span>
+                                            @else
+                                                <a href="{{ route('petugas.sdt.edit', ['id' => $r->ID, 'back' => request()->fullUrl()]) }}"
+                                                    class="btn-blue btn-compact" title="Update Data">
+                                                    <i class="bi bi-pencil"></i> Update
+                                                </a>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

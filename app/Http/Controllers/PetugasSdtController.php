@@ -123,9 +123,10 @@ class PetugasSdtController extends Controller
             $status = $row->latestStatus;
             $sdt = $row->sdt;
             $row->expired = '2'; //belum
-            if ($status && $status->create_at) {
+            if ($status && $status->created_at) {
+
                 // 1. Define the past date (e.g., from a database)
-                $past_date_string = $status->create_at;
+                $past_date_string = $status->created_at;
 
                 // 2. Convert dates to timestamps
                 $past_timestamp = strtotime($past_date_string);
