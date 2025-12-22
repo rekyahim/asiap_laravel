@@ -104,6 +104,28 @@
             </div>
           </div>
 
+          {{-- INFO NOP --}}
+            <div class="card border-0 rounded-4 shadow-sm mb-4">
+            <div class="card-body">
+
+                <div class="mb-3">
+                <div class="info-label">Nama Wajib Pajak</div>
+                <div id="NOP_NAMA_WP" class="info-value">—</div>
+                </div>
+
+                <div class="mb-3">
+                <div class="info-label">Alamat Objek Pajak</div>
+                <div id="NOP_ALAMAT_OP" class="info-value">—</div>
+                </div>
+
+                <div>
+                <div class="info-label">Tahun Pajak</div>
+                <div id="NOP_TAHUN" class="info-value text-primary">—</div>
+                </div>
+
+            </div>
+            </div>
+
           <div class="row g-3">
 
             <div class="col-md-6">
@@ -231,3 +253,25 @@
 
 {{-- MODAL KAMERA UNIVERSAL --}}
 @include('petugas.partials.modal-camera')
+
+<script>
+document.getElementById('selectNOP').addEventListener('change', function () {
+  const nop = this.value;
+  const sdtId = "{{ $sdt->ID }}";
+
+  if (!nop) {
+    ['NOP_NAMA_WP','NOP_ALAMAT_OP','NOP_TAHUN'].forEach(id => {
+      document.getElementById(id).innerText = '—';
+    });
+    return;
+  }
+
+  fetch(`{{ route('petugas.sdt.api.nop.detail') }}?nop=${nop}&sdt_id=${sdtId}`)
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById('NOP_NAMA_WP').innerText   = d.nama_wp ?? '-';
+      document.getElementById('NOP_ALAMAT_OP').innerText = d.alamat_op ?? '-';
+      document.getElementById('NOP_TAHUN').innerText     = (d.tahun ?? []).join(', ');
+    });
+});
+</script>

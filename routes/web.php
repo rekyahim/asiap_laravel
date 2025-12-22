@@ -321,7 +321,12 @@ Route::middleware(AuthOnly::class)->group(function () {
         Route::post('massupdate/nop/update', [PetugasSdtController::class, 'massUpdateNOP'])
             ->name('massupdate.nop.update');
 
+
         Route::get('api/nop/search', [PetugasSdtController::class, 'searchNOP'])
             ->name('api.nop');
+
+        Route::get('api/nop/detail', [PetugasSdtController::class, 'getDetailNOP'])
+            ->name('api.nop.detail');
+
     });
 });
