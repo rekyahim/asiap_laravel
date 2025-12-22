@@ -78,67 +78,68 @@
             text-decoration: none;
             outline: none !important;
             transition: all .15s ease-in-out;
+            display: inline-flex;
+            /* Ganti block jadi inline-flex agar icon rapi */
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            /* Mencegah teks turun ke bawah */
         }
 
         .btn-detail:hover {
             opacity: .9;
             transform: translateY(-1px);
-            text-decoration: none
+            color: white;
         }
 
-        .btn-detail:focus,
-        .btn-detail:active,
-        .btn-detail:focus-visible {
-            outline: none !important;
-            box-shadow: none !important;
-            text-decoration: none
-        }
-
-        /* ========== Table ========== */
+        /* ========== Table Desktop ========== */
         .table-wrap {
             border: 1px solid var(--line);
             border-radius: 14px;
             background: #fff;
-            overflow: auto
+            overflow: auto;
+            width: 100%;
         }
 
         .tbl {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            table-layout: fixed
+            table-layout: fixed;
+            /* Layout kaku agar rapi */
         }
 
+        /* --- PERBAIKAN LEBAR KOLOM DI SINI --- */
         .col-no {
-            width: 64px
+            width: 50px;
         }
 
         .col-nama {
-            width: 28%
+            width: 25%;
         }
 
+        /* Dikurangi sedikit */
         .col-date {
-            width: 14%
+            width: 13%;
         }
 
         .col-nop {
-            width: 12%
+            width: 10%;
         }
 
         .col-status {
-            width: 13%
+            width: 12%;
         }
 
         .col-prog {
-            width: 13%
-        }
-
-        .col-aksi {
             width: 10%;
-            min-width: 120px
         }
 
-        /* beri ruang tombol */
+        /* Diperlebar agar tombol muat */
+        .col-aksi {
+            width: 15%;
+            min-width: 130px;
+        }
 
         .tbl thead th {
             position: sticky;
@@ -151,43 +152,21 @@
             letter-spacing: .2px;
             text-transform: uppercase;
             padding: var(--th) calc(var(--th) + 2px);
-            font-size: clamp(.78rem, .9vw, .84rem)
+            font-size: clamp(.78rem, .9vw, .84rem);
+            text-align: left;
         }
 
-        /* Alignment sinkron */
+        /* Alignment Header Desktop */
         .tbl thead th.col-no,
-        .tbl tbody td.col-no {
-            text-align: right
-        }
-
-        .tbl thead th.col-nama,
-        .tbl tbody td.col-nama {
-            text-align: left
+        .tbl thead th.col-nop {
+            text-align: right;
         }
 
         .tbl thead th.col-date,
-        .tbl tbody td.col-date {
-            text-align: center
-        }
-
-        .tbl thead th.col-nop,
-        .tbl tbody td.col-nop {
-            text-align: right
-        }
-
         .tbl thead th.col-status,
-        .tbl tbody td.col-status {
-            text-align: center
-        }
-
         .tbl thead th.col-prog,
-        .tbl tbody td.col-prog {
-            text-align: center
-        }
-
-        .tbl thead th.col-aksi,
-        .tbl tbody td.col-aksi {
-            text-align: center
+        .tbl thead th.col-aksi {
+            text-align: center;
         }
 
         .tbl tbody td {
@@ -202,33 +181,38 @@
             white-space: nowrap;
         }
 
-        /* ==== FIX elipsis "..." di kolom Aksi ==== */
-        .tbl thead th.col-aksi,
+        /* KHUSUS KOLOM AKSI: Matikan overflow hidden agar shadow/tombol tidak kepotong */
         .tbl tbody td.col-aksi {
             overflow: visible;
             text-overflow: clip;
-            white-space: nowrap;
         }
 
-        .tbl tbody td.col-aksi * {
-            overflow: visible !important;
-            text-overflow: clip !important;
-            white-space: nowrap !important;
+        /* Alignment Body Desktop */
+        .tbl tbody td.col-no,
+        .tbl tbody td.col-nop {
+            text-align: right;
+        }
+
+        .tbl tbody td.col-date,
+        .tbl tbody td.col-status,
+        .tbl tbody td.col-prog,
+        .tbl tbody td.col-aksi {
+            text-align: center;
         }
 
         .tbl tbody tr:nth-child(even) {
-            background: #fcfdff
+            background: #fcfdff;
         }
 
         .tbl tbody tr:hover {
-            background: #f6f8ff
+            background: #f6f8ff;
         }
 
         .mono {
-            font-family: ui-monospace, Menlo, monospace
+            font-family: ui-monospace, Menlo, monospace;
         }
 
-        /* ========== Status Pill ========== */
+        /* ========== Components (Chip & Progress) ========== */
         .chip {
             display: inline-flex;
             align-items: center;
@@ -240,91 +224,189 @@
             font-weight: 700;
             background: #f3f4f6;
             color: #334155;
-            white-space: nowrap
+            white-space: nowrap;
         }
 
         .chip .dot {
             width: .44rem;
             height: .44rem;
             border-radius: 999px;
-            background: #9ca3af
+            background: #9ca3af;
         }
 
         .chip[data-type="success"] {
-            background: linear-gradient(180deg, #ecfdf5, #dcfce7)
+            background: linear-gradient(180deg, #ecfdf5, #dcfce7);
         }
 
         .chip[data-type="success"] .dot {
-            background: var(--ok)
+            background: var(--ok);
         }
 
         .chip[data-type="warn"] {
-            background: linear-gradient(180deg, #fff7ed, #ffedd5)
+            background: linear-gradient(180deg, #fff7ed, #ffedd5);
         }
 
         .chip[data-type="warn"] .dot {
-            background: var(--warn)
+            background: var(--warn);
         }
 
         .chip[data-type="info"] {
-            background: linear-gradient(180deg, #eff6ff, #dbeafe)
+            background: linear-gradient(180deg, #eff6ff, #dbeafe);
         }
 
         .chip[data-type="info"] .dot {
-            background: var(--info)
+            background: var(--info);
         }
 
-        /* ========== Progress Mini ========== */
         .progress {
             display: inline-flex;
             align-items: center;
             gap: .4rem;
-            white-space: nowrap
+            white-space: nowrap;
         }
 
         .bar {
             display: block;
-            width: clamp(90px, 12vw, 140px);
+            width: clamp(70px, 10vw, 100px);
             height: 8px;
             border-radius: 999px;
             background: #eef2f7;
-            overflow: hidden
+            overflow: hidden;
         }
 
         .bar>i {
             display: block;
             height: 100%;
-            background: linear-gradient(90deg, var(--accent), var(--accent-2))
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
         }
 
         .pct {
             font-size: .78rem;
-            color: var(--muted)
+            color: var(--muted);
         }
 
-        /* Responsif */
-        @media (max-width:992px) {
+        /* =========================================
+                       MOBILE CARD VIEW TRANSFORMATION
+                       ========================================= */
+        @media (max-width: 768px) {
+            .page-sdt {
+                margin-top: 0;
+            }
+
+            .section {
+                padding: 15px;
+                border-radius: 12px;
+            }
+
+            .card-clean {
+                border: none;
+                box-shadow: none;
+                background: transparent;
+            }
+
+            .card-header {
+                border-bottom: none;
+                padding: 0 0 15px 0;
+                background: transparent;
+            }
+
+            .card-body {
+                padding: 0 !important;
+            }
+
+            .table-wrap {
+                border: none;
+                background: transparent;
+                overflow: visible;
+            }
+
+            .tbl {
+                display: block;
+            }
+
+            /* Sembunyikan Header Tabel */
+            .tbl thead {
+                display: none;
+            }
+
+            /* Ubah TR menjadi Card */
+            .tbl tbody {
+                display: block;
+            }
+
+            .tbl tbody tr {
+                display: block;
+                margin-bottom: 15px;
+                background: #fff;
+                border: 1px solid var(--line);
+                border-radius: 16px;
+                padding: 16px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+            }
+
+            /* Ubah TD menjadi baris flex */
+            .tbl tbody td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right !important;
+                /* Force right align untuk konten */
+                padding: 8px 0;
+                border-bottom: 1px dashed #f1f5f9;
+                width: 100% !important;
+                /* Reset lebar kolom desktop */
+                box-sizing: border-box;
+                white-space: normal;
+                /* Biarkan teks panjang turun ke bawah */
+                height: auto;
+                overflow: visible;
+                /* Pastikan overflow visible di mobile juga */
+            }
+
+            /* Hapus border baris terakhir */
+            .tbl tbody td:last-child {
+                border-bottom: none;
+                padding-top: 15px;
+                justify-content: center;
+                /* Tombol aksi tengah */
+                margin-top: 5px;
+            }
+
+            /* Label data dari atribut data-label */
+            .tbl tbody td::before {
+                content: attr(data-label);
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                color: var(--muted);
+                margin-right: 15px;
+                text-align: left;
+                min-width: 90px;
+                /* Supaya label rapi rata kiri */
+            }
+
+            /* Styling Khusus per Kolom di Mobile */
+            .col-nama {
+                font-weight: 700;
+                color: var(--accent);
+                font-size: 1rem !important;
+                border-bottom: 2px solid #f1f5f9 !important;
+                margin-bottom: 5px;
+                padding-bottom: 12px !important;
+            }
+
+            .col-nama::before {
+                display: none;
+            }
+
             .col-prog {
-                display: none
+                display: flex !important;
             }
 
-            .tbl thead th.col-prog,
-            .tbl tbody td.col-prog {
-                display: none
-            }
-        }
-
-        @media (max-width:768px) {
-            .col-date {
-                width: 18%
-            }
-
-            .col-nop {
-                width: 18%
-            }
-
-            .col-aksi {
-                width: 14%
+            .btn-detail {
+                width: 100%;
+                justify-content: center;
+                padding: 10px;
             }
         }
     </style>
@@ -339,10 +421,11 @@
 
             {{-- Body --}}
             <div class="card-body" style="padding:20px 26px;">
-                <h6 class="text-muted fw-bold mb-3" style="font-size:.9rem;">Daftar SDT</h6>
+                <h6 class="text-muted fw-bold mb-3 d-none d-md-block" style="font-size:.9rem;">Daftar SDT</h6>
 
                 <div class="table-wrap">
                     <table class="tbl align-middle">
+                        {{-- Colgroup hanya untuk desktop --}}
                         <colgroup>
                             <col class="col-no">
                             <col class="col-nama">
@@ -357,10 +440,10 @@
                             <tr>
                                 <th class="col-no">No</th>
                                 <th class="col-nama">Nama SDT</th>
-                                <th class="col-date">Tanggal Mulai</th>
-                                <th class="col-date">Tanggal Selesai</th>
-                                <th class="col-nop">Jumlah NOP</th>
-                                <th class="col-status">Status SDT</th>
+                                <th class="col-date">Tgl Mulai</th>
+                                <th class="col-date">Tgl Selesai</th>
+                                <th class="col-nop">Jml NOP</th>
+                                <th class="col-status">Status</th>
                                 <th class="col-prog">Progress</th>
                                 <th class="col-aksi">Aksi</th>
                             </tr>
@@ -395,17 +478,31 @@
                                 @endphp
 
                                 <tr>
-                                    <td class="col-no mono">{{ $loop->iteration }}</td>
-                                    <td class="col-nama" title="{{ $m->NAMA_SDT }}">{{ $m->NAMA_SDT }}</td>
-                                    <td class="col-date">{{ $mulai ? $mulai->translatedFormat('d M Y') : '—' }}</td>
-                                    <td class="col-date">{{ $selesai ? $selesai->translatedFormat('d M Y') : '—' }}</td>
-                                    <td class="col-nop mono">{{ $nop }}</td>
-                                    <td class="col-status">
+                                    {{-- data-label untuk mobile view --}}
+
+                                    <td class="col-no mono" data-label="No">{{ $loop->iteration }}</td>
+
+                                    <td class="col-nama" data-label="Nama SDT" title="{{ $m->NAMA_SDT }}">
+                                        {{ $m->NAMA_SDT }}
+                                    </td>
+
+                                    <td class="col-date" data-label="Tgl Mulai">
+                                        {{ $mulai ? $mulai->translatedFormat('d M Y') : '—' }}
+                                    </td>
+
+                                    <td class="col-date" data-label="Tgl Selesai">
+                                        {{ $selesai ? $selesai->translatedFormat('d M Y') : '—' }}
+                                    </td>
+
+                                    <td class="col-nop mono" data-label="Jumlah NOP">{{ $nop }}</td>
+
+                                    <td class="col-status" data-label="Status">
                                         <span class="chip" data-type="{{ $chipType }}">
                                             <span class="dot"></span>{{ $status }}
                                         </span>
                                     </td>
-                                    <td class="col-prog">
+
+                                    <td class="col-prog" data-label="Progress">
                                         @if (!is_null($prog))
                                             <span class="progress">
                                                 <span class="bar"><i style="width:{{ $prog }}%"></i></span>
@@ -415,9 +512,12 @@
                                             —
                                         @endif
                                     </td>
-                                    <td class="col-aksi">
+
+                                    <td class="col-aksi" data-label="">
                                         <a href="{{ route('petugas.sdt.detail', $m->ID) }}" class="btn btn-detail btn-sm"
-                                            aria-label="Detail SDT {{ $m->NAMA_SDT }}">Detail</a>
+                                            aria-label="Detail SDT {{ $m->NAMA_SDT }}">
+                                            <i class="bi bi-eye me-1"></i> Detail
+                                        </a>
                                     </td>
                                 </tr>
                             @empty

@@ -266,6 +266,9 @@
         // Jalankan saat modal terbuka
         if (modalNOP) {
             modalNOP.addEventListener('shown.bs.modal', function() {
+                latInput.value = '';
+                longInput.value = '';
+                dispInput.value = '';
                 if (!latInput.value || !longInput.value) {
                     getGeoLocation(true); // Mulai dengan High Accuracy
                 }
@@ -303,7 +306,7 @@
 
             latInput.value = lat;
             longInput.value = lng;
-            dispInput.value = `${lat}, ${lng} (Akurasi: ${Math.round(acc)}m)`;
+            dispInput.value = `${lat}, ${lng}`;
 
             badgeGPS.style.display = 'inline-flex';
             dispInput.classList.remove('text-muted', 'text-danger');

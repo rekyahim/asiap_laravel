@@ -274,7 +274,7 @@
         function showPosition(position) {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
-            const acc = position.coords.accuracy; // Akurasi dalam meter
+            const acc = position.coords.accuracy;
 
             latInput.value = lat;
             longInput.value = lng;
