@@ -296,10 +296,27 @@ class SdtController extends Controller
             ->firstOrFail();
 
         // Ambil detail
-        $details = DtSdt::where('ID_SDT', $sdt->ID)
-            ->where('STATUS', 1)
-            ->orderBy('ID')
+        $details = DtSdt::query()
+            ->where('dt_sdt.ID_SDT', $sdt->ID)
+            ->where('dt_sdt.STATUS', 1)
+            ->leftJoin('pengguna', 'pengguna.ID', '=', 'dt_sdt.PENGGUNA_ID')
+            ->orderBy('dt_sdt.ID')
+            ->select([
+                'dt_sdt.*',
+                'dt_sdt.PENGGUNA_ID', // 🔥 WAJIB
+                DB::raw('COALESCE(pengguna.NAMA, dt_sdt.PETUGAS_SDT) as petugas_nama'),
+            ])
+
             ->get();
+
+        $petugas = $details
+            ->filter(fn($d) => filled($d->petugas_nama))
+            ->map(fn($d) => [
+                'id'   => $d->PENGGUNA_ID,
+                'nama' => $d->petugas_nama,
+            ])
+            ->unique('id')
+            ->values();
 
         return response()->json([
             'id'      => $sdt->ID,
@@ -308,8 +325,7 @@ class SdtController extends Controller
             'selesai' => optional($sdt->TGL_SELESAI)->format('Y-m-d'),
 
             // daftar petugas unik
-            'petugas' => $details->pluck('PETUGAS_SDT')->filter()->unique()->values(),
-
+            'petugas' => $petugas,
             'rows'    => $details->map(function ($d) {
 
                 // Ambil status penyampaian terbaru (sekali saja)
@@ -328,7 +344,8 @@ class SdtController extends Controller
                 return [
                     'id'                 => $d->ID,
                     'id_sdt'             => $d->ID_SDT,
-                    'petugas'            => $d->PETUGAS_SDT,
+                    'pengguna_id'        => $d->PENGGUNA_ID,
+                    'petugas_nama'       => $d->petugas_nama,
 
                     // OP
                     'nop'                => preg_replace('/\D+/', '', (string) $d->NOP),
@@ -350,7 +367,9 @@ class SdtController extends Controller
                     'kota_wp'            => $d->KOTA_WP,
 
                     // PBB
-                    'jatuh_tempo'        => optional($d->JATUH_TEMPO)->format('Y-m-d'),
+                    'jatuh_tempo'        => $d->JATUH_TEMPO
+                        ? date('Y-m-d', strtotime($d->JATUH_TEMPO))
+                        : null,
                     'terhutang'          => $this->idr($d->TERHUTANG),
                     'pengurangan'        => $this->idr($d->PENGURANGAN),
                     'pbb_harus_dibayar'  => $this->idr($d->PBB_HARUS_DIBAYAR),
@@ -372,10 +391,12 @@ class SdtController extends Controller
     public function addPetugasManual($id, Request $r)
     {
         $r->validate([
-            'NOP'          => 'required|string',
-            'TAHUN'        => 'required|digits:4',
-            'NAMA_PETUGAS' => 'required|integer', // ID pengguna dari Select2
+            'NOP'         => 'required|string',
+            'TAHUN'       => 'required|digits:4',
+            'PENGGUNA_ID' => 'required|integer',
         ]);
+
+        $userId = (int) $r->PENGGUNA_ID;
 
         $user = \App\Models\Pengguna::find(session('auth_uid'));
 
@@ -457,6 +478,7 @@ class SdtController extends Controller
         $created = DtSdt::create([
             'ID_SDT'            => $id,
             'STATUS'            => 1,
+            'PENGGUNA_ID'       => $petugas->ID,
             'PETUGAS_SDT'       => $petugas->NAMA,
             'NOP'               => $nop,
             'TAHUN'             => $tahun,
@@ -679,7 +701,7 @@ class SdtController extends Controller
             ->where('STATUS', 1)
             ->where('NOP', $nop)
             ->where('TAHUN', $tahun)
-            ->select(['ID', 'PETUGAS_SDT'])
+            ->select(['ID', 'PENGGUNA_ID'])
             ->first();
 
         if (! $row) {
@@ -692,7 +714,7 @@ class SdtController extends Controller
         return response()->json([
             'ok'          => true,
             'exists'      => true,
-            'has_petugas' => filled($row->PETUGAS_SDT),
+            'has_petugas' => filled($row->PENGGUNA_ID),
             'petugas'     => $row->PETUGAS_SDT,
         ]);
     }
@@ -936,7 +958,8 @@ class SdtController extends Controller
 
         // Update
         $row->update([
-            'PETUGAS_SDT' => $pengguna->NAMA,
+            'PENGGUNA_ID' => $pengguna->ID,
+            'PETUGAS_SDT' => $pengguna->NAMA, // legacy
         ]);
 
         // LOG
@@ -993,7 +1016,8 @@ class SdtController extends Controller
         $oldPetugas = $row->PETUGAS_SDT;
 
         $row->update([
-            'PETUGAS_SDT' => $pengguna->NAMA,
+            'PENGGUNA_ID' => $pengguna->ID,
+            'PETUGAS_SDT' => $pengguna->NAMA, // legacy
         ]);
 
         // LOG
