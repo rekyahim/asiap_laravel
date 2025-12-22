@@ -1,427 +1,233 @@
-<!-- ========================= MODAL MASS KO ========================= -->
-<div class="modal fade" id="modalMassKO" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-4">
-
-      <form method="POST" action="{{ route('petugas.sdt.massupdate.ko.update') }}">
-        @csrf
-
-        <div class="modal-header bg-white border-0 px-4 pt-4 pb-2">
-          <h5 class="modal-title fw-bold">Update Massal Berdasarkan KO</h5>
-          <button type="button" class="btn btn-light btn-sm rounded-3 fw-semibold" data-bs-dismiss="modal">Kembali</button>
-        </div>
-
-        <div class="modal-body px-4 pb-4">
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Pilih KO</label>
-            <select id="selectKO" name="KO" class="form-select rounded-3" required>
-              <option value="">-- Pilih KO --</option>
-              @foreach($dataKO as $k)
-                <option value="{{ $k->ALAMAT_OP }}">{{ $k->ALAMAT_OP }}</option>
-              @endforeach
-            </select>
-          </div>
-
-          <hr class="my-3">
-
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Status Penyampaian</label>
-              <select name="STATUS" class="form-select rounded-3" required>
-                <option value="">-- Pilih Status --</option>
-                <option value="TERSAMPAIKAN">Tersampaikan</option>
-                <option value="TIDAK TERSAMPAIKAN">Tidak Tersampaikan</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">NOP Benar?</label>
-              <select name="NOP_BENAR" class="form-select rounded-3" required>
-                <option value="">-- Pilih --</option>
-                <option value="YA">YA</option>
-                <option value="TIDAK">TIDAK</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Nama Penerima</label>
-              <input type="text" name="NAMA_PENERIMA" class="form-control rounded-3">
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">HP Penerima</label>
-              <input type="text" name="HP_PENERIMA" class="form-control rounded-3">
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Status OP</label>
-              <select name="STATUS_OP" class="form-select rounded-3">
-                <option value="">-- Pilih Status OP --</option>
-                <option value="Belum Diproses Petugas">Belum Diproses Petugas</option>
-                <option value="Ditemukan">Ditemukan</option>
-                <option value="Tidak Ditemukan">Tidak Ditemukan</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Status WP</label>
-              <select name="STATUS_WP" class="form-select rounded-3">
-                <option value="">-- Pilih Status WP --</option>
-                <option value="Belum Diproses Petugas">Belum Diproses Petugas</option>
-                <option value="Ditemukan">Ditemukan</option>
-                <option value="Tidak Ditemukan">Tidak Ditemukan</option>
-              </select>
-            </div>
-
-            <div class="col-12">
-              <label class="form-label fw-semibold">Keterangan</label>
-              <textarea name="KETERANGAN" class="form-control rounded-3" rows="2"></textarea>
-            </div>
-
-            <!-- Kamera KO -->
-            <div class="col-12 mt-3">
-              <label class="form-label fw-semibold">Ambil Foto KO</label>
-              <div class="d-flex align-items-center gap-2">
-                <img id="thumbPrevKO" style="display:none; max-height:80px; border-radius:8px; border:1px solid #ddd;">
-                <button type="button" id="btnOpenCamKO" class="btn btn-primary btn-sm rounded-3"
-                        data-bs-toggle="modal" data-bs-target="#modalCameraKO">Buka Kamera</button>
-                <button type="button" id="btnRetakeKO" class="btn btn-outline-secondary btn-sm" style="display:none;">Ulangi</button>
-                <span id="lockBadgeKO" class="badge bg-success" style="display:none;">GPS Locked</span>
-              </div>
-
-              <input type="hidden" name="FOTO_BASE64" id="FOTO_BASE64_KO">
-              <input type="hidden" name="LATITUDE" id="LATITUDE_KO">
-              <input type="hidden" name="LONGITUDE" id="LONGITUDE_KO">
-            </div>
-
-            <!-- Koordinat -->
-            <div class="col-12 mt-2">
-              <label class="form-label fw-semibold">Koordinat</label>
-              <input type="text" id="KOORDINAT_KO" class="form-control bg-light rounded-3" readonly placeholder="—">
-            </div>
-
-          </div>
-        </div>
-
-        <div class="modal-footer border-0 px-4 pb-4">
-          <button type="button" class="btn btn-outline-secondary rounded-3 px-4" data-bs-dismiss="modal">Batal</button>
-          <button type="submit" class="btn btn-primary fw-bold rounded-3 px-4">Simpan</button>
-        </div>
-
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- ========================= MODAL MASS NOP ========================= -->
-<div class="modal fade" id="modalMassNOP" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg rounded-4">
-
-      <form method="POST" action="{{ route('petugas.sdt.massupdate.nop.update') }}">
-        @csrf
-
-        <div class="modal-header bg-white border-0 px-4 pt-4 pb-2">
-          <h5 class="modal-title fw-bold">Update Massal Berdasarkan NOP</h5>
-          <button type="button" class="btn btn-light btn-sm rounded-3 fw-semibold" data-bs-dismiss="modal">Kembali</button>
-        </div>
-
-        <div class="modal-body px-4 pb-4">
-
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Pilih NOP</label>
-            <select id="selectNOP" name="NOP" class="form-select rounded-3" required>
-              <option value="">-- Pilih NOP --</option>
-              @foreach($dataNOP as $n)
-                <option value="{{ $n->NOP }}">{{ $n->NOP }}</option>
-              @endforeach
-            </select>
-          </div>
-
-          <hr class="my-3">
-
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Status Penyampaian</label>
-              <select name="STATUS" class="form-select rounded-3" required>
-                <option value="">-- Pilih Status --</option>
-                <option value="TERSAMPAIKAN">Tersampaikan</option>
-                <option value="TIDAK TERSAMPAIKAN">Tidak Tersampaikan</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">NOP Benar?</label>
-              <select name="NOP_BENAR" class="form-select rounded-3" required>
-                <option value="">-- Pilih --</option>
-                <option value="YA">YA</option>
-                <option value="TIDAK">TIDAK</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Nama Penerima</label>
-              <input type="text" name="NAMA_PENERIMA" class="form-control rounded-3">
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">HP Penerima</label>
-              <input type="text" name="HP_PENERIMA" class="form-control rounded-3">
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Status OP</label>
-              <select name="STATUS_OP" class="form-select rounded-3">
-                <option value="">-- Pilih Status OP --</option>
-                <option value="Belum Diproses Petugas">Belum Diproses Petugas</option>
-                <option value="Ditemukan">Ditemukan</option>
-                <option value="Tidak Ditemukan">Tidak Ditemukan</option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Status WP</label>
-              <select name="STATUS_WP" class="form-select rounded-3">
-                <option value="">-- Pilih Status WP --</option>
-                <option value="Belum Diproses Petugas">Belum Diproses Petugas</option>
-                <option value="Ditemukan">Ditemukan</option>
-                <option value="Tidak Ditemukan">Tidak Ditemukan</option>
-              </select>
-            </div>
-
-            <div class="col-12">
-              <label class="form-label fw-semibold">Keterangan</label>
-              <textarea name="KETERANGAN" class="form-control rounded-3" rows="2"></textarea>
-            </div>
-
-            <!-- Kamera NOP -->
-            <div class="col-12 mt-3">
-              <label class="form-label fw-semibold">Ambil Foto NOP</label>
-              <div class="d-flex align-items-center gap-2">
-                <img id="thumbPrevNOP" style="display:none; max-height:80px; border-radius:8px; border:1px solid #ddd;">
-                <button type="button" id="btnOpenCamNOP" class="btn btn-primary btn-sm rounded-3"
-                        data-bs-toggle="modal" data-bs-target="#modalCameraNOP">Buka Kamera</button>
-                <button type="button" id="btnRetakeNOP" class="btn btn-outline-secondary btn-sm" style="display:none;">Ulangi</button>
-                <span id="lockBadgeNOP" class="badge bg-success" style="display:none;">GPS Locked</span>
-              </div>
-
-              <input type="hidden" name="FOTO_BASE64" id="FOTO_BASE64_NOP">
-              <input type="hidden" name="LATITUDE" id="LATITUDE_NOP">
-              <input type="hidden" name="LONGITUDE" id="LONGITUDE_NOP">
-            </div>
-
-            <!-- Koordinat -->
-            <div class="col-12 mt-2">
-              <label class="form-label fw-semibold">Koordinat</label>
-              <input type="text" id="KOORDINAT_NOP" class="form-control bg-light rounded-3" readonly placeholder="—">
-            </div>
-
-          </div>
-        </div>
-
-        <div class="modal-footer border-0 px-4 pb-4">
-          <button type="button" class="btn btn-outline-secondary rounded-3 px-4" data-bs-dismiss="modal">Batal</button>
-          <button type="submit" class="btn btn-primary fw-bold rounded-3 px-4">Simpan</button>
-        </div>
-
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- ========================= MODAL KAMERA KO ========================= -->
-<div class="modal fade" id="modalCameraKO" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 rounded-4">
-      <div class="modal-header">
-        <h5 class="modal-title fw-bold">Ambil Foto</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body text-center">
-        <video id="videoStreamKO" autoplay playsinline style="width:100%; border-radius:10px;"></video>
-        <canvas id="canvasKO" style="display:none;"></canvas>
-      </div>
-      <div class="modal-footer">
-        <button type="button" id="btnCaptureKO" class="btn btn-primary w-100 fw-bold">Jepret</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========================= MODERN MODAL KAMERA NOP ========================= -->
 <style>
-  .camera-modal-content {
-      background: #000;
-      border-radius: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
+  :root {
+    --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+    --glass-bg: rgba(255, 255, 255, 0.95);
   }
 
-  .camera-header {
-      background: rgba(0, 0, 0, 0.4);
-      border: none !important;
+  .modal-content {
+    border-radius: 24px !important;
+    border: none;
+    overflow: hidden;
+    background: var(--glass-bg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
 
-  .camera-header h5 {
-      color: #fff;
-      font-weight: bold;
+  .modal-header {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-bottom: 0;
   }
 
-  #videoStreamNOP {
-      width: 100%;
-      height: auto;
-      border-radius: 14px;
-      box-shadow: 0 0 18px rgba(0,0,0,0.5);
+  .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
   }
 
-  .camera-footer {
-      position: absolute;
-      bottom: 40px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      display: flex;
-      justify-content: center;
+  .form-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
   }
 
-  #btnCaptureNOP {
-      width: 85px;
-      height: 85px;
-      border-radius: 50%;
-      background: white;
-      border: 5px solid #ddd;
-      box-shadow: 0px 0px 10px rgba(255,255,255,0.5);
+  .form-control, .form-select {
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid #e5e7eb;
   }
 
-  #btnCaptureNOP:active {
-      transform: scale(0.95);
+  .photo-preview-container {
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .badge-gps {
+    padding: 0.6rem 1.2rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 </style>
 
-<div class="modal fade" id="modalCameraNOP" tabindex="-1">
-  <div class="modal-dialog modal-fullscreen">
-    <div class="modal-content camera-modal-content border-0">
+<div class="modal fade"
+     id="modalMassNOP"
+     tabindex="-1"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false">
 
-      <div class="modal-header camera-header">
-        <h5 class="modal-title">Ambil Foto</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
 
-      <div class="modal-body d-flex justify-content-center align-items-center p-2">
-        <video id="videoStreamNOP" autoplay playsinline></video>
-        <canvas id="canvasNOP" style="display:none;"></canvas>
-      </div>
+      <form id="formMassNOP"
+            method="POST"
+            action="{{ route('petugas.sdt.massupdate.nop.update') }}">
+        @csrf
 
-      <div class="camera-footer">
-        <button type="button" id="btnCaptureNOP"></button>
-      </div>
+        {{-- HEADER --}}
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title fw-bold">
+              <i class="bi bi-files me-2"></i>Update Massal NOP
+            </h5>
+            <small class="opacity-75">
+              Perbarui status berdasarkan NOP
+            </small>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
 
+        {{-- BODY --}}
+        <div class="modal-body p-4">
+
+          {{-- PILIH NOP --}}
+          <div class="card bg-light border-0 rounded-4 mb-4">
+            <div class="card-body p-3">
+              <label class="form-label text-primary">Pilih NOP</label>
+              <select id="selectNOP"
+                      name="NOP"
+                      class="form-select border-0 shadow-sm"
+                      required>
+                <option value="">— Cari NOP —</option>
+                @foreach($dataNOP as $n)
+                  <option value="{{ $n->NOP }}">{{ $n->NOP }}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3">
+
+            <div class="col-md-6">
+              <label class="form-label">Status Penyampaian</label>
+              <select name="STATUS" class="form-select" required>
+                <option value="">— Pilih —</option>
+                <option value="TERSAMPAIKAN">Tersampaikan</option>
+                <option value="TIDAK TERSAMPAIKAN">Tidak Tersampaikan</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">NOP Benar?</label>
+              <select name="NOP_BENAR" class="form-select" required>
+                <option value="YA">YA</option>
+                <option value="TIDAK">TIDAK</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Nama Penerima</label>
+              <input type="text" name="NAMA_PENERIMA" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">HP Penerima</label>
+              <input type="text" name="HP_PENERIMA" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Status OP</label>
+              <select name="STATUS_OP" class="form-select">
+                <option value="">-- Pilih Status OP --</option>
+                <option value="Belum Diproses Petugas">Belum Diproses Petugas</option>
+                <option value="Ditemukan">Ditemukan</option>
+                <option value="Tidak Ditemukan">Tidak Ditemukan</option>
+                <option value="Sudah Dijual">Sudah Dijual</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Status WP</label>
+              <select name="STATUS_WP" class="form-select">
+                <option value="">-- Pilih Status WP --</option>
+                <option value="Belum Diproses Petugas">Belum Diproses Petugas</option>
+                <option value="Ditemukan">Ditemukan</option>
+                <option value="Tidak Ditemukan">Tidak Ditemukan</option>
+                <option value="Diluar Kota">Diluar Kota</option>
+              </select>
+            </div>
+
+            {{-- FOTO NOP --}}
+            <div class="col-12 mt-4">
+              <div class="photo-preview-container">
+
+                <div id="placeholderNOP">
+                  <i class="bi bi-camera-fill fs-1 text-muted opacity-50"></i>
+                  <p class="small text-muted mt-2">Ambil foto lokasi</p>
+                </div>
+
+                <img id="thumbPrevNOP"
+                     class="img-fluid rounded-4 mb-3 shadow"
+                     style="display:none; max-height:250px;">
+
+                <div class="d-flex justify-content-center gap-2">
+                  <button type="button"
+                          id="btnOpenCamNOP"
+                          class="btn btn-primary rounded-pill"
+                          onclick="openCam('NOP')">
+                    <i class="bi bi-camera me-2"></i>Buka Kamera
+                  </button>
+
+                  <button type="button"
+                          id="btnRetakeNOP"
+                          class="btn btn-outline-danger rounded-pill"
+                          style="display:none"
+                          onclick="openCam('NOP')">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Ulangi
+                  </button>
+                </div>
+
+                <div id="lockBadgeNOP"
+                     class="badge-gps bg-success-subtle text-success mt-3"
+                     style="display:none">
+                  <i class="bi bi-geo-alt-fill"></i> Lokasi GPS Terkunci
+                </div>
+
+              </div>
+            </div>
+
+            {{-- KOORDINAT --}}
+            <div class="col-12 mt-3">
+              <label class="form-label">Titik Koordinat</label>
+              <input type="text"
+                     id="KOORDINAT_NOP"
+                     class="form-control bg-light"
+                     readonly>
+
+              <input type="hidden" name="FOTO_BASE64_NOP" id="FOTO_BASE64_NOP">
+              <input type="hidden" name="LATITUDE_NOP" id="LATITUDE_NOP">
+              <input type="hidden" name="LONGITUDE_NOP" id="LONGITUDE_NOP">
+            </div>
+
+          </div>
+        </div>
+
+        {{-- FOOTER --}}
+        <div class="modal-footer border-0 p-4 pt-0">
+          <button type="button"
+                  class="btn btn-link text-muted"
+                  data-bs-dismiss="modal">
+            Batal
+          </button>
+
+          <button type="submit"
+                  class="btn btn-primary px-5 rounded-pill fw-bold">
+            Simpan Data
+          </button>
+        </div>
+
+      </form>
     </div>
   </div>
 </div>
 
-<!-- ========================= SCRIPT CAMERA & GPS ========================= -->
-<script>
-function setupCamera(videoId, canvasId, inputId, thumbId, lockId, btnCaptureId, btnOpenId, btnRetakeId, massModalId){
-    const video = document.getElementById(videoId);
-    const canvas = document.getElementById(canvasId);
-    const input = document.getElementById(inputId);
-    const thumb = document.getElementById(thumbId);
-    const lockBadge = document.getElementById(lockId);
-    const btnCapture = document.getElementById(btnCaptureId);
-    const btnOpen = document.getElementById(btnOpenId);
-    const btnRetake = document.getElementById(btnRetakeId);
-    let stream;
-
-    function startCamera() {
-        if(stream) stopCamera();
-        navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}})
-        .then(s => {
-            stream = s;
-            video.srcObject = s;
-            video.play().finally(() => btnCapture.disabled = false);
-        })
-        .catch(err => {
-            alert("Gagal membuka kamera: " + err);
-            btnCapture.disabled = true;
-        });
-    }
-
-    function stopCamera() {
-        if(stream){
-            stream.getTracks().forEach(t => t.stop());
-            stream = null;
-        }
-        btnCapture.disabled = true;
-    }
-
-    const modalEl = video.closest('.modal');
-    modalEl.addEventListener('shown.bs.modal', startCamera);
-    modalEl.addEventListener('hidden.bs.modal', stopCamera);
-
-    btnCapture.addEventListener('click', () => {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataURL = canvas.toDataURL('image/jpeg', 0.85);
-        input.value = dataURL;
-        thumb.src = dataURL;
-        thumb.style.display = 'inline-block';
-        btnRetake.style.display = 'inline-block';
-        btnOpen.style.display = 'none';
-
-        navigator.geolocation.getCurrentPosition(pos => {
-            const lat = pos.coords.latitude;
-            const lon = pos.coords.longitude;
-
-            if (massModalId === 'modalMassKO') {
-                document.getElementById('LATITUDE_KO').value = lat;
-                document.getElementById('LONGITUDE_KO').value = lon;
-                document.getElementById('KOORDINAT_KO').value = lat + ', ' + lon;
-            } else {
-                document.getElementById('LATITUDE_NOP').value = lat;
-                document.getElementById('LONGITUDE_NOP').value = lon;
-                document.getElementById('KOORDINAT_NOP').value = lat + ', ' + lon;
-            }
-
-            lockBadge.style.display = 'inline-block';
-        });
-
-        stopCamera();
-        const modalInstance = bootstrap.Modal.getInstance(modalEl);
-        if(modalInstance) modalInstance.hide();
-
-        const massModal = new bootstrap.Modal(document.getElementById(massModalId));
-        massModal.show();
-    });
-
-   btnRetake.addEventListener('click', () => {
-    input.value = '';
-    thumb.src = '';
-    thumb.style.display = 'none';
-    btnRetake.style.display = 'none';
-    btnOpen.style.display = 'inline-block';
-    lockBadge.style.display = 'none';
-
-    // RESET KOORDINAT + LAT + LON (BIAR JEPRET ULANG DAPAT GPS BARU)
-    if (massModalId === 'modalMassKO') {
-        document.getElementById('LATITUDE_KO').value = '';
-        document.getElementById('LONGITUDE_KO').value = '';
-        document.getElementById('KOORDINAT_KO').value = '';
-    } else {
-        document.getElementById('LATITUDE_NOP').value = '';
-        document.getElementById('LONGITUDE_NOP').value = '';
-        document.getElementById('KOORDINAT_NOP').value = '';
-    }
-
-    startCamera();
-});
-
-}
-
-// Init KO & NOP
-setupCamera('videoStreamKO','canvasKO','FOTO_BASE64_KO','thumbPrevKO','lockBadgeKO','btnCaptureKO','btnOpenCamKO','btnRetakeKO','modalMassKO');
-setupCamera('videoStreamNOP','canvasNOP','FOTO_BASE64_NOP','thumbPrevNOP','lockBadgeNOP','btnCaptureNOP','btnOpenCamNOP','btnRetakeNOP','modalMassNOP');
-</script>
+{{-- MODAL KAMERA UNIVERSAL --}}
+@include('petugas.partials.modal-camera')

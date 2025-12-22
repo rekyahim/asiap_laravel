@@ -167,104 +167,79 @@ foreach ($rows as $row) {
     /**
      * Handle mass update for NOP_BENAR or KOORDINAT_OP based on a list of NOPs.
      */
-    public function komplekMassUpdate(Request $request): RedirectResponse
-    {
-        // ID SDT diambil dari hidden field di form
-        $sdtId = $request->input('sdt_id');
+public function komplekMassUpdate(Request $request): RedirectResponse
+{
+    $sdtId = $request->input('sdt_id');
 
-        // 1. VALIDASI INPUT
-        $request->validate([
-            'sdt_id' => 'required|exists:sdt,ID', // Ganti 'sdt' dengan nama tabel master SDT Anda jika berbeda
-            'action_type' => 'required|in:ko,nop',
-            'list_nop' => 'required|string',
-            'koordinat' => 'nullable|string|required_if:action_type,ko', // Hanya wajib jika update KO
-            'nop_benar_baru' => 'nullable|string|required_if:action_type,nop|max:64', // Hanya wajib jika update NOP
-        ]);
+    $request->validate([
+        'sdt_id' => 'required|exists:sdt,ID',
+        'action_type' => 'required|in:ko,nop',
+        'list_nop' => 'required|string',
+        'koordinat' => 'nullable|string|required_if:action_type,ko',
+        // Jika NOP_BENAR hanya pilihan YA/TIDAK, gunakan validation ini:
+        'nop_benar_baru' => 'nullable|string|required_if:action_type,nop|in:YA,TIDAK',
+    ]);
 
-        $actionType = $request->input('action_type');
-        $rawNops = $request->input('list_nop');
+    $actionType = $request->input('action_type');
+    $rawNops = $request->input('list_nop');
 
-        // Bersihkan dan pecah daftar NOP menjadi array
-        $listNop = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $rawNops)));
+    // Bersihkan NOP dari spasi atau baris kosong
+    $listNop = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $rawNops)));
 
-        if (empty($listNop)) {
-            return back()->with('error', 'Daftar NOP tidak boleh kosong.');
-        }
-
-        try {
-            DB::beginTransaction();
-            $countUpdated = 0;
-
-            if ($actionType === 'ko') {
-                // MASS UPDATE KOORDINAT
-                $koordinat = $request->input('koordinat');
-
-                // Cari ID di DtSdt yang NOP-nya ada di $listNop
-                $dtSdtIds = DtSdt::where('ID_SDT', $sdtId)
-                    ->whereIn('NOP', $listNop)
-                    ->pluck('ID');
-
-                if ($dtSdtIds->isEmpty()) {
-                     throw new \Exception('Tidak ada NOP yang cocok ditemukan untuk SDT ini.');
-                }
-
-                // Update atau buat status penyampaian baru
-                foreach ($dtSdtIds as $dtSdtId) {
-                    StatusPenyampaian::updateOrCreate(
-                        ['ID_DT_SDT' => $dtSdtId],
-                        [
-                            'ID_SDT' => $sdtId,
-                            'ID_PETUGAS' => auth()->user()->ID_PENGGUNA,
-                            'KOORDINAT_OP' => $koordinat,
-                            'TGL_PENYAMPAIAN' => now(), // Dianggap input terbaru
-                            // Field lain dipertahankan atau diisi default jika kosong
-                        ]
-                    );
-                    $countUpdated++;
-                }
-
-                $message = "Berhasil memperbarui koordinat pada **{$countUpdated}** data NOP.";
-
-            } elseif ($actionType === 'nop') {
-                // MASS UPDATE NOP BENAR
-                $nopBenarBaru = $request->input('nop_benar_baru');
-
-                // Cari ID di DtSdt yang NOP-nya ada di $listNop
-                $dtSdtIds = DtSdt::where('ID_SDT', $sdtId)
-                    ->whereIn('NOP', $listNop)
-                    ->pluck('ID');
-
-                if ($dtSdtIds->isEmpty()) {
-                    throw new \Exception('Tidak ada NOP yang cocok ditemukan untuk SDT ini.');
-                }
-
-                // Update atau buat status penyampaian baru
-                foreach ($dtSdtIds as $dtSdtId) {
-                    StatusPenyampaian::updateOrCreate(
-                        ['ID_DT_SDT' => $dtSdtId],
-                        [
-                            'ID_SDT' => $sdtId,
-                            'ID_PETUGAS' => auth()->user()->ID_PENGGUNA,
-                            'NOP_BENAR' => $nopBenarBaru,
-                            'TGL_PENYAMPAIAN' => now(), // Dianggap input terbaru
-                            // Field lain dipertahankan atau diisi default jika kosong
-                        ]
-                    );
-                    $countUpdated++;
-                }
-
-                $message = "Berhasil memperbarui NOP Benar menjadi **{$nopBenarBaru}** pada **{$countUpdated}** data NOP.";
-            }
-
-            DB::commit();
-            return redirect()->route('petugas.sdt.detail', $sdtId)->with('success', $message);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal memproses pembaruan massal: ' . $e->getMessage())->withInput();
-        }
+    if (empty($listNop)) {
+        return back()->with('error', 'Daftar NOP tidak valid.');
     }
 
+    try {
+        DB::beginTransaction();
+
+        // Ambil semua ID sekaligus untuk meminimalkan query
+        $dtSdtIds = DtSdt::where('ID_SDT', $sdtId)
+            ->whereIn('NOP', $listNop)
+            ->pluck('ID');
+
+        if ($dtSdtIds->isEmpty()) {
+            throw new \Exception('Data NOP tidak ditemukan di sistem.');
+        }
+
+        $countUpdated = 0;
+        $userId = auth()->user()->ID_PENGGUNA;
+        $now = now();
+
+        foreach ($dtSdtIds as $dtSdtId) {
+            // Data yang akan diupdate/dibuat
+            $updateData = [
+                'ID_SDT' => $sdtId,
+                'ID_PETUGAS' => $userId,
+                'TGL_PENYAMPAIAN' => $now,
+            ];
+
+            if ($actionType === 'ko') {
+                $updateData['KOORDINAT_OP'] = $request->input('koordinat');
+            } else {
+                // Di sini diasumsikan nop_benar_baru berisi status "YA" atau "TIDAK"
+                $updateData['NOP_BENAR'] = $request->input('nop_benar_baru');
+            }
+
+            // Gunakan updateOrCreate agar data lama tidak hilang, hanya kolom tertentu yang tertimpa
+            StatusPenyampaian::updateOrCreate(
+                ['ID_DT_SDT' => $dtSdtId],
+                $updateData
+            );
+            $countUpdated++;
+        }
+
+        DB::commit();
+
+        $msgLabel = ($actionType === 'ko') ? "Koordinat" : "Status NOP Benar";
+        return redirect()->route('petugas.sdt.detail', $sdtId)
+            ->with('success', "Berhasil memperbarui {$msgLabel} pada {$countUpdated} data.");
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return redirect()->back()->with('error', 'Error: ' . $e->getMessage())->withInput();
+    }
+}
     /* =========================================================================
         SHOW A ROW
         ========================================================================= */

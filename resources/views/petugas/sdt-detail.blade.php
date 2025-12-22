@@ -364,6 +364,7 @@ tbody tr:hover { background: #f5f9ff; }
 
 @include('petugas.partials.mass-ko')
 @include('petugas.partials.mass-nop')
+@include('petugas.partials.modal-camera')
 
 @endsection
 63eb;
@@ -694,6 +695,7 @@ tbody tr:hover { background: #f5f9ff; }
 
     @include('petugas.partials.mass-ko')
     @include('petugas.partials.mass-nop')
+    @include('petugas.partials.modal-camera')
 
 
 @endsection
