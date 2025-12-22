@@ -228,8 +228,8 @@
         }
 
         /* =========================================
-                       MOBILE CARD VIEW TRANSFORMATION (MAGIC)
-                       ========================================= */
+                                                                                                               MOBILE CARD VIEW TRANSFORMATION (MAGIC)
+                                                                                                               ========================================= */
         @media (max-width: 768px) {
             .page-sdt-detail {
                 padding: 15px;
@@ -405,20 +405,44 @@
                         <tbody>
                             @forelse($rows as $i => $r)
                                 @php
-                                    $status = $r->STATUS_PENYAMPAIAN ?? null;
+                                    $status = $r->latestStatus->STATUS_PENYAMPAIAN ?? null;
 
                                     if ($status == '1') {
                                         $badgePeny =
                                             '<span class="badge-soft bg-soft-green"><i class="bi bi-check-circle me-1"></i> TERSAMPAIKAN</span>';
                                     } elseif ($status == '0' || $status === 0) {
                                         $badgePeny =
-                                            '<span class="badge-soft bg-soft-red"><i class="bi bi-x-circle me-1"></i> GAGAL</span>';
+                                            '<span class="badge-soft bg-soft-red"><i class="bi bi-x-circle me-1"></i> TIDAK TERSAMPAIKAN</span>';
                                     } else {
                                         $badgePeny = '<span class="badge-soft bg-soft-gray">BELUM DIPROSES</span>';
                                     }
 
-                                    $statusOP = $r->STATUS_OP ?: '-';
-                                    $statusWP = $r->STATUS_WP ?: '-';
+                                    $statusOP = $r->latestStatus->STATUS_OP ?? null;
+                                    $statusWP = $r->latestStatus->STATUS_WP ?? null;
+
+                                    if ($statusWP == 1 || $statusWP === '1') {
+                                        $statusWP = 'Belum Diproses Petugas';
+                                    } elseif ($statusWP == 2 || $statusWP === '2') {
+                                        $statusWP = 'Ditemukan';
+                                    } elseif ($statusWP == 3 || $statusWP === '3') {
+                                        $statusWP = 'Tidak Ditemukan';
+                                    } elseif ($statusWP == 4 || $statusWP === '4') {
+                                        $statusWP = 'Luar Kota';
+                                    } else {
+                                        $statusWP = '-';
+                                    }
+
+                                    if ($statusOP == 1 || $statusOP === '1') {
+                                        $statusOP = 'Belum Diproses Petugas';
+                                    } elseif ($statusOP == 2 || $statusOP === '2') {
+                                        $statusOP = 'Ditemukan';
+                                    } elseif ($statusOP == 3 || $statusOP === '3') {
+                                        $statusOP = 'Tidak Ditemukan';
+                                    } elseif ($statusOP == 4 || $statusOP === '4') {
+                                        $statusOP = 'Luar Kota';
+                                    } else {
+                                        $statusOP = '-';
+                                    }
                                 @endphp
                                 <tr>
                                     {{-- PERHATIKAN: data-label="..." ditambahkan di sini --}}
