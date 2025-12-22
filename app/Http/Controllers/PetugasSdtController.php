@@ -468,23 +468,23 @@ class PetugasSdtController extends Controller
             }
         }
 
-        $lastTwoPetugas = StatusPenyampaian::where('NOP_BENAR', $row->NOP)
-            ->orWhere(function ($query) use ($row) {
-                $query->where('NOP_BENAR', '')
-                    ->whereIn('ID_DT_SDT', DtSdt::where('NOP', $row->NOP)->pluck('ID'));
-            })
-            ->with('petugas', 'dtSdt') // pastikan relasi dtSdt ada
-            ->where('status_penyampaian.ID', '!=', $sp->ID ?? 0)
-            ->get()
-            ->sortByDesc(fn ($item) => $item->dtSdt->TAHUN ?? 0)
-            ->sortByDesc('TGL_PENYAMPAIAN')
-            ->take(2);
+        $dtsdt_history = DB::table('dt_sdt')
+            ->join('status_penyampaian', 'dt_sdt.ID', '=', 'status_penyampaian.ID_DT_SDT')
+            ->join('pengguna', 'dt_sdt.PETUGAS_SDT', '=', 'pengguna.ID')
+            ->where('dt_sdt.NOP', $row->NOP)
+            ->where('dt_sdt.ID', '!=', $row->ID)
+            ->where('dt_sdt.ID', '<', $row->ID)
+            ->orderByDesc('dt_sdt.ID')
+            ->get();
+
+
+
 
         return view('petugas.sdt-show', [
             'row' => $row,
             'photos' => $photos,
             'konfirmasi' => $sp,
-            'lastTwoPetugas' => $lastTwoPetugas,
+            'historydt' => $dtsdt_history,
             'return' => $r->query('return'),
         ]);
     }

@@ -108,7 +108,12 @@
                             {{ isset($konfirmasi->STATUS_PENYAMPAIAN) ? ($konfirmasi->STATUS_PENYAMPAIAN == 1 ? 'Tersampaikan' : 'Tidak Tersampaikan') : 'Belum Diproses Petugas' }}
                         </td>
                     </tr>
-
+                    <tr>
+                        <th>NOP BENAR</th>
+                        <td colspan="3">
+                            {{ isset($konfirmasi->NOP_BENAR) ? $konfirmasi->NOP_BENAR : 'Belum Diproses Petugas' }}
+                        </td>
+                    </tr>
                     {{-- Status OP --}}
                     <tr>
                         <th>STATUS OP</th>
@@ -153,7 +158,12 @@
                             {{ isset($konfirmasi->HP_PENERIMA) ? $konfirmasi->HP_PENERIMA : 'Belum Diproses Petugas' }}
                         </td>
                     </tr>
-
+                    <tr>
+                        <th>TGL PENYAMPAIAN</th>
+                        <td colspan="3">
+                            {{ isset($konfirmasi->created_at) ? date('d M Y H:i', strtotime($konfirmasi->created_at)) : 'Belum Diproses Petugas' }}
+                        </td>
+                    </tr>
                     {{-- Peta Utama --}}
                     <tr>
                         <th>KOORDINAT OP</th>
@@ -250,9 +260,9 @@
         @endphp
 
         {{-- Loop Blade Standar (Rapi tanpa Echo) --}}
-        @forelse($historyData as $data)
-            <div class="riwayat-card {{ $data->is_latest ? 'border-primary shadow-sm' : '' }}">
-                <div class="d-flex justify-content-between align-items-center mb-2">
+        @forelse($historydt as $data)
+            <div class="riwayat-card">
+                {{-- <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="mb-0 fw-bold">
                         {{ $data->is_latest ? 'Input Terbaru' : 'Input Sebelumnya (Tahun: ' . ($data->TAHUN ?? '—') . ')' }}
                     </h6>
@@ -261,22 +271,44 @@
                     @else
                         <span class="badge bg-secondary">ARSIP LAMA</span>
                     @endif
-                </div>
+                </div> --}}
 
                 <div class="table-responsive">
                     <table class="table table-sm mb-2">
                         <tr>
                             <th style="width: 30%">Petugas</th>
                             <td colspan="3">
-                                <strong>{{ $data->petugas->NAMA ?? '—' }}</strong>
-                                <span class="text-muted small">(NOP Benar: {{ $data->NOP_BENAR ?? '—' }})</span>
+                                <strong>{{ $data->NAMA ?? '—' }}</strong>
+                                <span class="text-muted small"> (NOP Benar: {{ $data->NOP_BENAR ?? '—' }})</span>
                             </td>
                         </tr>
                         <tr>
                             <th>Status Penyampaian</th>
-                            <td>{{ $data->STATUS_PENYAMPAIAN ?? ($row->STATUS_PENYAMPAIAN ?? '-') }}</td>
-                            <th>Status OP/WP</th>
-                            <td>{{ $data->STATUS_OP ?? '-' }} / {{ $data->STATUS_WP ?? '-' }}</td>
+                            <td>{{ isset($data->STATUS_PENYAMPAIAN) ? ($data->STATUS_PENYAMPAIAN == 1 ? 'Tersampaikan' : 'Tidak Tersampaikan') : 'Belum Diproses Petugas' }}
+                            </td>
+
+                        </tr>
+                        <tr>
+                            <th>STATUS OP</th>
+                            <td colspan="3">
+                                {{ [
+                                    1 => 'Belum Diproses Petugas',
+                                    2 => 'Ditemukan',
+                                    3 => 'Tidak Ditemukan',
+                                    4 => 'Sudah Dijual',
+                                ][$data->STATUS_OP ?? 0] ?? '-' }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>STATUS OP</th>
+                            <td colspan="3">
+                                {{ [
+                                    1 => 'Belum Diproses Petugas',
+                                    2 => 'Ditemukan',
+                                    3 => 'Tidak Ditemukan',
+                                    4 => 'Sudah Dijual',
+                                ][$data->STATUS_WP ?? 0] ?? '-' }}
+                            </td>
                         </tr>
                         <tr>
                             <th>Penerima / HP</th>
@@ -290,6 +322,35 @@
                             <th>Tgl Input</th>
                             <td colspan="3">
                                 {{ $data->TGL_PENYAMPAIAN ? date('d M Y H:i', strtotime($data->TGL_PENYAMPAIAN)) : '—' }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Foto Evidence</th>
+                            <td colspan="3">
+                                @if (!empty($data->EVIDENCE))
+                                    {{-- Container agar tampilan konsisten --}}
+                                    <div class="d-flex">
+                                        <div class="text-center p-2 border rounded bg-light" style="width: fit-content;">
+                                            {{-- 1. Preview Image --}}
+                                            {{-- GANTI url() MENJADI asset() --}}
+                                            <a href="{{ asset('storage/' . $data->EVIDENCE) }}" target="_blank"
+                                                class="d-block mb-2">
+                                                <img src="{{ asset('storage/' . $data->EVIDENCE) }}" alt="Evidence Riwayat"
+                                                    style="height:120px; width: auto; object-fit:cover; border-radius:4px; border:1px solid #ddd;">
+                                            </a>
+
+                                            {{-- 2. Tombol Download --}}
+                                            {{-- GANTI url() MENJADI asset() --}}
+                                            <a href="{{ asset('storage/' . $data->EVIDENCE) }}"
+                                                download="evidence-riwayat-{{ $data->ID ?? rand() }}"
+                                                class="btn btn-sm btn-primary w-100" target="_blank">
+                                                <i class="fas fa-download"></i> Unduh
+                                            </a>
+                                        </div>
+                                    </div>
+                                @else
+                                    <span class="text-muted small">Tidak ada foto.</span>
+                                @endif
                             </td>
                         </tr>
                     </table>
@@ -323,9 +384,10 @@
                     <span class="text-muted small">Tidak ada data koordinat.</span>
                 @endif
             </div>
+            <hr>
         @empty
             <div class="alert alert-secondary text-center">
-                Belum ada riwayat pengisian petugas untuk SDT ini.
+                Belum ada riwayat pengisian petugas untuk SDT dengan NOP ini.
             </div>
         @endforelse
     </div>
