@@ -4,7 +4,6 @@
 @section('breadcrumb', 'Petugas / Edit SDT')
 
 @php
-    // Smart-back (kembali ke halaman utama SDT)
     $paramBack = request('back');
     $decodedBack = $paramBack ? urldecode($paramBack) : null;
     $goBack =
@@ -14,609 +13,642 @@
 @endphp
 
 @section('content')
+
     <style>
-        :root {
-            --bg: #f6f7fb;
-            --card: #fff;
-            --line: #e6e8ec;
-            --text: #0f172a;
-            --muted: #64748b;
-            --accent: #2563eb;
-            --accent-2: #1d4ed8;
-            --radius: 12px;
-            --shadow: 0 8px 18px rgba(2, 6, 23, .08);
+        /* ======= STYLING CARD & BUTTON ======= */
+        .edit-card {
+            background: linear-gradient(145deg, #003b8e, #005ed9);
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+            color: #fff;
         }
 
-        .section {
-            background: var(--bg);
-            border-radius: 16px;
-            padding: 14px
+        .edit-section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 6px;
         }
 
-        .card-clean {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow)
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 14px;
-            border-bottom: 1px solid var(--line)
-        }
-
-        .page-title {
-            margin: 0;
-            font-weight: 800;
-            color: var(--text);
-            font-size: 1.05rem
-        }
-
-        .small-muted {
-            font-size: .78rem;
-            color: var(--muted)
-        }
-
-        .hr-soft {
-            border-top: 1px solid var(--line);
-            margin: 8px 0
-        }
-
-        .form-label {
-            font-size: .86rem;
-            margin-bottom: .25rem
+        .white-card {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 20px 25px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            color: #222;
         }
 
         .form-control,
         .form-select {
-            border: 1px solid var(--line);
             border-radius: 10px;
-            padding: .38rem .6rem;
-            height: 2.15rem
+            padding: 10px 12px;
+            font-size: 14px;
         }
 
-        .input-readonly {
-            background: #f1f5f9;
-            color: #475569
+        /* Glass Buttons */
+        .btn-glass-blue {
+            background: rgba(79, 147, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: #1c66ff;
+            font-weight: 600;
+            border: 1px solid rgba(79, 147, 255, 0.5);
+            border-radius: 12px;
+            padding: 0.45rem 1rem;
+            box-shadow: 0 4px 20px rgba(31, 96, 255, 0.3);
+            transition: all 0.3s ease;
         }
 
-        .btn-quiet {
-            border: 1px solid var(--line);
-            background: #fff;
-            border-radius: 10px;
-            font-weight: 700;
-            padding: .3rem .55rem
+        .btn-glass-blue:hover {
+            background: rgba(79, 147, 255, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(31, 96, 255, 0.5);
         }
 
-        .btn-accent {
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            border: 1px solid var(--accent-2);
-            color: #fff;
-            font-weight: 800;
-            border-radius: 10px;
-            padding: .45rem .8rem
+        .btn-glass-green {
+            background: rgba(0, 208, 132, 0.2);
+            backdrop-filter: blur(10px);
+            color: #009e5f;
+            font-weight: 600;
+            border: 1px solid rgba(0, 208, 132, 0.5);
+            border-radius: 12px;
+            padding: 0.45rem 1.2rem;
+            box-shadow: 0 4px 20px rgba(0, 208, 132, 0.3);
+            transition: all 0.3s ease;
         }
 
-        .badge-soft {
-            background: #f3f4f6;
-            border: 1px solid var(--line);
-            border-radius: 999px;
-            padding: .1rem .5rem;
-            font-weight: 700;
-            color: #334155;
-            font-size: .72rem
+        .btn-glass-green:hover {
+            background: rgba(0, 208, 132, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 208, 132, 0.5);
         }
 
-        .grid-tight {
-            row-gap: .6rem
+        .btn-retake {
+            background: rgba(240, 173, 78, 0.2);
+            backdrop-filter: blur(10px);
+            color: #e6951c;
+            font-weight: 600;
+            border: 1px solid rgba(240, 173, 78, 0.5);
+            border-radius: 12px;
+            padding: 0.45rem 1rem;
+            box-shadow: 0 4px 20px rgba(240, 173, 78, 0.3);
+            transition: all 0.3s ease;
         }
 
-        .col-gap-tight>[class^="col-"] {
-            padding-right: .4rem;
-            padding-left: .4rem
-        }
-
-        .mb-tight {
-            margin-bottom: .4rem
+        .btn-retake:hover {
+            background: rgba(240, 173, 78, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(240, 173, 78, 0.5);
         }
 
         .thumb {
-            max-height: 78px;
-            border: 1px solid var(--line);
-            border-radius: 8px
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
         }
 
-        #modalCamera .modal-content {
-            border-radius: 12px
+        .thumb:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
 
-        #modalCamera .modal-header {
-            padding: 8px 12px
+        @media(max-width:576px) {
+            .edit-card {
+                padding: 16px;
+                border-radius: 12px;
+            }
+
+            .white-card {
+                padding: 14px;
+                border-radius: 10px;
+            }
+
+            .btn-glass-blue,
+            .btn-retake {
+                width: 100%;
+                display: block;
+                margin-bottom: 8px;
+            }
         }
 
-        #modalCamera .modal-body {
-            padding: 10px 12px
+        /* ===== CAMERA MODAL STYLES ===== */
+        .cam-container {
+            background: #000;
+            overflow: hidden;
+            position: relative;
         }
 
-        .input-group-sm>.form-select {
-            height: 2rem
-        }
-
-        .shot-wrap {
+        .cam-topbar {
+            position: absolute;
+            width: 100%;
+            top: 0;
+            padding: 15px 20px;
             display: flex;
-            justify-content: center;
-            padding-top: .4rem
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.05);
+            z-index: 10;
         }
 
-        .btn-shot-round {
-            width: 50px;
-            height: 50px;
-            border-radius: 999px;
+        .cam-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .cam-btn-close {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: #fff;
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            font-size: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 10px 18px rgba(37, 99, 235, .22)
         }
 
-        .btn-shot-round svg {
-            width: 20px;
-            height: 20
+        .cam-view {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            background: #000;
         }
 
-        .form-section {
-            display: none
+        #camVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
-        .form-section.show {
-            display: block
+        #camCanvas {
+            display: none;
+        }
+
+        .cam-bottom {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 20px 30px 35px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            backdrop-filter: blur(12px);
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        .cam-btn-round-small {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.18);
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            color: #fff;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .cam-shutter {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            background: white;
+            border: 5px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+            cursor: pointer;
         }
     </style>
 
     <div class="section">
-        <div class="card-clean">
-            <div class="card-header">
-                <h5 class="page-title">Edit Detail SDT</h5>
-                <a href="{{ $goBack }}" class="btn btn-quiet btn-sm">Kembali</a>
-            </div>
 
-            @if (session('info'))
-                <div class="alert alert-info m-3" style="border-radius:10px;">
-                    {{ session('info') }}
+        <div class="edit-card mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="edit-section-title mb-0">Edit Detail SDT</h5>
+                    <div style="opacity:.95;font-size:13px;margin-top:6px;">
+                        <strong>Master SDT :</strong>
+                        <span style="font-weight:700;color:#ffd;">{{ $row->NAMA_SDT }}</span>
+                    </div>
                 </div>
-            @endif
+                <div>
+                    <a href="{{ $goBack }}" class="btn btn-light btn-sm" style="border-radius:10px;font-weight:600;">⟵
+                        Kembali</a>
+                </div>
+            </div>
+            <div class="mt-3" style="font-size:13px;opacity:.92;">
+                <div><strong>NOP:</strong> {{ $row->NOP }}</div>
+                <div><strong>Tahun:</strong> {{ $row->TAHUN }}</div>
+                <div><strong>Alamat OP:</strong> {{ $row->ALAMAT_OP }}</div>
+                <div><strong>Nama WP:</strong> {{ $row->NAMA_WP }}</div>
+            </div>
+        </div>
 
-            {{-- ========================= FORM ========================= --}}
-            <form id="frmEdit" method="POST"
-                action="{{ route('petugas.sdt.update', $row->ID) }}?back={{ urlencode($paramBack ?? $goBack) }}">
-                @csrf
+        @if (session('info'))
+            <div class="alert alert-info m-3" style="border-radius:10px;">{{ session('info') }}</div>
+        @endif
 
-                {{-- Hidden guard / geo / foto --}}
-                <input type="hidden" name="ID_SDT" value="{{ $row->ID_SDT }}">
-                <input type="hidden" name="FOTO_BASE64" id="FOTO_BASE64">
-                <input type="hidden" name="LATITUDE" id="LATITUDE">
-                <input type="hidden" name="LONGITUDE" id="LONGITUDE">
-                <input type="hidden" name="KOORDINAT_OP" id="KOORDINAT_OP">
-                {{-- Keterangan dikirimkan ke dua field agar controller dapat membaca --}}
-                <input type="hidden" name="KETERANGAN_PETUGAS" id="KETERANGAN_PETUGAS">
-                <input type="hidden" name="KETERANGAN" id="KETERANGAN">
+        <form id="frmEdit" method="POST"
+            action="{{ route('petugas.sdt.update', $row->ID) }}?back={{ urlencode($paramBack ?? $goBack) }}">
+            @csrf
+            <input type="hidden" name="FOTO_BASE64" id="FOTO_BASE64">
+            <input type="hidden" name="KOORDINAT_OP" id="KOORDINAT_OP">
+            <input type="hidden" name="back" value="{{ $paramBack ?? urlencode($goBack) }}">
 
-                @if ($paramBack)
-                    <input type="hidden" name="back" value="{{ $paramBack }}">
-                @else
-                    <input type="hidden" name="back" value="{{ urlencode($goBack) }}">
-                @endif
-
-                {{-- ========================= ISI FORM ========================= --}}
-                <div class="row grid-tight col-gap-tight">
-                    {{-- Baris 1 --}}
-                    <div class="col-lg-6">
-                        <label class="form-label">Master SDT</label>
-                        <select class="form-select input-readonly" disabled>
-                            @foreach ($master as $m)
-                                <option value="{{ $m->ID }}" {{ $m->ID == $row->ID_SDT ? 'selected' : '' }}>
-                                    {{ $m->NAMA_SDT }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-lg-6">
-                        <label class="form-label">NOP</label>
-                        <input type="text" class="form-control input-readonly" value="{{ $row->NOP }}" disabled>
-                    </div>
-
-                    {{-- Baris 2 --}}
-                    <div class="col-lg-3 col-md-4">
-                        <label class="form-label">Tahun</label>
-                        <input type="text" class="form-control input-readonly" value="{{ $row->TAHUN }}" disabled>
-                    </div>
-                    <div class="col-lg-9 col-md-8">
-                        <label class="form-label">Alamat OP</label>
-                        <input type="text" class="form-control input-readonly" value="{{ $row->ALAMAT_OP }}" disabled>
-                    </div>
-
-                    {{-- Baris 3 --}}
-                    <div class="col-lg-4">
-                        <label class="form-label">Nama WP</label>
-                        <input type="text" class="form-control input-readonly" value="{{ $row->NAMA_WP }}" disabled>
-                    </div>
-
-                    {{-- Status penyampaian (sesuai controller) --}}
-                    <div class="col-lg-4">
+            <div class="white-card glass-card mb-3" id="editContainer">
+                <div class="row g-3">
+                    <div class="col-md-4">
                         <label class="form-label">Status Penyampaian</label>
-                        <select name="STATUS_PENYAMPAIAN" id="STATUS" class="form-select"
-                            {{ $expired ? 'disabled' : '' }} required>
+                        <select name="STATUS_PENYAMPAIAN" id="STATUS" class="form-select" required>
                             <option value="">— Pilih —</option>
-                            <option value="TERSAMPAIKAN" {{ strtoupper($row->STATUS) == 'TERSAMPAIKAN' ? 'selected' : '' }}>
+                            <option value="TERSAMPAIKAN"
+                                {{ strtoupper($status->STATUS_PENYAMPAIAN ?? '') == 'TERSAMPAIKAN' || ($status->STATUS_PENYAMPAIAN ?? '') == '1' ? 'selected' : '' }}>
                                 Tersampaikan</option>
                             <option value="TIDAK TERSAMPAIKAN"
-                                {{ strtoupper($row->STATUS) == 'TIDAK TERSAMPAIKAN' ? 'selected' : '' }}>Tidak Tersampaikan
-                            </option>
+                                {{ strtoupper($status->STATUS_PENYAMPAIAN ?? '') == 'TIDAK TERSAMPAIKAN' || ($status->STATUS_PENYAMPAIAN ?? '') == '0' ? 'selected' : '' }}>
+                                Tidak Tersampaikan</option>
                         </select>
                     </div>
-
-                    <div class="col-lg-4">
-                        <label class="form-label">Koordinat</label>
-                        <input type="text" id="coordDisplay" class="form-control input-readonly" placeholder="—"
-                            disabled>
-                        <small class="small-muted" id="coordHint" style="display:none"></small>
-                    </div>
-
-                    {{-- NOP_BENAR --}}
-                    <div class="col-lg-4">
+                    <div class="col-md-4">
                         <label class="form-label">Apakah NOP benar?</label>
                         <select name="NOP_BENAR" id="NOP_BENAR" class="form-select" required>
                             <option value="">— Pilih —</option>
-                            <option value="YA" {{ strtoupper($row->NOP_BENAR ?? '') == 'YA' ? 'selected' : '' }}>YA</option>
-                            <option value="TIDAK" {{ strtoupper($row->NOP_BENAR ?? '') == 'TIDAK' ? 'selected' : '' }}>TIDAK
+                            <option value="YA" {{ strtoupper($status->NOP_BENAR ?? '') == 'YA' ? 'selected' : '' }}>YA
+                            </option>
+                            <option value="TIDAK" {{ strtoupper($status->NOP_BENAR ?? '') == 'TIDAK' ? 'selected' : '' }}>
+                                TIDAK
                             </option>
                         </select>
                     </div>
-
-                    {{-- Jika tersampaikan --}}
-                    <div id="secTersampaikan" class="form-section col-12">
-                        <div class="row grid-tight col-gap-tight">
-                            <div class="col-md-6">
-                                <label class="form-label">Nama Penerima</label>
-                                <input type="text" name="NAMA_PENERIMA" id="NAMA_PENERIMA" class="form-control"
-                                    value="{{ old('NAMA_PENERIMA', $row->NAMA_PENERIMA) }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">HP Penerima</label>
-                                <input type="text" name="HP_PENERIMA" id="HP_PENERIMA" class="form-control"
-                                    inputmode="numeric" value="{{ old('HP_PENERIMA', $row->HP_PENERIMA) }}">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">Keterangan</label>
-                                <input type="text" id="KETERANGAN_OK" class="form-control"
-                                    value="{{ old('KETERANGAN_PETUGAS', $row->KETERANGAN_PETUGAS) }}">
-                            </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Koordinat</label>
+                        <div class="input-group">
+                            <span class="input-group-text">📍</span>
+                            <input type="text" id="coordDisplay" class="form-control" placeholder="Mencari GPS..."
+                                disabled value="{{ $status->KOORDINAT_OP ?? '' }}">
                         </div>
-                    </div>
-
-                    {{-- Jika tidak tersampaikan --}}
-                    <div id="secTidak" class="form-section col-12">
-                        <div class="row grid-tight col-gap-tight">
-                            <div class="col-md-6">
-                                <label class="form-label">Status OP</label>
-                                <select name="STATUS_OP" id="STATUS_OP" class="form-select">
-                                    @php $sop = $row->STATUS_OP ?? 'Belum Diproses Petugas'; @endphp
-                                    <option {{ $sop == 'Belum Diproses Petugas' ? 'selected' : '' }}>Belum Diproses Petugas
-                                    </option>
-                                    <option {{ $sop == 'Ditemukan' ? 'selected' : '' }}>Ditemukan</option>
-                                    <option {{ $sop == 'Tidak Ditemukan' ? 'selected' : '' }}>Tidak Ditemukan</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Status WP</label>
-                                <select name="STATUS_WP" id="STATUS_WP" class="form-select">
-                                    @php $swp = $row->STATUS_WP ?? 'Belum Diproses Petugas'; @endphp
-                                    <option {{ $swp == 'Belum Diproses Petugas' ? 'selected' : '' }}>Belum Diproses Petugas
-                                    </option>
-                                    <option {{ $swp == 'Ditemukan' ? 'selected' : '' }}>Ditemukan</option>
-                                    <option {{ $swp == 'Tidak Ditemukan' ? 'selected' : '' }}>Tidak Ditemukan</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">Keterangan</label>
-                                <input type="text" id="KETERANGAN_NO" class="form-control"
-                                    value="{{ old('KETERANGAN_PETUGAS', $row->KETERANGAN_PETUGAS) }}">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-12">
-                        <hr class="hr-soft">
-                    </div>
-
-                    {{-- Kamera --}}
-                    <div class="col-12">
-                        <div class="d-flex align-items-start gap-2 flex-wrap">
-                            <div class="me-2">
-                                <div class="small-muted mb-tight">Preview</div>
-                                <img id="thumbPrev" class="thumb" style="display:none" alt="Preview">
-                            </div>
-                            <div class="d-flex flex-column gap-1">
-                                <button type="button" id="btnOpenCam" class="btn btn-quiet btn-sm"
-                                    {{ $expired ? 'disabled' : '' }} data-bs-toggle="modal"
-                                    data-bs-target="#modalCamera">
-                                    Buka Kamera
-                                </button>
-                                <div>
-                                    <button type="button" id="btnRetake" class="btn btn-quiet btn-sm"
-                                        style="display:none;">Ulangi</button>
-                                </div>
-                                <span id="lockBadge" class="badge-soft"
-                                    style="display:none; width:max-content;">Geo-locked</span>
-                            </div>
-
-                            @if (!empty($row->EVIDENCE))
-                                <div class="ms-auto">
-                                    <a href="{{ asset('storage/' . $row->EVIDENCE) }}" class="small-muted" target="_blank"
-                                        rel="noopener">Lihat foto saat ini →</a>
-                                </div>
-                            @endif
-                        </div>
+                        <small class="text-muted" style="font-size:11px;">Otomatis terisi saat GPS aktif</small>
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center gap-2 mt-3">
-                    <button class="btn btn-accent" id="btnSave" {{ $expired ? 'disabled' : '' }}>Simpan</button>
-                    <a href="{{ $goBack }}" class="btn btn-quiet">Batal</a>
-                    @if ($expired)
-                        <span class="small-muted ms-1">Terkunci (&gt;6 jam).</span>
-                    @endif
-                </div>
-            </form>
-        </div>
-    </div>
+                <hr class="my-4">
 
-    {{-- ========================= MODAL KAMERA ========================= --}}
-    <div class="modal fade" id="modalCamera" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h6 class="modal-title">Kamera</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nama Penerima</label>
+                        <input type="text" name="NAMA_PENERIMA" class="form-control"
+                            placeholder="Masukkan nama penerima..."
+                            value="{{ old('NAMA_PENERIMA', $status->NAMA_PENERIMA ?? '') }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Nomor HP Penerima</label>
+                        <input type="text" name="HP_PENERIMA" class="form-control" placeholder="08xxxxxxxxxx"
+                            value="{{ old('HP_PENERIMA', $status->HP_PENERIMA ?? '') }}">
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <div class="input-group input-group-sm mb-2">
-                        <select id="cameraSelect" class="form-select form-select-sm"></select>
-                        <button type="button" id="btnFlip" class="btn btn-outline-secondary">Putar</button>
+
+                <div class="row g-3 mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Status OP</label>
+                        <select name="STATUS_OP" class="form-select" required>
+                            <option value="">-- Pilih Status OP --</option>
+                            <option value="Belum Diproses Petugas"
+                                {{ ($status->STATUS_OP ?? '') == 'Belum Diproses Petugas' || ($status->STATUS_OP ?? '') == '1' ? 'selected' : '' }}>
+                                Belum Diproses Petugas</option>
+                            <option value="Ditemukan"
+                                {{ ($status->STATUS_OP ?? '') == 'Ditemukan' || ($status->STATUS_OP ?? '') == '2' ? 'selected' : '' }}>
+                                Ditemukan</option>
+                            <option value="Tidak Ditemukan"
+                                {{ ($status->STATUS_OP ?? '') == 'Tidak Ditemukan' || ($status->STATUS_OP ?? '') == '3' ? 'selected' : '' }}>
+                                Tidak Ditemukan</option>
+                            <option value="Sudah Dijual"
+                                {{ ($status->STATUS_OP ?? '') == 'Sudah Dijual' || ($status->STATUS_OP ?? '') == '4' ? 'selected' : '' }}>
+                                Sudah Dijual</option>
+                        </select>
                     </div>
-                    <div class="border rounded p-2" style="border-color:var(--line)!important">
-                        <video id="camVideo" playsinline autoplay muted
-                            style="max-width:100%;width:100%;border-radius:.6rem;"></video>
-                        <canvas id="camCanvas"
-                            style="display:none;max-width:100%;width:100%;border-radius:.6rem;"></canvas>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Status WP</label>
+                        <select name="STATUS_WP" class="form-select" required>
+                            <option value="">-- Pilih Status WP -- </option>
+                            <option value="Belum Diproses Petugas"
+                                {{ ($status->STATUS_WP ?? '') == 'Belum Diproses Petugas' || ($status->STATUS_WP ?? '') == '1' ? 'selected' : '' }}>
+                                Belum Diproses Petugas</option>
+                            <option value="Ditemukan"
+                                {{ ($status->STATUS_WP ?? '') == 'Ditemukan' || ($status->STATUS_WP ?? '') == '2' ? 'selected' : '' }}>
+                                Ditemukan</option>
+                            <option value="Tidak Ditemukan"
+                                {{ ($status->STATUS_WP ?? '') == 'Tidak Ditemukan' || ($status->STATUS_WP ?? '') == '3' ? 'selected' : '' }}>
+                                Tidak Ditemukan</option>
+                            <option value="Luar Kota"
+                                {{ ($status->STATUS_WP ?? '') == 'Luar Kota' || ($status->STATUS_WP ?? '') == '4' ? 'selected' : '' }}>
+                                Luar Kota</option>
+                        </select>
                     </div>
-                    <div class="shot-wrap">
-                        <button type="button" id="btnShotModal" class="btn btn-primary btn-shot-round" title="Jepret"
-                            disabled>
-                            <svg viewBox="0 0 16 16" fill="currentColor">
-                                <path
-                                    d="M4 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .4.2l1.2 1.6H15a1 1 0 0 1 1 1V13a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V4.8A1.3 1.3 0 0 1 1.3 3.5H3l1-1z" />
-                                <circle cx="8" cy="9" r="3" />
-                            </svg>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <label class="form-label">Keterangan</label>
+                    <textarea name="KETERANGAN" class="form-control" rows="3" placeholder="Masukkan keterangan tambahan...">{{ old('KETERANGAN_PETUGAS', $status->KETERANGAN_PETUGAS ?? '') }}</textarea>
+                </div>
+
+                <div class="mt-4">
+                    <div class="btn-wrapper-bottom">
+                        <button type="button" id="btnOpenCam" class="btn-glass-blue" data-bs-toggle="modal"
+                            data-bs-target="#modalCamera" {{ $expired ? 'disabled' : '' }}>
+                            📷 Kamera
                         </button>
+
+                        @if (!$expired)
+                            <button type="submit" class="btn-glass-green" id="btnSubmit">💾 Simpan</button>
+                        @else
+                            <span class="text-muted ms-2">Update tidak tersedia (lebih dari 6 jam)</span>
+                        @endif
+                    </div>
+
+                    <button type="button" id="btnRetake" class="btn-glass-blue btn-retake mt-3" style="display:none;">
+                        🔄 Ulangi Foto
+                    </button>
+                    <img id="thumbPrev" class="thumb mt-3" style="display:none; max-width:180px;">
+
+                    <div id="expiredMsg" class="mt-3 text-danger"
+                        style="font-weight:600; display: {{ $expired ? 'block' : 'none' }};">
+                        ⚠️ Update sudah tidak tersedia (lebih dari 6 jam)
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div class="modal fade" id="modalCamera" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-fullscreen">
+                <div class="modal-content cam-container">
+                    <div class="cam-topbar">
+                        <span class="cam-title">Kamera</span>
+                        <button type="button" id="btnCloseCam" class="cam-btn-close">✕</button>
+                    </div>
+                    <div class="cam-view">
+                        <video id="camVideo" autoplay playsinline></video>
+                        <canvas id="camCanvas"></canvas>
+                    </div>
+                    <div class="cam-bottom">
+                        <button id="btnFlip" class="cam-btn-round-small">🔄</button>
+                        <button id="btnShot" class="cam-shutter"></button>
+                        <button id="btnRetakeModal" class="cam-btn-round-small" style="display:none;">↺</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- ========================= SCRIPT ========================= --}}
     <script>
-        (() => {
-            const $ = s => document.querySelector(s);
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Konfigurasi Awal ---
             const expired = {{ $expired ? 'true' : 'false' }};
+            const petugas = "{{ auth()->user()->name }}";
+            const nomorSDT = "{{ $row->ID_SDT }}";
 
-            const foto64 = $('#FOTO_BASE64');
-            const lat = $('#LATITUDE');
-            const lng = $('#LONGITUDE');
-            const prev = $('#thumbPrev');
-            const hint = $('#coordHint');
-            const lock = $('#lockBadge');
-            const btnSave = $('#btnSave');
-            const coordDisplay = $('#coordDisplay');
-            const btnOpenCam = $('#btnOpenCam');
-            const koordHidden = $('#KOORDINAT_OP');
-            const ketPetugas = $('#KETERANGAN_PETUGAS');
-            const ket = $('#KETERANGAN');
-            const selStatus = $('#STATUS');
-            const secOk = $('#secTersampaikan');
-            const secNo = $('#secTidak');
-            const namaP = $('#NAMA_PENERIMA');
-            const hpP = $('#HP_PENERIMA');
+            // --- Referensi Elemen ---
+            const form = document.getElementById('frmEdit');
+            const editContainer = document.getElementById('editContainer');
+            const btnOpenCam = document.getElementById('btnOpenCam');
+            const expiredMsg = document.getElementById('expiredMsg');
+            const btnSubmit = document.getElementById('btnSubmit');
 
-            function syncStatusUI() {
-                const v = (selStatus.value || '').toUpperCase();
-                const isOk = v === 'TERSAMPAIKAN';
-                secOk.classList.toggle('show', isOk);
-                secNo.classList.toggle('show', !isOk && v);
-                if (namaP) namaP.required = isOk;
-                if (hpP) hpP.required = isOk;
+            const statusPenyampaian = document.getElementById('STATUS');
+            const foto64 = document.getElementById('FOTO_BASE64');
+            const koordInput = document.getElementById('KOORDINAT_OP');
+            const coordDisplay = document.getElementById('coordDisplay');
+
+            // --- Elemen Kamera ---
+            const video = document.getElementById('camVideo');
+            const canvas = document.getElementById('camCanvas');
+            const prev = document.getElementById('thumbPrev');
+            const btnShot = document.getElementById('btnShot');
+            const btnFlip = document.getElementById('btnFlip');
+            const btnRetakeModal = document.getElementById('btnRetakeModal');
+            const btnCloseCam = document.getElementById('btnCloseCam');
+            const btnRetakeMain = document.getElementById('btnRetake');
+
+            let stream = null;
+            let currentFacingMode = 'environment'; // Default ke kamera belakang
+
+            // ================= 1. LOGIKA EXPIRED =================
+            if (expired) {
+                const inputs = editContainer.querySelectorAll('input, select, textarea, button');
+                inputs.forEach(el => el.disabled = true);
+                if (btnSubmit) btnSubmit.style.display = 'none';
+
+                btnOpenCam.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert("Update tidak tersedia (Waktu habis).");
+                });
             }
-            selStatus?.addEventListener('change', syncStatusUI);
-            syncStatusUI();
 
-            function updateCoordDisplay() {
-                if (lat.value && lng.value) {
-                    coordDisplay.value = `${Number(lat.value).toFixed(6)},${Number(lng.value).toFixed(6)}`;
-                }
-            }
+            // ================= 2. LOGIKA GPS PINTAR (SMART LOCATION) =================
+            // Strategi: Coba High Accuracy (GPS) -> Gagal? -> Coba Low Accuracy (Network)
 
-            function getLocationOnce() {
-                if (lat.value && lng.value) {
-                    updateCoordDisplay();
+            function requestLocation() {
+                if (!navigator.geolocation) {
+                    coordDisplay.value = "GPS Tidak Didukung";
                     return;
                 }
-                if (!('geolocation' in navigator)) {
-                    return;
-                }
+
+                // Langkah 1: Coba High Accuracy (Timeout 15 detik)
                 navigator.geolocation.getCurrentPosition(
-                    pos => {
-                        lat.value = pos.coords.latitude;
-                        lng.value = pos.coords.longitude;
-                        hint.textContent = `±${Math.round(pos.coords.accuracy||0)}m`;
-                        hint.style.display = '';
-                        lock.style.display = '';
-                        updateCoordDisplay();
-                    },
-                    _ => {
-                        lock.style.display = '';
+                    successLocation,
+                    function(err) {
+                        console.warn("High Accuracy Failed/Timeout. Fallback to Low Accuracy...");
+                        // Langkah 2: Fallback ke Low Accuracy (Lebih cepat, via Wifi/Seluler)
+                        navigator.geolocation.getCurrentPosition(
+                            successLocation,
+                            function(err2) {
+                                console.error("GPS Total Failure:", err2);
+                                coordDisplay.value = "";
+                                coordDisplay.placeholder = "Gagal mengambil lokasi. Pastikan GPS Aktif.";
+                                coordDisplay.disabled = false; // Izinkan input manual jika perlu
+                            }, {
+                                enableHighAccuracy: false,
+                                timeout: 10000,
+                                maximumAge: 0
+                            }
+                        );
                     }, {
                         enableHighAccuracy: true,
-                        timeout: 8000,
+                        timeout: 15000,
                         maximumAge: 0
                     }
                 );
             }
 
-            function showPreview(d) {
-                prev.src = d;
-                prev.style.display = '';
+            function successLocation(pos) {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                const acc = pos.coords.accuracy;
+
+                const val = `${lat},${lng}`;
+                koordInput.value = val;
+                coordDisplay.value = val;
+                console.log(`Lokasi didapat. Akurasi: ${acc} meter`);
             }
 
-            const mCam = $('#modalCamera');
-            const camSel = $('#cameraSelect');
-            const video = $('#camVideo');
-            const canvas = $('#camCanvas');
-            const btnShot = $('#btnShotModal');
-            const btnRet = $('#btnRetake');
-
-            function stopStream() {
-                try {
-                    video.pause();
-                    video.srcObject?.getTracks()?.forEach(t => t.stop());
-                    video.srcObject = null;
-                } catch (_) {}
-                btnShot.disabled = true;
+            // Jalankan pencarian lokasi saat halaman dimuat
+            if (!expired && !koordInput.value) {
+                requestLocation();
             }
-            async function startStream(constraints) {
-                stopStream();
+
+            // ================= 3. LOGIKA KAMERA HYBRID =================
+            // Strategi: Coba kamera belakang -> Error (di PC)? -> Coba webcam depan
+
+            async function startCamera() {
+                if (expired) return;
+
+                // Stop stream lama jika ada
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+
+                const constraints = {
+                    audio: false,
+                    video: true,
+                };
+
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia(constraints || {
-                        video: {
-                            facingMode: {
-                                ideal: 'environment'
-                            },
-                            width: {
-                                ideal: 1280
-                            },
-                            height: {
-                                ideal: 720
-                            }
-                        },
-                        audio: false
-                    });
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
                     video.srcObject = stream;
-                    video.onloadedmetadata = () => {
-                        video.play().finally(() => btnShot.disabled = false);
-                    };
-                } catch (e) {
-                    alert('Gagal membuka kamera');
-                    stopStream();
+                } catch (err) {
+                    console.warn("Gagal akses kamera:", err.name);
+
+                    // Fallback khusus PC: Jika 'environment' gagal, coba 'user' (Webcam)
+                    if (currentFacingMode === 'environment') {
+                        console.log("Mencoba fallback ke Webcam (User)...");
+                        currentFacingMode = 'user';
+                        startCamera(); // Restart fungsi
+                    } else {
+                        alert("Tidak dapat mengakses kamera. Pastikan izin diberikan.");
+                    }
                 }
             }
-            async function listCams() {
-                try {
-                    const devs = await navigator.mediaDevices.enumerateDevices();
-                    const cams = devs.filter(d => d.kind === 'videoinput');
-                    camSel.innerHTML = '';
-                    cams.forEach((d, i) => {
-                        const o = document.createElement('option');
-                        o.value = d.deviceId;
-                        o.textContent = d.label || `Kamera ${i+1}`;
-                        camSel.appendChild(o);
-                    });
-                } catch (_) {}
+
+            function stopCamera() {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+                video.srcObject = null;
             }
 
-            function takeShot() {
-                if (btnShot.disabled) return alert('Kamera belum siap');
+            function takePicture() {
+                if (!stream) return;
+
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                const d = canvas.toDataURL('image/jpeg', 0.85);
-                foto64.value = d;
-                showPreview(d);
-                stopStream();
-                window.bootstrap.Modal.getOrCreateInstance(mCam)?.hide();
-                btnRet.style.display = 'inline-block';
-                btnOpenCam.style.display = 'none';
-                getLocationOnce();
+                const ctx = canvas.getContext("2d");
+
+                // Flip horizontal jika pakai kamera depan (mirroring)
+                if (currentFacingMode === 'user') {
+                    ctx.translate(canvas.width, 0);
+                    ctx.scale(-1, 1);
+                }
+
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                // Kembalikan konteks agar teks tidak terbalik
+                if (currentFacingMode === 'user') {
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                }
+
+                // Watermark Data
+                addWatermark(ctx);
+
+                // Simpan ke Hidden Input & Preview
+                const dataURL = canvas.toDataURL("image/jpeg", 0.85);
+                foto64.value = dataURL;
+                prev.src = dataURL;
+                prev.style.display = "block";
+                btnRetakeMain.style.display = "block";
+
+                // Tutup Modal
+                stopCamera();
+                const modalEl = document.getElementById('modalCamera');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
             }
 
-            function retake() {
-                foto64.value = '';
-                prev.src = '';
+            function addWatermark(ctx) {
+                // Ambil koordinat saat ini (atau dari input jika GPS belum lock)
+                const loc = koordInput.value || "Mencari Lokasi...";
+                const time = new Date().toLocaleString("id-ID");
+
+                ctx.font = "bold 24px Arial";
+                ctx.fillStyle = "white";
+                ctx.shadowColor = "black";
+                ctx.shadowBlur = 6;
+                ctx.lineWidth = 3;
+
+                const lines = [
+                    `Petugas: ${petugas}`,
+                    `SDT: ${nomorSDT}`,
+                    `Lokasi: ${loc}`,
+                    `Waktu: ${time}`
+                ];
+
+                // Posisi teks di pojok kiri atas
+                let y = 40;
+                lines.forEach(line => {
+                    ctx.strokeText(line, 20, y);
+                    ctx.fillText(line, 20, y);
+                    y += 35;
+                });
+            }
+
+            // Event Listeners Kamera
+            const modalEl = document.getElementById('modalCamera');
+            modalEl.addEventListener('shown.bs.modal', startCamera);
+            modalEl.addEventListener('hidden.bs.modal', stopCamera);
+
+            btnShot.addEventListener('click', takePicture);
+
+            btnFlip.addEventListener('click', () => {
+                currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
+                startCamera();
+            });
+
+            btnCloseCam.addEventListener('click', () => {
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+            });
+
+            // Fitur Retake (Ulangi Foto)
+            btnRetakeMain.addEventListener('click', () => {
                 prev.style.display = 'none';
-                btnRet.style.display = 'none';
-                btnOpenCam.style.display = '';
-            }
-
-            mCam?.addEventListener('shown.bs.modal', async () => {
-                await listCams();
-                startStream();
-            });
-            mCam?.addEventListener('hidden.bs.modal', stopStream);
-            camSel?.addEventListener('change', e => startStream({
-                video: {
-                    deviceId: {
-                        exact: e.target.value
-                    }
-                },
-                audio: false
-            }));
-            $('#btnFlip')?.addEventListener('click', () => startStream({
-                video: {
-                    facingMode: {
-                        ideal: 'user'
-                    },
-                    width: {
-                        ideal: 1280
-                    },
-                    height: {
-                        ideal: 720
-                    }
-                },
-                audio: false
-            }));
-            btnShot?.addEventListener('click', takeShot);
-            btnRet?.addEventListener('click', retake);
-
-            $('#frmEdit')?.addEventListener('submit', e => {
-                // set koordinat hidden
-                if (lat.value && lng.value) koordHidden.value = `${Number(lat.value)},${Number(lng.value)}`;
-                else koordHidden.value = '';
-
-                // ambil keterangan berdasarkan status
-                const v = (selStatus.value || '').toUpperCase();
-                const kOk = $('#KETERANGAN_OK')?.value?.trim() || '';
-                const kNo = $('#KETERANGAN_NO')?.value?.trim() || '';
-                const finalK = (v === 'TERSAMPAIKAN') ? kOk : kNo;
-                if (ketPetugas) ketPetugas.value = finalK;
-                if (ket) ket.value = finalK; // juga isi KETERANGAN agar controller menerima
-
-                // validasi NOP_BENAR
-                const nb = ($('#NOP_BENAR')?.value || '').toUpperCase();
-                if (!['YA', 'TIDAK'].includes(nb)) {
-                    e.preventDefault();
-                    return alert('Pilih NOP BENAR: YA atau TIDAK');
-                }
-
-                // foto wajib kalau belum expired
-                if (!foto64.value && !expired) {
-                    e.preventDefault();
-                    return alert('Harap ambil foto dari kamera terlebih dahulu.');
-                }
-
-                btnSave.disabled = true;
+                btnRetakeMain.style.display = 'none';
+                foto64.value = '';
+                // Buka modal lagi
+                new bootstrap.Modal(modalEl).show();
             });
 
-            updateCoordDisplay();
-        })();
+            // Validasi Submit Form
+            form.addEventListener('submit', (e) => {
+                if (statusPenyampaian.value === 'TERSAMPAIKAN' && !foto64.value) {
+                    e.preventDefault();
+                    alert("WAJIB FOTO bukti jika status 'Tersampaikan'!");
+                    btnOpenCam.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    btnOpenCam.classList.add('btn-danger'); // Highlight tombol
+                    setTimeout(() => btnOpenCam.classList.remove('btn-danger'), 2000);
+                }
+            });
+
+        });
     </script>
 @endsection
