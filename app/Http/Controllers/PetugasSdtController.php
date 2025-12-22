@@ -198,84 +198,85 @@ class PetugasSdtController extends Controller
     /**
      * Handle mass update for NOP_BENAR or KOORDINAT_OP based on a list of NOPs.
      */
-public function komplekMassUpdate(Request $request): RedirectResponse
-{
-    $sdtId = $request->input('sdt_id');
+    public function komplekMassUpdate(Request $request): RedirectResponse
+    {
+        $sdtId = $request->input('sdt_id');
 
-    $request->validate([
-        'sdt_id' => 'required|exists:sdt,ID',
-        'action_type' => 'required|in:ko,nop',
-        'list_nop' => 'required|string',
-        'koordinat' => 'nullable|string|required_if:action_type,ko',
-        // Jika NOP_BENAR hanya pilihan YA/TIDAK, gunakan validation ini:
-        'nop_benar_baru' => 'nullable|string|required_if:action_type,nop|in:YA,TIDAK',
-    ]);
+        $request->validate([
+            'sdt_id' => 'required|exists:sdt,ID',
+            'action_type' => 'required|in:ko,nop',
+            'list_nop' => 'required|string',
+            'koordinat' => 'nullable|string|required_if:action_type,ko',
+            // Jika NOP_BENAR hanya pilihan YA/TIDAK, gunakan validation ini:
+            'nop_benar_baru' => 'nullable|string|required_if:action_type,nop|in:YA,TIDAK',
+        ]);
 
-    $actionType = $request->input('action_type');
-    $rawNops = $request->input('list_nop');
+        $actionType = $request->input('action_type');
+        $rawNops = $request->input('list_nop');
 
-    // Bersihkan NOP dari spasi atau baris kosong
-    $listNop = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $rawNops)));
+        // Bersihkan NOP dari spasi atau baris kosong
+        $listNop = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $rawNops)));
 
-    if (empty($listNop)) {
-        return back()->with('error', 'Daftar NOP tidak valid.');
-    }
-
-    try {
-        DB::beginTransaction();
-
-        // Ambil semua ID sekaligus untuk meminimalkan query
-        $dtSdtIds = DtSdt::where('ID_SDT', $sdtId)
-            ->whereIn('NOP', $listNop)
-            ->pluck('ID');
-
-        if ($dtSdtIds->isEmpty()) {
-            throw new \Exception('Data NOP tidak ditemukan di sistem.');
+        if (empty($listNop)) {
+            return back()->with('error', 'Daftar NOP tidak valid.');
         }
 
-        $countUpdated = 0;
-        $userId = auth()->user()->ID_PENGGUNA;
-        $now = now();
+        try {
+            DB::beginTransaction();
 
-        foreach ($dtSdtIds as $dtSdtId) {
-            // Data yang akan diupdate/dibuat
-            $updateData = [
-                'ID_SDT' => $sdtId,
-                'ID_PETUGAS' => $userId,
-                'TGL_PENYAMPAIAN' => $now,
-            ];
+            // Ambil semua ID sekaligus untuk meminimalkan query
+            $dtSdtIds = DtSdt::where('ID_SDT', $sdtId)
+                ->whereIn('NOP', $listNop)
+                ->pluck('ID');
 
-            if ($actionType === 'ko') {
-                $updateData['KOORDINAT_OP'] = $request->input('koordinat');
-            } else {
-                // Di sini diasumsikan nop_benar_baru berisi status "YA" atau "TIDAK"
-                $updateData['NOP_BENAR'] = $request->input('nop_benar_baru');
+            if ($dtSdtIds->isEmpty()) {
+                throw new \Exception('Data NOP tidak ditemukan di sistem.');
             }
 
-            // Gunakan updateOrCreate agar data lama tidak hilang, hanya kolom tertentu yang tertimpa
-            StatusPenyampaian::updateOrCreate(
-                ['ID_DT_SDT' => $dtSdtId],
-                $updateData
-            );
-            $countUpdated++;
+            $countUpdated = 0;
+            $userId = auth()->user()->ID_PENGGUNA;
+            $now = now();
+
+            foreach ($dtSdtIds as $dtSdtId) {
+                // Data yang akan diupdate/dibuat
+                $updateData = [
+                    'ID_SDT' => $sdtId,
+                    'ID_PETUGAS' => $userId,
+                    'TGL_PENYAMPAIAN' => $now,
+                ];
+
+                if ($actionType === 'ko') {
+                    $updateData['KOORDINAT_OP'] = $request->input('koordinat');
+                } else {
+                    // Di sini diasumsikan nop_benar_baru berisi status "YA" atau "TIDAK"
+                    $updateData['NOP_BENAR'] = $request->input('nop_benar_baru');
+                }
+
+                // Gunakan updateOrCreate agar data lama tidak hilang, hanya kolom tertentu yang tertimpa
+                StatusPenyampaian::updateOrCreate(
+                    ['ID_DT_SDT' => $dtSdtId],
+                    $updateData
+                );
+                $countUpdated++;
+            }
+
+            DB::commit();
+
+            $msgLabel = ($actionType === 'ko') ? "Koordinat" : "Status NOP Benar";
+            return redirect()->route('petugas.sdt.detail', $sdtId)
+                ->with('success', "Berhasil memperbarui {$msgLabel} pada {$countUpdated} data.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error: ' . $e->getMessage())->withInput();
         }
-
-        DB::commit();
-
-        $msgLabel = ($actionType === 'ko') ? "Koordinat" : "Status NOP Benar";
-        return redirect()->route('petugas.sdt.detail', $sdtId)
-            ->with('success', "Berhasil memperbarui {$msgLabel} pada {$countUpdated} data.");
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return redirect()->back()->with('error', 'Error: ' . $e->getMessage())->withInput();
     }
-}
     /* =========================================================================
         SHOW A ROW
         ========================================================================= */
     public function showPage(Request $r, int $id): View|RedirectResponse
     {
+
+
         $row = DtSdt::find($id);
         if (!$row) {
             return redirect()->route('petugas.sdt.index')
@@ -310,7 +311,6 @@ public function komplekMassUpdate(Request $request): RedirectResponse
             ->sortByDesc(fn ($item) => $item->dtSdt->TAHUN ?? 0)
             ->sortByDesc('TGL_PENYAMPAIAN')
             ->take(2);
-
 
         return view('petugas.sdt-show', [
             'row' => $row,
