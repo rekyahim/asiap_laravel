@@ -21,15 +21,61 @@ class PetugasSdtController extends Controller
     {
         $user_id = session('auth_uid');
 
-        // Menggunakan whereHas jauh lebih aman & "Laravel way"
-        $master = Sdt::query()
-            ->orderBy('ID')
-            ->whereHas('details', function ($query) use ($user_id) {
-                // 'details' adalah nama fungsi relasi di model Sdt Anda
-                // Filter: hanya ambil SDT yang punya detail dengan PETUGAS_SDT = user login
-                $query->where('PETUGAS_SDT', $user_id);
+        $master = DB::table('sdt')
+            ->select([
+                'sdt.ID',
+                'sdt.NAMA_SDT',
+                'sdt.TGL_MULAI',
+                'sdt.TGL_SELESAI',
+                'sdt.STATUS_SDT',
+                'sdt.STATUS',
+
+                // 1. SUBQUERY: Hitung Total NOP (Khusus User Ini & STATUS Detail = 1)
+                DB::raw("(
+            SELECT COUNT(id) 
+            FROM dt_sdt 
+            WHERE dt_sdt.ID_SDT = sdt.ID 
+            AND dt_sdt.PETUGAS_SDT = '$user_id'
+            AND dt_sdt.STATUS = 1   -- Filter Tambahan
+        ) as JUMLAH_NOP"),
+
+                // 2. SUBQUERY: Hitung Progress (Khusus User Ini & STATUS Detail = 1)
+                DB::raw("(
+            SELECT COUNT(a.id) 
+            FROM dt_sdt a
+            JOIN status_penyampaian b ON b.ID_DT_SDT = a.ID
+            WHERE a.ID_SDT = sdt.ID 
+            AND a.PETUGAS_SDT = '$user_id'
+            AND a.STATUS = 1       -- Filter Tambahan
+        ) as SUDAH_DIPROSES")
+            ])
+            // 3. MAIN FILTER: Pastikan Master SDT Aktif (STATUS = 1)
+            ->where('sdt.STATUS', 1)
+
+            // 4. EXISTS FILTER: User punya tugas aktif di SDT ini
+            ->whereExists(function ($query) use ($user_id) {
+                $query->select(DB::raw(1))
+                    ->from('dt_sdt')
+                    ->whereColumn('dt_sdt.ID_SDT', 'sdt.ID')
+                    ->where('dt_sdt.PETUGAS_SDT', $user_id)
+                    ->where('dt_sdt.STATUS', 1); // Filter Tambahan
             })
-            ->get(['ID', 'NAMA_SDT', 'TGL_MULAI', 'TGL_SELESAI']);
+            ->orderBy('sdt.ID', 'DESC')
+            ->get();
+
+        // --- Logic Matematika Persentase (Sama seperti sebelumnya) ---
+        $master->transform(function ($item) {
+            if ($item->JUMLAH_NOP > 0) {
+                $item->PROGRESS = round(($item->SUDAH_DIPROSES / $item->JUMLAH_NOP) * 100, 1);
+            } else {
+                $item->PROGRESS = 0;
+            }
+
+            $item->TGL_MULAI_FMT = $item->TGL_MULAI ? date('d M Y', strtotime($item->TGL_MULAI)) : '-';
+            $item->TGL_SELESAI_FMT = $item->TGL_SELESAI ? date('d M Y', strtotime($item->TGL_SELESAI)) : '-';
+
+            return $item;
+        });
 
         return view('petugas.sdt-index', compact('master'));
     }
@@ -77,9 +123,10 @@ class PetugasSdtController extends Controller
             $status = $row->latestStatus;
             $sdt = $row->sdt;
             $row->expired = '2'; //belum
-            if ($status && $status->create_at) {
+            if ($status && $status->created_at) {
+
                 // 1. Define the past date (e.g., from a database)
-                $past_date_string = $status->create_at;
+                $past_date_string = $status->created_at;
 
                 // 2. Convert dates to timestamps
                 $past_timestamp = strtotime($past_date_string);
@@ -118,7 +165,7 @@ class PetugasSdtController extends Controller
             }
         }
 
-
+        //dd($rows);
         /* ============================================================
         DATA KO (TIDAK TERPENGARUH FILTER)
         ============================================================ */
@@ -155,7 +202,7 @@ class PetugasSdtController extends Controller
             'ID_DT_SDT',
             DtSdt::where('ID_SDT', $id)->where('PETUGAS_SDT', $user_id)->pluck('ID')
         )
-            ->where('STATUS_PENYAMPAIAN', 1)
+
             ->distinct('ID_DT_SDT')
             ->count();
 
@@ -174,7 +221,7 @@ class PetugasSdtController extends Controller
             ============================================================ */
         $totalBiaya = DtSdt::where('ID_SDT', $id)
             ->where('PETUGAS_SDT', $user_id)
-            ->whereIn('ALAMAT_OP', $dataKO->pluck('ALAMAT_OP'))
+            // ->whereIn('ALAMAT_OP', $dataKO->pluck('ALAMAT_OP'))
             ->sum('PBB_HARUS_DIBAYAR');
 
         /* ============================================================
