@@ -44,28 +44,28 @@ class ModulController extends Controller
         return back()->with('success', 'Modul berhasil dibuat.');
     }
 
-    public function update(Request $r, $id)
-    {
-        $modul = Modul::findOrFail($id);
+public function update(Request $r, $id)
+{
+    $modul = Modul::findOrFail($id);
 
-        $data = $r->validate([
-            'nama_modul'   => ['required', 'string', 'max:100'],
-            'lokasi_modul' => [
-                'required', 'string', 'max:150',
-                Rule::unique('modul', 'lokasi_modul')->ignore($modul->ID, 'ID'),
-            ],
-            'tglpost'      => ['nullable', 'date'],
-        ]);
+    $data = $r->validate([
+        'nama_modul' => ['required', 'string', 'max:100'],
+        'lokasi_modul' => [
+            'required', 'string', 'max:150',
+            Rule::unique('modul', 'lokasi_modul')->ignore($modul->id, 'id'),
+        ],
+        'tglpost' => ['nullable', 'date'],
+    ]);
 
-        $modul->update([
-            'nama_modul'   => trim($data['nama_modul']),
-            'lokasi_modul' => trim($data['lokasi_modul']),
-            'tglpost'      => $data['tglpost'] ?? $modul->tglpost,
-        ]);
-        // 🔥 LOG otomatis: event = updated
+    $modul->update([
+        'nama_modul'   => trim($data['nama_modul']),
+        'lokasi_modul' => trim($data['lokasi_modul']),
+        'tglpost'      => $data['tglpost'] ?? $modul->tglpost,
+    ]);
 
-        return back()->with('success', 'Modul berhasil diperbarui.');
-    }
+    return back()->with('success', 'Modul berhasil diperbarui.');
+}
+
 
     public function destroy($id)
     {
