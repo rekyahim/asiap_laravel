@@ -321,7 +321,7 @@ Route::prefix('petugas/sdt')->name('petugas.sdt.')->group(function () {
     Route::post('row/{id}/status/store', [PetugasSdtController::class, 'storeStatusPenyampaian'])
         ->whereNumber('id')->name('status.store');
 
-    Route::post('massupdate/ko/update', [PetugasSdtController::class, 'komplekMassUpdate'])
+    Route::post('massupdate/ko/update', [PetugasSdtController::class, 'massUpdateKO'])
         ->name('massupdate.ko.update');
 
     Route::post('massupdate/nop/update', [PetugasSdtController::class, 'massUpdateNOP'])

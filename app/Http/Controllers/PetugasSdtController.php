@@ -32,19 +32,19 @@ class PetugasSdtController extends Controller
 
                 // 1. SUBQUERY: Hitung Total NOP (Khusus User Ini & STATUS Detail = 1)
                 DB::raw("(
-            SELECT COUNT(id) 
-            FROM dt_sdt 
-            WHERE dt_sdt.ID_SDT = sdt.ID 
+            SELECT COUNT(id)
+            FROM dt_sdt
+            WHERE dt_sdt.ID_SDT = sdt.ID
             AND dt_sdt.PETUGAS_SDT = '$user_id'
             AND dt_sdt.STATUS = 1   -- Filter Tambahan
         ) as JUMLAH_NOP"),
 
                 // 2. SUBQUERY: Hitung Progress (Khusus User Ini & STATUS Detail = 1)
                 DB::raw("(
-            SELECT COUNT(a.id) 
+            SELECT COUNT(a.id)
             FROM dt_sdt a
             JOIN status_penyampaian b ON b.ID_DT_SDT = a.ID
-            WHERE a.ID_SDT = sdt.ID 
+            WHERE a.ID_SDT = sdt.ID
             AND a.PETUGAS_SDT = '$user_id'
             AND a.STATUS = 1       -- Filter Tambahan
         ) as SUDAH_DIPROSES")
@@ -245,154 +245,232 @@ class PetugasSdtController extends Controller
     /**
      * Handle mass update for NOP_BENAR or KOORDINAT_OP based on a list of NOPs.
      */
-    public function komplekMassUpdate(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'sdt_id' => 'required|exists:sdt,ID',
-            'action_type' => 'required|in:ko,nop,status_ko,status_nop',
-            'list_nop' => 'required|string',
+//     public function komplekMassUpdate(Request $request): RedirectResponse
+// {
+//     $request->validate([
+//         'sdt_id'             => 'required|exists:sdt,ID',
+//         'action_type'        => 'required|in:ko,nop,status_ko,status_nop',
+//         'list_nop'           => 'required|string',
 
-            // khusus mode lama
-            'koordinat' => 'nullable|required_if:action_type,ko|string',
-            'nop_benar_baru' => 'nullable|required_if:action_type,nop|in:YA,TIDAK',
+//         'koordinat'          => 'nullable|required_if:action_type,ko|string',
+//         'nop_benar_baru'     => 'nullable|required_if:action_type,nop|in:YA,TIDAK',
+//         'STATUS_PENYAMPAIAN' => 'nullable|required_if:action_type,status_ko,status_nop',
+//     ]);
 
-            // khusus status
-            'STATUS_PENYAMPAIAN' => 'nullable|required_if:action_type,status_ko,status_nop',
-        ]);
+//     $sdtId      = $request->sdt_id;
+//     $actionType = $request->action_type;
+//     $userId     = auth()->user()->ID_PETUGAS;
+//     $now        = now();
 
-        $sdtId      = $request->sdt_id;
-        $actionType = $request->action_type;
-        $userId     = auth()->user()->ID_PENGGUNA;
-        $now        = now();
+//     $listNop = array_filter(array_map(
+//         'trim',
+//         preg_split('/\r\n|\r|\n/', $request->list_nop)
+//     ));
 
-        // Pecah list NOP (textarea / multiline)
-        $listNop = array_filter(array_map(
-            'trim',
-            preg_split('/\r\n|\r|\n/', $request->list_nop)
-        ));
+//     if (empty($listNop)) {
+//         return back()->with('error', 'Daftar NOP tidak valid.');
+//     }
 
-        if (empty($listNop)) {
-            return back()->with('error', 'Daftar NOP tidak valid.');
+//     try {
+//         DB::beginTransaction();
+
+//         // Ambil DT_SDT milik petugas
+//         $dtSdts = DtSdt::where('ID_SDT', $sdtId)
+//             ->whereIn('NOP', $listNop)
+//             ->where('PETUGAS_SDT', $userId)
+//             ->get();
+
+//         if ($dtSdts->isEmpty()) {
+//             throw new \Exception('Data tidak ditemukan untuk petugas ini.');
+//         }
+
+//         $countUpdated = 0;
+
+//         foreach ($dtSdts as $row) {
+
+//             /* ===============================
+//                 UPDATE DT_SDT
+//             =============================== */
+//             if ($actionType === 'ko') {
+//                 $row->update([
+//                     'KOORDINAT_OP' => $request->koordinat,
+//                 ]);
+//             }
+
+//             if ($actionType === 'nop') {
+//                 $row->update([
+//                     'NOP_BENAR' => $request->nop_benar_baru,
+//                 ]);
+//             }
+
+//             /* ===============================
+//                 UPDATE STATUS (JIKA DIPERLUKAN)
+//             =============================== */
+//             if (in_array($actionType, ['status_ko', 'status_nop'])) {
+
+//                 StatusPenyampaian::updateOrCreate(
+//                     ['ID_DT_SDT' => $row->ID],
+//                     [
+//                         'ID_SDT'             => $sdtId,
+//                         'ID_PETUGAS'         => $userId,
+//                         'STATUS_PENYAMPAIAN' => $request->STATUS_PENYAMPAIAN,
+//                         'TGL_PENYAMPAIAN'    => $now,
+//                     ]
+//                 );
+//             }
+
+//             $countUpdated++;
+//         }
+
+//         DB::commit();
+
+//         $label = match ($actionType) {
+//             'ko'         => 'Koordinat OP',
+//             'nop'        => 'Status NOP Benar',
+//             'status_ko'  => 'Status Penyampaian KO',
+//             'status_nop' => 'Status Penyampaian NOP',
+//         };
+
+//         return redirect()
+//             ->route('petugas.sdt.detail', $sdtId)
+//             ->with('success', "Berhasil memperbarui {$label} pada {$countUpdated} data.");
+
+//     } catch (\Exception $e) {
+//         DB::rollBack();
+//         return back()
+//             ->with('error', 'Gagal menyimpan: ' . $e->getMessage())
+//             ->withInput();
+//     }
+// }
+
+
+//     // FUNCTION KO \\
+
+//     public function updateStatusByKO(Request $request): RedirectResponse
+//     {
+//         $request->validate([
+//             'ID_SDT' => 'required|exists:sdt,ID',
+//             'KO' => 'required|string',
+//             'STATUS_PENYAMPAIAN' => 'required'
+//         ]);
+
+//         $userId = auth()->user()->ID_PENGGUNA;
+//         $now = now();
+
+//         DB::beginTransaction();
+//         try {
+
+//             // Ambil semua dt_sdt dengan KO yang sama
+//             $rows = DtSdt::where('ID_SDT', $request->ID_SDT)
+//                 ->where('ALAMAT_OP', $request->KO)
+//                 ->where('PETUGAS_SDT', $userId)
+//                 ->get();
+
+//             if ($rows->isEmpty()) {
+//                 throw new \Exception('Data KO tidak ditemukan.');
+//             }
+
+//             foreach ($rows as $row) {
+
+//                 StatusPenyampaian::updateOrCreate(
+//                     [
+//                         'ID_DT_SDT' => $row->ID
+//                     ],
+//                     [
+//                         'ID_SDT'             => $row->ID_SDT,
+//                         'ID_PETUGAS'         => $userId,
+//                         'STATUS_PENYAMPAIAN' => $request->STATUS_PENYAMPAIAN,
+//                         'TGL_PENYAMPAIAN'    => $now,
+//                     ]
+//                 );
+//             }
+
+//             DB::commit();
+
+//             return back()->with(
+//                 'success',
+//                 'Status penyampaian berhasil diperbarui untuk seluruh KO.'
+//             );
+//         } catch (\Exception $e) {
+//             DB::rollBack();
+//             return back()->with('error', $e->getMessage());
+//         }
+//     }
+
+
+    public function massUpdateKO(Request $request): RedirectResponse
+{
+    $request->validate([
+        'ID_SDT'         => 'required|exists:sdt,ID',
+        'KO'             => 'required|string',
+        'STATUS'         => 'required|string',
+        'NOP_BENAR'      => 'required|in:YA,TIDAK',
+        'LATITUDE_KO'    => 'required|numeric',
+        'LONGITUDE_KO'   => 'required|numeric',
+        'FOTO_BASE64_KO' => 'required|string',
+    ]);
+
+    $userId = auth()->user()->ID_PETUGAS;
+    $now    = now();
+
+    DB::beginTransaction();
+    try {
+
+        /* =====================================================
+           AMBIL SEMUA DT_SDT
+           1 KO → BISA > 1 DATA
+        ===================================================== */
+    $rows = DtSdt::withInactive()
+        ->where('ID_SDT', $request->ID_SDT)
+        ->where('ALAMAT_OP', $request->KO)
+        ->where('PETUGAS_SDT', $userId)
+        ->get();
+
+
+        if ($rows->isEmpty()) {
+            throw new \Exception('Data KO tidak ditemukan untuk petugas ini.');
         }
 
-        try {
-            DB::beginTransaction();
+        foreach ($rows as $row) {
 
-            // Ambil semua DT_SDT ID berdasarkan NOP
-            $dtSdtIds = DtSdt::where('ID_SDT', $sdtId)
-                ->whereIn('NOP', $listNop)
-                ->pluck('ID');
-
-            if ($dtSdtIds->isEmpty()) {
-                throw new \Exception('Data NOP tidak ditemukan di sistem.');
-            }
-
-            $countUpdated = 0;
-
-            foreach ($dtSdtIds as $dtSdtId) {
-
-                // Data dasar (selalu ada)
-                $updateData = [
-                    'ID_SDT'          => $sdtId,
-                    'ID_PETUGAS'      => $userId,
-                    'TGL_PENYAMPAIAN' => $now,
-                ];
-
-                /* ===============================
-               MODE UPDATE
+            /* ===============================
+               1. UPDATE DT_SDT
             =============================== */
-                if ($actionType === 'ko') {
-                    // Update Koordinat OP
-                    $updateData['KOORDINAT_OP'] = $request->koordinat;
-                } elseif ($actionType === 'nop') {
-                    // Update NOP Benar
-                    $updateData['NOP_BENAR'] = $request->nop_benar_baru;
-                } elseif (in_array($actionType, ['status_ko', 'status_nop'])) {
-                    // Update Status Penyampaian
-                    $updateData['STATUS_PENYAMPAIAN'] = $request->STATUS_PENYAMPAIAN;
-                }
+            $row->update([
+                'NOP_BENAR'    => $request->NOP_BENAR,
+                'KOORDINAT_OP' => $request->LATITUDE_KO . ',' . $request->LONGITUDE_KO,
+            ]);
 
-                // Simpan / update status penyampaian
-                StatusPenyampaian::updateOrCreate(
-                    ['ID_DT_SDT' => $dtSdtId],
-                    $updateData
-                );
-
-                $countUpdated++;
-            }
-
-            DB::commit();
-
-            $msgLabel = match ($actionType) {
-                'ko' => 'Koordinat OP',
-                'nop' => 'Status NOP Benar',
-                'status_ko' => 'Status Penyampaian (KO)',
-                'status_nop' => 'Status Penyampaian (NOP)',
-            };
-
-            return redirect()
-                ->route('petugas.sdt.detail', $sdtId)
-                ->with('success', "Berhasil memperbarui {$msgLabel} pada {$countUpdated} data.");
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()
-                ->with('error', 'Error: ' . $e->getMessage())
-                ->withInput();
+            /* ===============================
+               2. INSERT RIWAYAT STATUS (SELALU BARU)
+            =============================== */
+            StatusPenyampaian::create([
+                'ID_DT_SDT'          => $row->ID,
+                'ID_SDT'             => $row->ID_SDT,
+                'ID_PETUGAS'         => $userId,
+                'STATUS_PENYAMPAIAN' => $request->STATUS,
+                'TGL_PENYAMPAIAN'    => $now,
+                'EVIDENCE'           => $request->FOTO_BASE64_KO,
+            ]);
         }
+
+        DB::commit();
+
+        return back()->with(
+            'success',
+            'Mass Update KO berhasil (' . $rows->count() . ' data)'
+        );
+
+    } catch (\Throwable $e) {
+        DB::rollBack();
+
+        return back()->with(
+            'error',
+            'Gagal menyimpan Mass KO: ' . $e->getMessage()
+        );
     }
+}
 
-    // FUNCTION KO \\
-
-    public function updateStatusByKO(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'ID_SDT' => 'required|exists:sdt,ID',
-            'KO' => 'required|string',
-            'STATUS_PENYAMPAIAN' => 'required'
-        ]);
-
-        $userId = auth()->user()->ID_PENGGUNA;
-        $now = now();
-
-        DB::beginTransaction();
-        try {
-
-            // Ambil semua dt_sdt dengan KO yang sama
-            $rows = DtSdt::where('ID_SDT', $request->ID_SDT)
-                ->where('ALAMAT_OP', $request->KO)
-                ->where('PETUGAS_SDT', $userId)
-                ->get();
-
-            if ($rows->isEmpty()) {
-                throw new \Exception('Data KO tidak ditemukan.');
-            }
-
-            foreach ($rows as $row) {
-
-                StatusPenyampaian::updateOrCreate(
-                    [
-                        'ID_DT_SDT' => $row->ID
-                    ],
-                    [
-                        'ID_SDT'             => $row->ID_SDT,
-                        'ID_PETUGAS'         => $userId,
-                        'STATUS_PENYAMPAIAN' => $request->STATUS_PENYAMPAIAN,
-                        'TGL_PENYAMPAIAN'    => $now,
-                    ]
-                );
-            }
-
-            DB::commit();
-
-            return back()->with(
-                'success',
-                'Status penyampaian berhasil diperbarui untuk seluruh KO.'
-            );
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', $e->getMessage());
-        }
-    }
 
 
     // FUNCTION NOP \\
