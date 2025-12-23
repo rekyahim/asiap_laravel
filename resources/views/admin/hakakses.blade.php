@@ -202,10 +202,12 @@ $total = method_exists($items,'total') ? $items->total() : $items->count();
 </div>
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    // Modal Edit
+    // MODAL EDIT
     const modalEdit = document.getElementById('modalEdit');
     modalEdit.addEventListener('show.bs.modal', e => {
         const btn = e.relatedTarget;
@@ -214,11 +216,24 @@ document.addEventListener('DOMContentLoaded', function () {
             "{{ url('admin/hak-akses') }}/" + btn.getAttribute('data-id');
     });
 
-    // Tooltip Init (SESUAI PERMINTAAN)
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-title]');
-    [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
+    // TOOLTIP
+    document.querySelectorAll('[data-bs-title]').forEach(el => {
+        new bootstrap.Tooltip(el);
+    });
+
+    // SWEETALERT
+    @if(session('swal'))
+    Swal.fire({
+        icon: "{{ session('swal.icon') }}",
+        title: "{{ session('swal.title') }}",
+        position: "{{ session('swal.position') ?? 'center' }}",
+        showConfirmButton: false,
+        timer: {{ session('swal.timer') ?? 1500 }},
+    });
+    @endif
 
 });
 </script>
 @endpush
+
 @endsection

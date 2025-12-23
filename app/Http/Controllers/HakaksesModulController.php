@@ -123,8 +123,17 @@ class HakaksesModulController extends Controller
                 ->log("Mapping modul untuk Hak Akses \"{$hak->HAKAKSES}\" diperbarui");
 
             return redirect()
-                ->route('admin.hakakses.modul.edit', ['hak' => $hak->ID])
-                ->with('success', '✅ Akses modul berhasil diperbarui. Riwayat lama disimpan.');
+    ->route('admin.hakakses.modul.edit', ['hak' => $hak->ID])
+    ->with([
+        'swal' => [
+            'title'    => 'Berhasil di perbarui',
+            'text'     => 'Akses modul berhasil diperbarui.\nRiwayat lama disimpan.',
+            'icon'     => 'success',
+            'position' => 'center',
+            'timer'    => 2000,
+        ],
+    ]);
+
         } catch (QueryException $e) {
             DB::rollBack();
 

@@ -308,4 +308,18 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endpush
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@if(session('swal'))
+<script>
+Swal.fire({
+    icon: "{{ session('swal.icon') }}",
+    title: "{{ session('swal.title') }}",
+    position: "{{ session('swal.position') ?? 'center' }}",
+    showConfirmButton: false,
+    timer: {{ session('swal.timer') ?? 1500 }},
+});
+</script>
+@endif
 @endsection

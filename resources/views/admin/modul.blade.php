@@ -242,26 +242,50 @@ $tz = 'Asia/Jakarta';
 </div>
 
 @push('scripts')
+
+{{-- SweetAlert CDN --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
+    // =====================
     // TOOLTIP
+    // =====================
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
         new bootstrap.Tooltip(el);
     });
 
+    // =====================
     // MODAL EDIT
+    // =====================
     const modal = document.getElementById('modalEdit');
-    modal.addEventListener('show.bs.modal', e => {
-        const b = e.relatedTarget;
-        document.getElementById('editNama').value = b.dataset.nama;
-        document.getElementById('editLokasi').value = b.dataset.lokasi;
-        document.getElementById('editTgl').value = b.dataset.tgl;
-        document.getElementById('formEditModul').action =
-            "{{ url('admin/modul') }}/" + b.dataset.id;
-    });
+    if (modal) {
+        modal.addEventListener('show.bs.modal', e => {
+            const b = e.relatedTarget;
+            document.getElementById('editNama').value   = b.dataset.nama ?? '';
+            document.getElementById('editLokasi').value = b.dataset.lokasi ?? '';
+            document.getElementById('editTgl').value    = b.dataset.tgl ?? '';
+            document.getElementById('formEditModul').action =
+                "{{ url('admin/modul') }}/" + b.dataset.id;
+        });
+    }
+
+    // =====================
+    // SWEETALERT (FLASH)
+    // =====================
+    @if(session('swal'))
+        Swal.fire({
+            icon: "{{ session('swal.icon') }}",
+            title: "{{ session('swal.title') }}",
+            position: "{{ session('swal.position') ?? 'center' }}",
+            showConfirmButton: false,
+            timer: {{ session('swal.timer') ?? 1500 }},
+        });
+    @endif
 
 });
 </script>
+
 @endpush
 @endsection
