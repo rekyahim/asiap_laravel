@@ -3,6 +3,7 @@ namespace App\Exports;
 
 use App\Models\DtSdt;
 use App\Models\StatusPenyampaian;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -13,19 +14,27 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class SdtExport implements FromCollection, WithHeadings, WithStyles, WithEvents, WithColumnWidths
 {
-    protected $sdtId;
+    protected int $sdtId;
 
-    public function __construct($sdtId)
+    public function __construct(int $sdtId)
     {
         $this->sdtId = $sdtId;
     }
 
     public function collection()
     {
-        $rows = DtSdt::where('ID_SDT', $this->sdtId)->orderBy('ID')->get();
+        $rows = DtSdt::query()
+            ->leftJoin('pengguna', 'pengguna.ID', '=', 'dt_sdt.PETUGAS_SDT')
+            ->where('dt_sdt.ID_SDT', $this->sdtId)
+            ->orderBy('dt_sdt.ID')
+            ->select([
+                'dt_sdt.*',
+                DB::raw('pengguna.NAMA AS petugas_nama'),
+            ])
+            ->get();
 
         $formatNop = function ($nop) {
-            $nop = preg_replace('/\D+/', '', $nop);
+            $nop = preg_replace('/\D+/', '', (string) $nop);
             if (strlen($nop) !== 18) {
                 return $nop;
             }
@@ -42,35 +51,52 @@ class SdtExport implements FromCollection, WithHeadings, WithStyles, WithEvents,
 
         foreach ($rows as $d) {
 
+            /** ambil status terakhir */
             $sp = StatusPenyampaian::where('ID_DT_SDT', $d->ID)
-                ->latest('id')
+                ->orderByDesc('id')
                 ->first();
 
-            // ================================
-            // Safe value (NULL friendly)
-            // ================================
-            $statusPenyampaian = match (optional($sp)->STATUS_PENYAMPAIAN) {
-                1       => 'Tersampaikan',
-                0       => 'Belum Tersampaikan',
-                default => '-'
-            };
+            /* ===============================
+             * STATUS PENYAMPAIAN
+             * =============================== */
+            if ($sp) {
+                $statusPenyampaian = match ((int) $sp->STATUS_PENYAMPAIAN) {
+                    1       => 'Tersampaikan',
+                    0       => 'Tidak Tersampaikan',
+                    default => '-',
+                };
 
-            $statusOP = match (optional($sp)->STATUS_OP) {
-                1       => 'Benar',
-                0       => 'Tidak Benar',
-                default => '-'
-            };
+                $statusOP = match ((int) $sp->STATUS_OP) {
+                    1       => 'Belum Diproses Petugas',
+                    2       => 'Ditemukan',
+                    3       => 'Tidak Ditemukan',
+                    4       => 'Sudah Dijual',
+                    default => '-',
+                };
 
-            $statusWP = match (optional($sp)->STATUS_WP) {
-                1       => 'Ditemui',
-                0       => 'Tidak Ditemui',
-                default => '-'
-            };
+                $statusWP = match ((int) $sp->STATUS_WP) {
+                    1       => 'Belum Diproses Petugas',
+                    2       => 'Ditemukan',
+                    3       => 'Tidak Ditemukan',
+                    4       => 'Luar Kota',
+                    default => '-',
+                };
+
+                $tglPenyampaian = $sp->TGL_PENYAMPAIAN
+                    ? date('Y-m-d H:i:s', strtotime($sp->TGL_PENYAMPAIAN))
+                    : '-';
+            } else {
+                $statusPenyampaian = '-';
+                $statusOP          = '-';
+                $statusWP          = '-';
+                $tglPenyampaian    = '-';
+            }
 
             $data[] = [
-                $d->PETUGAS_SDT,
-                "" . $formatNop($d->NOP),
+                $d->petugas_nama ?? '-', // NAMA PETUGAS
+                $formatNop($d->NOP),     // NOP
                 $d->TAHUN,
+
                 $d->ALAMAT_OP,
                 $d->BLOK_KAV_NO_OP,
                 $d->RT_OP,
@@ -93,14 +119,14 @@ class SdtExport implements FromCollection, WithHeadings, WithStyles, WithEvents,
 
                 $statusPenyampaian,
                 $statusOP,
-                optional($sp)->NOP_BENAR ?? '-',
+                $sp->NOP_BENAR ?? '-',
                 $statusWP,
-                optional($sp)->KETERANGAN_PETUGAS ?? '-',
-                optional($sp)->EVIDENCE ?? '-',
-                optional($sp)->KOORDINAT_OP ?? '-',
-                optional(optional($sp)->TGL_PENYAMPAIAN)->format('Y-m-d H:i:s'),
-                optional($sp)->NAMA_PENERIMA ?? '-',
-                optional($sp)->HP_PENERIMA ?? '-',
+                $sp->KETERANGAN_PETUGAS ?? '-',
+                $sp->EVIDENCE ?? '-',
+                $sp->KOORDINAT_OP ?? '-',
+                $tglPenyampaian,
+                $sp->NAMA_PENERIMA ?? '-',
+                $sp->HP_PENERIMA ?? '-',
             ];
         }
 
@@ -119,7 +145,6 @@ class SdtExport implements FromCollection, WithHeadings, WithStyles, WithEvents,
             'RW OP',
             'KEL OP',
             'KEC OP',
-
             'NAMA WP',
             'ALAMAT WP',
             'BLOK KAV NO WP',
@@ -127,12 +152,10 @@ class SdtExport implements FromCollection, WithHeadings, WithStyles, WithEvents,
             'RW WP',
             'KEL WP',
             'KOTA WP',
-
             'JATUH TEMPO',
             'TERHUTANG',
             'PENGURANGAN',
             'PBB HARUS DIBAYAR',
-
             'STATUS PENYAMPAIAN',
             'STATUS OP',
             'NOP BENAR',
@@ -144,7 +167,8 @@ class SdtExport implements FromCollection, WithHeadings, WithStyles, WithEvents,
             'NAMA PENERIMA',
             'HP PENERIMA',
         ];
-    } /* Styling header */
+    }
+
     public function styles(Worksheet $sheet)
     {
         return [
@@ -155,62 +179,30 @@ class SdtExport implements FromCollection, WithHeadings, WithStyles, WithEvents,
         ];
     }
 
-/* Lebar kolom */
     public function columnWidths(): array
     {
         return [
-            'A'  => 18, // Nama Petugas
-            'B'  => 25, // NOP
-            'C'  => 12, // Tahun
-            'D'  => 25, // Alamat OP
-            'E'  => 18,
-            'F'  => 8,
-            'G'  => 8,
-            'H'  => 12,
-            'I'  => 12,
-
-            'J'  => 20, // Nama WP
-            'K'  => 25,
-            'L'  => 18,
-            'M'  => 8,
-            'N'  => 8,
-            'O'  => 12,
-            'P'  => 12,
-
-            'Q'  => 14, // Jatuh tempo
-            'R'  => 15,
-            'S'  => 15,
-            'T'  => 18,
-
-            'U'  => 20, // Status Penyampaian
-            'V'  => 15,
-            'W'  => 20,
-            'X'  => 20,
-            'Y'  => 25,
-            'Z'  => 20,
-            'AA' => 18,
-            'AB' => 18,
-            'AC' => 18,
-            'AD' => 18,
+            'A'  => 18, 'B'  => 25, 'C'  => 12, 'D'  => 25, 'E' => 18,
+            'F'  => 8, 'G'   => 8, 'H'   => 12, 'I'  => 12,
+            'J'  => 20, 'K'  => 25, 'L'  => 18, 'M'  => 8, 'N'  => 8,
+            'O'  => 12, 'P'  => 12,
+            'Q'  => 14, 'R'  => 15, 'S'  => 15, 'T'  => 18,
+            'U'  => 20, 'V'  => 20, 'W'  => 20, 'X'  => 20,
+            'Y'  => 25, 'Z'  => 20, 'AA' => 18, 'AB' => 18,
+            'AC' => 18, 'AD' => 18,
         ];
     }
 
-/* Border + Freeze + Background */
     public function registerEvents(): array
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
+                $sheet   = $event->sheet->getDelegate();
+                $lastRow = $sheet->getHighestRow();
 
-                $sheet = $event->sheet->getDelegate();
-
-                                                    // Hitung jumlah baris (header + data)
-                $lastRow = $sheet->getHighestRow(); // dinamis
-
-                // Freeze baris header
                 $sheet->freezePane('A2');
 
-                // Warna header
-                $sheet->getStyle("A1:AB1")->applyFromArray([
+                $sheet->getStyle("A1:AD1")->applyFromArray([
                     'fill'      => [
                         'fillType' => 'solid',
                         'color'    => ['rgb' => 'E5E5E5'],
@@ -222,8 +214,7 @@ class SdtExport implements FromCollection, WithHeadings, WithStyles, WithEvents,
                     ],
                 ]);
 
-                // Border seluruh tabel
-                $sheet->getStyle("A1:AB{$lastRow}")->applyFromArray([
+                $sheet->getStyle("A1:AD{$lastRow}")->applyFromArray([
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => 'thin',
@@ -232,8 +223,9 @@ class SdtExport implements FromCollection, WithHeadings, WithStyles, WithEvents,
                     ],
                 ]);
 
-                // Auto wrap text untuk kolom panjang
-                $sheet->getStyle("A1:AD{$lastRow}")->getAlignment()->setWrapText(true);
+                $sheet->getStyle("A1:AD{$lastRow}")
+                    ->getAlignment()
+                    ->setWrapText(true);
             },
         ];
     }
