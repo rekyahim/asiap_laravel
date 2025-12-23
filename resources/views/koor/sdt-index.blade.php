@@ -4,7 +4,7 @@
 @section('breadcrumb', '')
 
 @section('header_sdt_search')
-<meta name="csrf-token" content="{{ csrf_token() }}">
+
 
     <form id="header-sdt-search-form" method="GET" action="{{ route('sdt.index') }}">
         <div class="input-group input-group-sm header-search" style="width:clamp(220px, 28vw, 360px);">
@@ -853,13 +853,13 @@
 
     <script>
         $.ajaxSetup({
-    headers: {
-        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-    }
-});
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
 
         (function() {
-            const BASE = @json(url('/koor/sdt'));
+            const BASE = '/koor/sdt';
 
             /* ====== HEADER SEARCH (tetap) ====== */
             (function() {
@@ -1812,58 +1812,50 @@ data-current="${(r.petugas_nama || '').replace(/"/g,'&quot;')}"
                     tdPetugas.innerHTML = oldHTML;
                 });
 
+
+                // ... di dalam event listener klik .btn-edit-row ...
+
                 /* ============================
-                 * SIMPAN
+                 * LOGIK TOMBOL SIMPAN
                  * ============================ */
-                tr.querySelector(".btn-save-row").addEventListener("click", async () => {
-                    const val = $select.val(); // ← ID pengguna (INTEGER)
+                $(document).on("click", ".btn-save-row", function() {
+                    const tr = $(this).closest("tr");
+                    const rowId = tr.find(".btn-edit-row").attr("data-row-id");
+                    const val = $(`#edit-petugas-${rowId}`).val();
+                    const tdPetugas = tr.find("td").eq(4);
 
-                    if (!val) {
-                        alert("Pilih petugas terlebih dahulu");
-                        return;
-                    }
+                    // Ambil token langsung saat klik, jangan simpan di variabel global
+                    const token = $('meta[name="csrf-token"]').attr('content');
 
-                    const csrf = document
-                        .querySelector('meta[name="csrf-token"]')
-                        .getAttribute("content");
-
-                    const fd = new FormData();
-                    fd.append("petugas", val);
-
-                    let res;
-                    try {
-                        res = await fetch(`/koor/sdt/row/${rowId}/update-petugas`, {
-                            method: "POST",
-                            headers: {
-                                "X-Requested-With": "XMLHttpRequest"
-                                // "X-CSRF-TOKEN": csrf
-                            },
-                            credentials: "same-origin", // ⬅️ WAJIB
-                            body: fd
-                        });
-                    } catch (err) {
-                        alert("Request gagal (network error)");
-                        tdPetugas.innerHTML = oldHTML;
-                        return;
-                    }
-
-                    if (!res.ok) {
-                        alert("Gagal menyimpan (HTTP " + res.status + ")");
-                        tdPetugas.innerHTML = oldHTML;
-                        return;
-                    }
-
-                    const json = await res.json();
-
-                    if (!json.ok) {
-                        alert(json.msg || "Gagal menyimpan petugas");
-                        tdPetugas.innerHTML = oldHTML;
-                        return;
-                    }
-
-                    // SUCCESS → tampilkan nama petugas baru
-                    tdPetugas.innerHTML =
-                        `<span class="fw-semibold text-success">${json.petugas}</span>`;
+                    $.ajax({
+                        url: `${BASE}/row/${rowId}/update-petugas`,
+                        method: "POST",
+                        headers: {
+                            'X-CSRF-TOKEN': token // Kirim via Header
+                        },
+                        data: {
+                            _token: token, // Kirim juga via Body (Double Check)
+                            petugas: val
+                        },
+                        success: function(json) {
+                            if (json.ok) {
+                                tdPetugas.html(
+                                    `<span class="fw-semibold text-success">${json.petugas}</span>`
+                                );
+                            } else {
+                                alert(json.msg || "Error");
+                            }
+                        },
+                        error: function(xhr) {
+                            if (xhr.status === 419) {
+                                alert(
+                                    "CSRF Token Kadaluarsa. Tekan F5 (Refresh) halaman."
+                                );
+                            } else {
+                                alert("Gagal: " + xhr.status);
+                            }
+                        }
+                    });
                 });
             });
 

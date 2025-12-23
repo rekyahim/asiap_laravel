@@ -70,7 +70,7 @@ Route::middleware(AuthOnly::class)->group(function () {
 Route::middleware(AuthOnly::class)->group(function () {
 
     // Dashboard
-    Route::get('/', fn() => view('dashboard'))->name('dashboard');
+    Route::get('/', fn () => view('dashboard'))->name('dashboard');
 
     /*
     |--------------------------------------------------------------------------
@@ -195,48 +195,60 @@ Route::middleware(AuthOnly::class)->group(function () {
     | ============================ KOORDINATOR ============================
     |--------------------------------------------------------------------------
     */
-    Route::prefix('koor')->group(function () {
 
-        /*
+
+    /*
+    |--------------------------------------------------------------------------
+    | PETUGAS SDT
+    |--------------------------------------------------------------------------
+    */
+});
+
+
+Route::prefix('koor')->group(function () {
+
+    /*
         |--------------------------------------------------------------------------
         | SDT
         |--------------------------------------------------------------------------
         */
-        Route::prefix('sdt')->name('sdt.')->group(function () {
+    Route::prefix('sdt')->name('sdt.')->group(function () {
 
-            Route::get('/', [SdtController::class, 'index'])->name('index');
-            Route::get('/create', [SdtController::class, 'create'])->name('create');
-            Route::post('/', [SdtController::class, 'store'])->name('store');
+        Route::post(
+            'row/{id}/update-petugas',
+            [\App\Http\Controllers\SdtController::class, 'updateRowPetugas']
+        )->name('sdt.row.update-petugas');
 
-            Route::patch('{id}', [SdtController::class, 'update'])->whereNumber('id')->name('update');
+        Route::get('/', [SdtController::class, 'index'])->name('index');
+        Route::get('/create', [SdtController::class, 'create'])->name('create');
+        Route::post('/', [SdtController::class, 'store'])->name('store');
 
-            Route::get('{id}', [SdtController::class, 'show'])->whereNumber('id')->name('show');
-            Route::get('{id}/detail', [SdtController::class, 'detail'])->whereNumber('id')->name('detail');
+        Route::patch('{id}', [SdtController::class, 'update'])->whereNumber('id')->name('update');
 
-            Route::delete('{id}', [SdtController::class, 'destroy'])->whereNumber('id')->name('destroy');
+        Route::get('{id}', [SdtController::class, 'show'])->whereNumber('id')->name('show');
+        Route::get('{id}/detail', [SdtController::class, 'detail'])->whereNumber('id')->name('detail');
 
-            Route::post('{id}/import-detail', [SdtController::class, 'importDetailExcel'])
-                ->whereNumber('id')->name('importDetail');
+        Route::delete('{id}', [SdtController::class, 'destroy'])->whereNumber('id')->name('destroy');
 
-            Route::post('{id}/petugas-manual', [SdtController::class, 'addPetugasManual'])
-                ->whereNumber('id')->name('petugasManual');
+        Route::post('{id}/import-detail', [SdtController::class, 'importDetailExcel'])
+            ->whereNumber('id')->name('importDetail');
 
-            Route::get('{id}/api/nop', [SdtController::class, 'apiNop'])
-                ->whereNumber('id')->name('api.nop');
+        Route::post('{id}/petugas-manual', [SdtController::class, 'addPetugasManual'])
+            ->whereNumber('id')->name('petugasManual');
 
-            Route::get('{id}/api/tahun', [SdtController::class, 'apiTahun'])
-                ->whereNumber('id')->name('api.tahun');
+        Route::get('{id}/api/nop', [SdtController::class, 'apiNop'])
+            ->whereNumber('id')->name('api.nop');
 
-            Route::get('{id}/exists', [SdtController::class, 'existsDetail'])
-                ->whereNumber('id')->name('exists');
+        Route::get('{id}/api/tahun', [SdtController::class, 'apiTahun'])
+            ->whereNumber('id')->name('api.tahun');
 
-            Route::get('{id}/nops', [SdtController::class, 'listNops'])
-                ->whereNumber('id')->name('nops');
+        Route::get('{id}/exists', [SdtController::class, 'existsDetail'])
+            ->whereNumber('id')->name('exists');
 
-            Route::post(
-                'row/{id}/update-petugas',
-                [\App\Http\Controllers\SdtController::class, 'updateRowPetugas']
-            )->name('sdt.row.update-petugas');
+        Route::get('{id}/nops', [SdtController::class, 'listNops'])
+            ->whereNumber('id')->name('nops');
+
+
 
         Route::get('{id}/export', [RiwayatController::class, 'exportSdt'])
             ->whereNumber('id')->name('export');
@@ -247,7 +259,7 @@ Route::middleware(AuthOnly::class)->group(function () {
         | LEGACY ROUTES (TIDAK DIUBAH)
         |--------------------------------------------------------------------------
         */
-    Route::get('/koor/sdt/{id}/detail', fn($id) => redirect()->route('sdt.detail', $id))
+    Route::get('/koor/sdt/{id}/detail', fn ($id) => redirect()->route('sdt.detail', $id))
         ->whereNumber('id');
 
     Route::delete('/koor/sdt/{id}', [SdtController::class, 'destroy'])
@@ -255,7 +267,7 @@ Route::middleware(AuthOnly::class)->group(function () {
 
     Route::get(
         '/koor/sdt/{id}/edit',
-        fn($id) =>
+        fn ($id) =>
         redirect()->route('sdt.index', ['openEdit' => $id])
     )->name('sdt.edit')->whereNumber('id');
 
@@ -290,12 +302,6 @@ Route::middleware(AuthOnly::class)->group(function () {
         ->name('api.pengguna.show');
 });
 
-/*
-    |--------------------------------------------------------------------------
-    | PETUGAS SDT
-    |--------------------------------------------------------------------------
-    */
-});
 Route::prefix('petugas/sdt')->name('petugas.sdt.')->group(function () {
 
     Route::get('/', [PetugasSdtController::class, 'index'])->name('index');
@@ -323,8 +329,6 @@ Route::prefix('petugas/sdt')->name('petugas.sdt.')->group(function () {
 
     Route::get('api/nop/search', [PetugasSdtController::class, 'searchNOP'])
         ->name('api.nop');
-        Route::get('api/nop/detail', [PetugasSdtController::class, 'getDetailNOP'])
+    Route::get('api/nop/detail', [PetugasSdtController::class, 'getDetailNOP'])
         ->name('api.nop.detail');
 });
-
-
