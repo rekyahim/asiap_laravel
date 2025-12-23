@@ -66,7 +66,7 @@
 
             <form id="formMassKO" method="POST" action="{{ route('petugas.sdt.massupdate.ko.update') }}">
                 @csrf
-
+                                            <input type="hidden" name="ID_SDT" class="form-control" value="{{$ID_SDT}}">
                 {{-- HEADER --}}
                 <div class="modal-header">
                     <div>
@@ -207,117 +207,6 @@
         </div>
     </div>
 </div>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const modalKO = document.getElementById('modalMassKO');
-        const latInput = document.getElementById('LATITUDE_KO');
-        const longInput = document.getElementById('LONGITUDE_KO');
-        const dispInput = document.getElementById('KOORDINAT_KO');
-        const badgeGPS = document.getElementById('lockBadgeKO');
 
-        // Tombol refresh manual (Disuntikkan via JS agar rapi)
-        const refreshBtn = document.createElement('button');
-        refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
-        refreshBtn.className =
-            'btn btn-sm btn-outline-secondary position-absolute end-0 top-0 mt-1 me-1 border-0';
-        refreshBtn.type = 'button';
-        refreshBtn.onclick = function() {
-            getGeoLocation(true);
-        }; // Klik untuk paksa ulang mode GPS
-
-        // Bungkus input koordinat agar bisa ada tombol di dalamnya
-        const wrapper = document.createElement('div');
-        wrapper.className = 'position-relative';
-        dispInput.parentNode.insertBefore(wrapper, dispInput);
-        wrapper.appendChild(dispInput);
-        wrapper.appendChild(refreshBtn);
-
-
-        // Jalankan saat modal terbuka
-        modalKO.addEventListener('shown.bs.modal', function() {
-            latInput.value = '';
-            longInput.value = '';
-            dispInput.value = '';
-            if (!latInput.value || !longInput.value) {
-                getGeoLocation(true); // Mulai dengan High Accuracy
-            }
-        });
-
-        // Fungsi Utama (Support Recursive Fallback)
-        function getGeoLocation(isHighAccuracy) {
-            if (navigator.geolocation) {
-
-                // UI Loading
-                dispInput.value = isHighAccuracy ? "Mencari GPS Satelit..." : "Mencari via Jaringan...";
-                dispInput.classList.remove('text-danger', 'text-success', 'fw-bold');
-                dispInput.classList.add('text-muted');
-
-                const options = {
-                    enableHighAccuracy: isHighAccuracy,
-                    timeout: 100000, // Naikkan ke 20 Detik
-                    maximumAge: 0
-                };
-
-                navigator.geolocation.getCurrentPosition(
-                    showPosition,
-                    function(error) {
-                        handleError(error, isHighAccuracy)
-                    }, // Kirim status mode ke error handler
-                    options
-                );
-
-            } else {
-                alert("Browser tidak mendukung Geolocation.");
-            }
-        }
-
-        function showPosition(position) {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            const acc = position.coords.accuracy;
-
-            latInput.value = lat;
-            longInput.value = lng;
-
-            // Tampilkan info koordinat
-            dispInput.value = `${lat}, ${lng}`;
-
-            badgeGPS.style.display = 'inline-flex';
-            dispInput.classList.remove('text-muted', 'text-danger');
-            dispInput.classList.add('text-success', 'fw-bold');
-        }
-
-        function handleError(error, wasHighAccuracy) {
-            // JIKA TIMEOUT SAAT PAKE GPS (High Accuracy) -> COBA PAKAI NETWORK (Low Accuracy)
-            if (error.code === error.TIMEOUT && wasHighAccuracy) {
-                console.log("GPS Timeout, beralih ke Network...");
-                getGeoLocation(false); // Panggil ulang diri sendiri dengan mode Low Accuracy
-                return;
-            }
-
-            // Error Handling Standar
-            badgeGPS.style.display = 'none';
-            dispInput.classList.remove('text-muted', 'text-success');
-            dispInput.classList.add('text-danger');
-
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    alert("Izin Lokasi Ditolak. Halaman akan dimuat ulang.");
-                    window.location.reload();
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    dispInput.value = "Sinyal lokasi tidak ditemukan.";
-                    break;
-                case error.TIMEOUT:
-                    // Ini hanya akan muncul jika Low Accuracy juga timeout
-                    dispInput.value = "Gagal. Klik tombol panah di kanan untuk coba lagi.";
-                    break;
-                case error.UNKNOWN_ERROR:
-                    dispInput.value = "Error tidak diketahui.";
-                    break;
-            }
-        }
-    });
-</script>
 {{-- MODAL KAMERA UNIVERSAL --}}
 @include('petugas.partials.modal-camera')
