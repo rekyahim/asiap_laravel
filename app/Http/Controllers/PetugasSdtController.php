@@ -873,7 +873,6 @@ class PetugasSdtController extends Controller
         } else {
             StatusPenyampaian::create([
                 'ID_DT_SDT'          => $row->ID,
-                'ID_SDT'             => $row->ID_SDT,
                 'ID_PETUGAS'         => auth()->user()->ID_PENGGUNA,
                 'STATUS_PENYAMPAIAN' => $statusPenyampaian,
                 'STATUS_OP'          => $statusOP,

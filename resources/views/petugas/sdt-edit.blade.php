@@ -10,6 +10,10 @@
         $decodedBack && str_starts_with($decodedBack, url('/'))
             ? $decodedBack
             : route('petugas.sdt.detail', $row->ID_SDT);
+
+    // Helper untuk cek status awal
+    $currentStatus = strtoupper($status->STATUS_PENYAMPAIAN ?? '');
+    $isTersampaikan = $currentStatus == 'TERSAMPAIKAN' || ($status->STATUS_PENYAMPAIAN ?? '') == '1';
 @endphp
 
 @section('content')
@@ -48,7 +52,6 @@
             font-size: 14px;
         }
 
-        /* Glass Buttons */
         .btn-glass-blue {
             background: rgba(79, 147, 255, 0.2);
             backdrop-filter: blur(10px);
@@ -59,12 +62,6 @@
             padding: 0.45rem 1rem;
             box-shadow: 0 4px 20px rgba(31, 96, 255, 0.3);
             transition: all 0.3s ease;
-        }
-
-        .btn-glass-blue:hover {
-            background: rgba(79, 147, 255, 0.35);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(31, 96, 255, 0.5);
         }
 
         .btn-glass-green {
@@ -79,12 +76,6 @@
             transition: all 0.3s ease;
         }
 
-        .btn-glass-green:hover {
-            background: rgba(0, 208, 132, 0.35);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(0, 208, 132, 0.5);
-        }
-
         .btn-retake {
             background: rgba(240, 173, 78, 0.2);
             backdrop-filter: blur(10px);
@@ -97,12 +88,6 @@
             transition: all 0.3s ease;
         }
 
-        .btn-retake:hover {
-            background: rgba(240, 173, 78, 0.35);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(240, 173, 78, 0.5);
-        }
-
         .thumb {
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.3);
@@ -110,9 +95,9 @@
             transition: all 0.3s ease;
         }
 
-        .thumb:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        /* Container Penerima Transition */
+        #containerPenerima {
+            transition: all 0.4s ease-in-out;
         }
 
         @media(max-width:576px) {
@@ -127,14 +112,14 @@
             }
 
             .btn-glass-blue,
-            .btn-retake {
+            .btn-glass-green {
                 width: 100%;
                 display: block;
                 margin-bottom: 8px;
             }
         }
 
-        /* ===== CAMERA MODAL STYLES ===== */
+        /* CAMERA STYLES (Sama seperti sebelumnya) */
         .cam-container {
             background: #000;
             overflow: hidden;
@@ -167,7 +152,6 @@
             border-radius: 50%;
             width: 34px;
             height: 34px;
-            font-size: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -229,7 +213,6 @@
     </style>
 
     <div class="section">
-
         <div class="edit-card mb-4">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
@@ -252,10 +235,6 @@
             </div>
         </div>
 
-        @if (session('info'))
-            <div class="alert alert-info m-3" style="border-radius:10px;">{{ session('info') }}</div>
-        @endif
-
         <form id="frmEdit" method="POST"
             action="{{ route('petugas.sdt.update', $row->ID) }}?back={{ urlencode($paramBack ?? $goBack) }}">
             @csrf
@@ -269,9 +248,7 @@
                         <label class="form-label">Status Penyampaian</label>
                         <select name="STATUS_PENYAMPAIAN" id="STATUS" class="form-select" required>
                             <option value="">— Pilih —</option>
-                            <option value="TERSAMPAIKAN"
-                                {{ strtoupper($status->STATUS_PENYAMPAIAN ?? '') == 'TERSAMPAIKAN' || ($status->STATUS_PENYAMPAIAN ?? '') == '1' ? 'selected' : '' }}>
-                                Tersampaikan</option>
+                            <option value="TERSAMPAIKAN" {{ $isTersampaikan ? 'selected' : '' }}>Tersampaikan</option>
                             <option value="TIDAK TERSAMPAIKAN"
                                 {{ strtoupper($status->STATUS_PENYAMPAIAN ?? '') == 'TIDAK TERSAMPAIKAN' || ($status->STATUS_PENYAMPAIAN ?? '') == '0' ? 'selected' : '' }}>
                                 Tidak Tersampaikan</option>
@@ -284,8 +261,7 @@
                             <option value="YA" {{ strtoupper($status->NOP_BENAR ?? '') == 'YA' ? 'selected' : '' }}>YA
                             </option>
                             <option value="TIDAK" {{ strtoupper($status->NOP_BENAR ?? '') == 'TIDAK' ? 'selected' : '' }}>
-                                TIDAK
-                            </option>
+                                TIDAK</option>
                         </select>
                     </div>
                     <div class="col-md-4">
@@ -295,27 +271,30 @@
                             <input type="text" id="coordDisplay" class="form-control" placeholder="Mencari GPS..."
                                 disabled value="{{ $status->KOORDINAT_OP ?? '' }}">
                         </div>
-                        <small class="text-muted" style="font-size:11px;">Otomatis terisi saat GPS aktif</small>
+                    </div>
+                </div>
+
+                {{-- WRAPPER PENERIMA --}}
+                <div id="containerPenerima" style="{{ $isTersampaikan ? '' : 'display:none;' }}">
+                    <hr class="my-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nama Penerima</label>
+                            <input type="text" name="NAMA_PENERIMA" id="NAMA_PENERIMA" class="form-control"
+                                placeholder="Masukkan nama penerima..."
+                                value="{{ old('NAMA_PENERIMA', $status->NAMA_PENERIMA ?? '') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nomor HP Penerima</label>
+                            <input type="text" name="HP_PENERIMA" id="HP_PENERIMA" class="form-control"
+                                placeholder="08xxxxxxxxxx" value="{{ old('HP_PENERIMA', $status->HP_PENERIMA ?? '') }}">
+                        </div>
                     </div>
                 </div>
 
                 <hr class="my-4">
 
                 <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Nama Penerima</label>
-                        <input type="text" name="NAMA_PENERIMA" class="form-control"
-                            placeholder="Masukkan nama penerima..."
-                            value="{{ old('NAMA_PENERIMA', $status->NAMA_PENERIMA ?? '') }}">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Nomor HP Penerima</label>
-                        <input type="text" name="HP_PENERIMA" class="form-control" placeholder="08xxxxxxxxxx"
-                            value="{{ old('HP_PENERIMA', $status->HP_PENERIMA ?? '') }}">
-                    </div>
-                </div>
-
-                <div class="row g-3 mt-3">
                     <div class="col-md-6">
                         <label class="form-label">Status OP</label>
                         <select name="STATUS_OP" class="form-select" required>
@@ -363,30 +342,24 @@
                 <div class="mt-4">
                     <div class="btn-wrapper-bottom">
                         <button type="button" id="btnOpenCam" class="btn-glass-blue" data-bs-toggle="modal"
-                            data-bs-target="#modalCamera" {{ $expired ? 'disabled' : '' }}>
-                            📷 Kamera
-                        </button>
-
+                            data-bs-target="#modalCamera" {{ $expired ? 'disabled' : '' }}>📷 Kamera</button>
                         @if (!$expired)
                             <button type="submit" class="btn-glass-green" id="btnSubmit">💾 Simpan</button>
                         @else
                             <span class="text-muted ms-2">Update tidak tersedia (lebih dari 6 jam)</span>
                         @endif
                     </div>
-
-                    <button type="button" id="btnRetake" class="btn-glass-blue btn-retake mt-3" style="display:none;">
-                        🔄 Ulangi Foto
-                    </button>
+                    <button type="button" id="btnRetake" class="btn-glass-blue btn-retake mt-3"
+                        style="display:none;">🔄 Ulangi Foto</button>
                     <img id="thumbPrev" class="thumb mt-3" style="display:none; max-width:180px;">
-
                     <div id="expiredMsg" class="mt-3 text-danger"
-                        style="font-weight:600; display: {{ $expired ? 'block' : 'none' }};">
-                        ⚠️ Update sudah tidak tersedia (lebih dari 6 jam)
-                    </div>
+                        style="font-weight:600; display: {{ $expired ? 'block' : 'none' }};">⚠️ Update sudah tidak
+                        tersedia (lebih dari 6 jam)</div>
                 </div>
             </div>
         </form>
 
+        {{-- MODAL KAMERA --}}
         <div class="modal fade" id="modalCamera" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-fullscreen">
                 <div class="modal-content cam-container">
@@ -410,245 +383,135 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // --- Konfigurasi Awal ---
             const expired = {{ $expired ? 'true' : 'false' }};
             const petugas = "{{ auth()->user()->name }}";
             const nomorSDT = "{{ $row->ID_SDT }}";
 
-            // --- Referensi Elemen ---
+            // Referensi Elemen Form
             const form = document.getElementById('frmEdit');
-            const editContainer = document.getElementById('editContainer');
-            const btnOpenCam = document.getElementById('btnOpenCam');
-            const expiredMsg = document.getElementById('expiredMsg');
-            const btnSubmit = document.getElementById('btnSubmit');
-
             const statusPenyampaian = document.getElementById('STATUS');
+            const containerPenerima = document.getElementById('containerPenerima');
+            const inputNama = document.getElementById('NAMA_PENERIMA');
+            const inputHp = document.getElementById('HP_PENERIMA');
+
             const foto64 = document.getElementById('FOTO_BASE64');
             const koordInput = document.getElementById('KOORDINAT_OP');
             const coordDisplay = document.getElementById('coordDisplay');
 
-            // --- Elemen Kamera ---
+            // ================= 1. LOGIKA SHOW/HIDE PENERIMA =================
+            function handlePenerimaToggle() {
+                if (statusPenyampaian.value === 'TERSAMPAIKAN') {
+                    $(containerPenerima).slideDown(); // Pakai jQuery untuk animasi halus
+                    inputNama.setAttribute('required', 'required');
+                    inputHp.setAttribute('required', 'required');
+                } else {
+                    $(containerPenerima).slideUp();
+                    inputNama.removeAttribute('required');
+                    inputHp.removeAttribute('required');
+                    // Reset value agar tidak ada data sampah terkirim
+                    inputNama.value = '';
+                    inputHp.value = '';
+                }
+            }
+
+            statusPenyampaian.addEventListener('change', handlePenerimaToggle);
+
+            // ================= 2. LOGIKA GPS =================
+            function requestLocation() {
+                if (!navigator.geolocation) return;
+                navigator.geolocation.getCurrentPosition(successLocation, function(err) {
+                    navigator.geolocation.getCurrentPosition(successLocation, null, {
+                        enableHighAccuracy: false,
+                        timeout: 10000
+                    });
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 15000
+                });
+            }
+
+            function successLocation(pos) {
+                const val = `${pos.coords.latitude},${pos.coords.longitude}`;
+                koordInput.value = val;
+                coordDisplay.value = val;
+            }
+
+            if (!expired && !koordInput.value) requestLocation();
+
+            // ================= 3. LOGIKA KAMERA =================
             const video = document.getElementById('camVideo');
             const canvas = document.getElementById('camCanvas');
             const prev = document.getElementById('thumbPrev');
             const btnShot = document.getElementById('btnShot');
             const btnFlip = document.getElementById('btnFlip');
-            const btnRetakeModal = document.getElementById('btnRetakeModal');
-            const btnCloseCam = document.getElementById('btnCloseCam');
             const btnRetakeMain = document.getElementById('btnRetake');
-
             let stream = null;
-            let currentFacingMode = 'environment'; // Default ke kamera belakang
-
-            // ================= 1. LOGIKA EXPIRED =================
-            if (expired) {
-                const inputs = editContainer.querySelectorAll('input, select, textarea, button');
-                inputs.forEach(el => el.disabled = true);
-                if (btnSubmit) btnSubmit.style.display = 'none';
-
-                btnOpenCam.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    alert("Update tidak tersedia (Waktu habis).");
-                });
-            }
-
-            // ================= 2. LOGIKA GPS PINTAR (SMART LOCATION) =================
-            // Strategi: Coba High Accuracy (GPS) -> Gagal? -> Coba Low Accuracy (Network)
-
-            function requestLocation() {
-                if (!navigator.geolocation) {
-                    coordDisplay.value = "GPS Tidak Didukung";
-                    return;
-                }
-
-                // Langkah 1: Coba High Accuracy (Timeout 15 detik)
-                navigator.geolocation.getCurrentPosition(
-                    successLocation,
-                    function(err) {
-                        console.warn("High Accuracy Failed/Timeout. Fallback to Low Accuracy...");
-                        // Langkah 2: Fallback ke Low Accuracy (Lebih cepat, via Wifi/Seluler)
-                        navigator.geolocation.getCurrentPosition(
-                            successLocation,
-                            function(err2) {
-                                console.error("GPS Total Failure:", err2);
-                                coordDisplay.value = "";
-                                coordDisplay.placeholder = "Gagal mengambil lokasi. Pastikan GPS Aktif.";
-                                coordDisplay.disabled = false; // Izinkan input manual jika perlu
-                            }, {
-                                enableHighAccuracy: false,
-                                timeout: 10000,
-                                maximumAge: 0
-                            }
-                        );
-                    }, {
-                        enableHighAccuracy: true,
-                        timeout: 15000,
-                        maximumAge: 0
-                    }
-                );
-            }
-
-            function successLocation(pos) {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                const acc = pos.coords.accuracy;
-
-                const val = `${lat},${lng}`;
-                koordInput.value = val;
-                coordDisplay.value = val;
-                console.log(`Lokasi didapat. Akurasi: ${acc} meter`);
-            }
-
-            // Jalankan pencarian lokasi saat halaman dimuat
-            if (!expired && !koordInput.value) {
-                requestLocation();
-            }
-
-            // ================= 3. LOGIKA KAMERA HYBRID =================
-            // Strategi: Coba kamera belakang -> Error (di PC)? -> Coba webcam depan
+            let currentFacingMode = 'environment';
 
             async function startCamera() {
                 if (expired) return;
-
-                // Stop stream lama jika ada
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                }
-
-                const constraints = {
-                    audio: false,
-                    video: true,
-                };
-
+                if (stream) stream.getTracks().forEach(t => t.stop());
                 try {
-                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: currentFacingMode
+                        }
+                    });
                     video.srcObject = stream;
                 } catch (err) {
-                    console.warn("Gagal akses kamera:", err.name);
-
-                    // Fallback khusus PC: Jika 'environment' gagal, coba 'user' (Webcam)
                     if (currentFacingMode === 'environment') {
-                        console.log("Mencoba fallback ke Webcam (User)...");
                         currentFacingMode = 'user';
-                        startCamera(); // Restart fungsi
-                    } else {
-                        alert("Tidak dapat mengakses kamera. Pastikan izin diberikan.");
+                        startCamera();
                     }
                 }
             }
 
-            function stopCamera() {
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                    stream = null;
-                }
-                video.srcObject = null;
-            }
+            document.getElementById('modalCamera').addEventListener('shown.bs.modal', startCamera);
+            document.getElementById('modalCamera').addEventListener('hidden.bs.modal', () => {
+                if (stream) stream.getTracks().forEach(t => t.stop());
+            });
 
-            function takePicture() {
-                if (!stream) return;
-
+            btnShot.addEventListener('click', () => {
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 const ctx = canvas.getContext("2d");
-
-                // Flip horizontal jika pakai kamera depan (mirroring)
                 if (currentFacingMode === 'user') {
                     ctx.translate(canvas.width, 0);
                     ctx.scale(-1, 1);
                 }
+                ctx.drawImage(video, 0, 0);
 
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                // Add Watermark
+                const loc = koordInput.value || "Lokasi tidak diketahui";
+                const time = new Date().toLocaleString("id-ID");
+                ctx.font = "bold 22px Arial";
+                ctx.fillStyle = "white";
+                ctx.shadowColor = "black";
+                ctx.shadowBlur = 4;
+                ctx.fillText(`Petugas: ${petugas}`, 20, 40);
+                ctx.fillText(`SDT: ${nomorSDT}`, 20, 75);
+                ctx.fillText(`Lokasi: ${loc}`, 20, 110);
+                ctx.fillText(`Waktu: ${time}`, 20, 145);
 
-                // Kembalikan konteks agar teks tidak terbalik
-                if (currentFacingMode === 'user') {
-                    ctx.setTransform(1, 0, 0, 1, 0, 0);
-                }
-
-                // Watermark Data
-                addWatermark(ctx);
-
-                // Simpan ke Hidden Input & Preview
-                const dataURL = canvas.toDataURL("image/jpeg", 0.85);
+                const dataURL = canvas.toDataURL("image/jpeg", 0.8);
                 foto64.value = dataURL;
                 prev.src = dataURL;
                 prev.style.display = "block";
                 btnRetakeMain.style.display = "block";
-
-                // Tutup Modal
-                stopCamera();
-                const modalEl = document.getElementById('modalCamera');
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                modal.hide();
-            }
-
-            function addWatermark(ctx) {
-                // Ambil koordinat saat ini (atau dari input jika GPS belum lock)
-                const loc = koordInput.value || "Mencari Lokasi...";
-                const time = new Date().toLocaleString("id-ID");
-
-                ctx.font = "bold 24px Arial";
-                ctx.fillStyle = "white";
-                ctx.shadowColor = "black";
-                ctx.shadowBlur = 6;
-                ctx.lineWidth = 3;
-
-                const lines = [
-                    `Petugas: ${petugas}`,
-                    `SDT: ${nomorSDT}`,
-                    `Lokasi: ${loc}`,
-                    `Waktu: ${time}`
-                ];
-
-                // Posisi teks di pojok kiri atas
-                let y = 40;
-                lines.forEach(line => {
-                    ctx.strokeText(line, 20, y);
-                    ctx.fillText(line, 20, y);
-                    y += 35;
-                });
-            }
-
-            // Event Listeners Kamera
-            const modalEl = document.getElementById('modalCamera');
-            modalEl.addEventListener('shown.bs.modal', startCamera);
-            modalEl.addEventListener('hidden.bs.modal', stopCamera);
-
-            btnShot.addEventListener('click', takePicture);
-
-            btnFlip.addEventListener('click', () => {
-                currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
-                startCamera();
+                bootstrap.Modal.getInstance(document.getElementById('modalCamera')).hide();
             });
 
-            btnCloseCam.addEventListener('click', () => {
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                modal.hide();
-            });
-
-            // Fitur Retake (Ulangi Foto)
             btnRetakeMain.addEventListener('click', () => {
-                prev.style.display = 'none';
-                btnRetakeMain.style.display = 'none';
-                foto64.value = '';
-                // Buka modal lagi
-                new bootstrap.Modal(modalEl).show();
+                new bootstrap.Modal(document.getElementById('modalCamera')).show();
             });
 
-            // Validasi Submit Form
+            // ================= 4. VALIDASI SUBMIT =================
             form.addEventListener('submit', (e) => {
                 if (statusPenyampaian.value === 'TERSAMPAIKAN' && !foto64.value) {
                     e.preventDefault();
-                    alert("WAJIB FOTO bukti jika status 'Tersampaikan'!");
-                    btnOpenCam.scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                    btnOpenCam.classList.add('btn-danger'); // Highlight tombol
-                    setTimeout(() => btnOpenCam.classList.remove('btn-danger'), 2000);
+                    alert("WAJIB ambil foto bukti lokasi untuk status 'Tersampaikan'!");
                 }
             });
-
         });
     </script>
 @endsection
