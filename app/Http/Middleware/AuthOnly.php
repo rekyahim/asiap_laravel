@@ -31,7 +31,11 @@ class AuthOnly
         }
 
         // **Inject user ke Laravel Auth**
-        Auth::login($user);
+        if (!Auth::check()) {
+    Auth::login($user);
+}
+
+
 
         // Jika password default → wajib ubah password
         if ($user->INITIAL_PASSWORD === '123456') {

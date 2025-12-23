@@ -370,22 +370,36 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const editModal = document.getElementById('modalEditUser');
-            editModal?.addEventListener('show.bs.modal', event => {
-                const btn = event.relatedTarget;
-                const id = btn.getAttribute('data-id');
-                document.getElementById('edit_username').value = btn.getAttribute('data-username') || '';
-                document.getElementById('edit_nama').value = btn.getAttribute('data-nama') || '';
-                document.getElementById('edit_jabatan').value = btn.getAttribute('data-jabatan') || 'PNS';
-                document.getElementById('edit_nip').value = btn.getAttribute('data-nip') || '';
-                document.getElementById('edit_kdunit').value = btn.getAttribute('data-kd_unit') || '';
-                document.getElementById('editUserForm').action = "{{ url('/admin/pengguna') }}/" + id;
-            });
-            
-            // Tooltip Init
-            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"], [title]');
-            [...tooltipTriggerList].map(t => new bootstrap.Tooltip(t));
-        });
-    </script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // =========================
+    // MODAL EDIT USER
+    // =========================
+    const editModal = document.getElementById('modalEditUser');
+    editModal?.addEventListener('show.bs.modal', event => {
+        const btn = event.relatedTarget;
+        const id  = btn.getAttribute('data-id');
+
+        document.getElementById('edit_username').value = btn.getAttribute('data-username') || '';
+        document.getElementById('edit_nama').value     = btn.getAttribute('data-nama') || '';
+        document.getElementById('edit_jabatan').value = btn.getAttribute('data-jabatan') || 'PNS';
+        document.getElementById('edit_nip').value      = btn.getAttribute('data-nip') || '';
+        document.getElementById('edit_kdunit').value   = btn.getAttribute('data-kd_unit') || '';
+
+        document.getElementById('editUserForm').action =
+            "{{ url('/admin/pengguna') }}/" + id;
+    });
+
+
+    // =========================
+    // TOOLTIP INIT (AMAN)
+    // =========================
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-title]');
+    tooltipTriggerList.forEach(el => {
+        new bootstrap.Tooltip(el);
+    });
+
+});
+</script>
+
 @endsection
