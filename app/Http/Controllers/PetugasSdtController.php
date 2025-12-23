@@ -103,7 +103,8 @@ class PetugasSdtController extends Controller
         ============================================================ */
         //perbaiki
 
-        $query = DtSdt::where('ID_SDT', $id)->where('PETUGAS_SDT', $user_id)->with('latestStatus', 'sdt');
+        $query = DtSdt::where('ID_SDT', $id)
+            ->where('PETUGAS_SDT', $user_id)->with('latestStatus', 'sdt');
 
         if ($req->filled('nop')) {
             $query->where('NOP', 'like', "%{$req->nop}%");
@@ -162,6 +163,15 @@ class PetugasSdtController extends Controller
 
                 // 5. Compare the difference
                 if ($difference_seconds > $six_hours_in_seconds) {
+                    $row->expired = '1'; //udh expired
+                }
+            }
+
+
+            //JIKA sdt belum tanggal saat ini lebih kecil dari tanggal mulai di tabel sdt maka expired juga
+            if ($sdt && $sdt->TGL_MULAI) {
+                $today = date('Y-m-d');
+                if ($today < $sdt->TGL_MULAI) {
                     $row->expired = '1'; //udh expired
                 }
             }
