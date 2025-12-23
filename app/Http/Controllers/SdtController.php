@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Imports\DtSdtImport;
@@ -22,6 +23,7 @@ class SdtController extends Controller
 
     public function index(Request $r)
     {
+
         $user   = \App\Models\Pengguna::find(session('auth_uid'));
         $kdUnit = $user->KD_UNIT ?? null;
 
@@ -30,11 +32,15 @@ class SdtController extends Controller
             ->select(['ID', 'NAMA_SDT', 'TGL_MULAI', 'TGL_SELESAI'])
             ->withCount('details')
 
-            ->when($q !== '', fn($qq) =>
+            ->when(
+                $q !== '',
+                fn ($qq) =>
                 $qq->where('NAMA_SDT', 'like', "%{$q}%")
             )
 
-            ->when($kdUnit !== null && $kdUnit != 1, fn($qq) =>
+            ->when(
+                $kdUnit !== null && $kdUnit != 1,
+                fn ($qq) =>
                 $qq->where('KD_UNIT', $kdUnit)
             )
 
@@ -55,7 +61,7 @@ class SdtController extends Controller
         $r->validate([
             'NAMA_SDT'    => [
                 'required',
-                Rule::unique('sdt', 'NAMA_SDT')->where(fn($q) => $q->where('STATUS', 1)),
+                Rule::unique('sdt', 'NAMA_SDT')->where(fn ($q) => $q->where('STATUS', 1)),
             ],
             'TGL_MULAI'   => 'required|date',
             'TGL_SELESAI' => 'required|date',
@@ -70,14 +76,14 @@ class SdtController extends Controller
             $arrays = Excel::toArray(null, $r->file('detail_file'));
             $rows   = $arrays[0] ?? [];
 
-            if (! count($rows)) {
+            if (!count($rows)) {
                 throw ValidationException::withMessages([
                     'row_errors' => ['File kosong atau rusak.'],
                 ])->errorBag('import');
             }
 
-            $headerRaw = array_map(fn($h) => is_string($h) ? $h : (string) $h, array_shift($rows));
-            $norm      = fn($s) => strtoupper(trim(preg_replace('/\s+/', ' ', (string) $s)));
+            $headerRaw = array_map(fn ($h) => is_string($h) ? $h : (string) $h, array_shift($rows));
+            $norm      = fn ($s) => strtoupper(trim(preg_replace('/\s+/', ' ', (string) $s)));
 
             $headToIdx = [];
             foreach ($headerRaw as $i => $h) {
@@ -124,13 +130,13 @@ class SdtController extends Controller
 
             $names = array_keys($namesOriginal);
 
-            if (! count($names)) {
+            if (!count($names)) {
                 throw ValidationException::withMessages([
                     'row_errors' => ['Kolom NAMA PETUGAS kosong.'],
                 ])->errorBag('import');
             }
 
-            $lc         = fn($s) => mb_strtolower($s, 'UTF-8');
+            $lc         = fn ($s) => mb_strtolower($s, 'UTF-8');
             $lowerNames = array_map($lc, $names);
 
             $foundAny = DB::table('pengguna')
@@ -149,9 +155,9 @@ class SdtController extends Controller
             $wrongRole = [];
 
             foreach ($lowerNames as $i => $ln) {
-                if (! in_array($ln, $foundAny, true)) {
+                if (!in_array($ln, $foundAny, true)) {
                     $missing[] = $names[$i];
-                } elseif (! in_array($ln, $foundPetugas, true)) {
+                } elseif (!in_array($ln, $foundPetugas, true)) {
                     $wrongRole[] = $names[$i];
                 }
             }
@@ -217,7 +223,6 @@ class SdtController extends Controller
                         ],
                     ])
                     ->log("SDT \"{$sdt->NAMA_SDT}\" dibuat dan detail diimpor");
-
             }
 
             DB::commit();
@@ -225,7 +230,6 @@ class SdtController extends Controller
             return redirect()
                 ->route('sdt.index')
                 ->with('ok', 'SDT berhasil ditambahkan' . ($r->hasFile('detail_file') ? ' & file terimpor.' : '.'));
-
         } catch (\Throwable $e) {
             DB::rollBack();
             return back()
@@ -238,14 +242,14 @@ class SdtController extends Controller
     {
 
         $user = \App\Models\Pengguna::find(session('auth_uid'));
-        abort_if(! $user, 403);
+        abort_if(!$user, 403);
 
         $kdUnit    = $user->KD_UNIT;
         $isAdmin   = $user->HAKAKSES_ID == 1;
         $isBapenda = $kdUnit == 1;
 
         $sdt = Sdt::query()
-            ->when(! ($isAdmin || $isBapenda), fn($q) => $q->where('KD_UNIT', $kdUnit))
+            ->when(!($isAdmin || $isBapenda), fn ($q) => $q->where('KD_UNIT', $kdUnit))
             ->where('ID', $id)
             ->firstOrFail();
 
@@ -284,7 +288,7 @@ class SdtController extends Controller
     public function detail($id)
     {
         $user = \App\Models\Pengguna::find(session('auth_uid'));
-        abort_if(! $user, 403);
+        abort_if(!$user, 403);
 
         $kdUnit    = $user->KD_UNIT;
         $isAdmin   = $user->HAKAKSES_ID == 1;
@@ -292,7 +296,7 @@ class SdtController extends Controller
 
         // Ambil SDT sesuai hak akses
         $sdt = Sdt::query()
-            ->when(! ($isAdmin || $isBapenda), fn($q) => $q->where('KD_UNIT', $kdUnit))
+            ->when(!($isAdmin || $isBapenda), fn ($q) => $q->where('KD_UNIT', $kdUnit))
             ->where('ID', $id)
             ->firstOrFail();
 
@@ -309,8 +313,8 @@ class SdtController extends Controller
             ->get();
 
         $petugas = $details
-            ->filter(fn($d) => filled($d->petugas_nama))
-            ->map(fn($d) => [
+            ->filter(fn ($d) => filled($d->petugas_nama))
+            ->map(fn ($d) => [
                 'id'   => $d->PETUGAS_SDT, // ini ID
                 'nama' => $d->petugas_nama,
             ])
@@ -399,7 +403,7 @@ class SdtController extends Controller
 
         $user = \App\Models\Pengguna::find(session('auth_uid'));
 
-        abort_if(! $user, 403);
+        abort_if(!$user, 403);
 
         $nop    = preg_replace('/\D+/', '', $r->NOP);
         $tahun  = $r->TAHUN;
@@ -411,12 +415,14 @@ class SdtController extends Controller
     |--------------------------------------------------------------------------
     */
         $petugas = \App\Models\Pengguna::where('ID', $userId)
-            ->whereHas('hakakses', fn($q) =>
+            ->whereHas(
+                'hakakses',
+                fn ($q) =>
                 $q->whereRaw('LOWER(HAKAKSES) = "petugas"')
             )
             ->first();
 
-        if (! $petugas) {
+        if (!$petugas) {
             return response()->json([
                 'ok'  => false,
                 'msg' => 'Petugas tidak valid.',
@@ -461,7 +467,6 @@ class SdtController extends Controller
             }
 
             $dataApi = $resp['data'];
-
         } catch (\Throwable $e) {
             return response()->json([
                 'ok'  => false,
@@ -556,11 +561,11 @@ class SdtController extends Controller
             }
 
             $rows = collect($resp['data'])
-                ->map(fn($x) => [
+                ->map(fn ($x) => [
                     'id'   => $x['value'] ?? '',
                     'text' => $x['label'] ?? '',
                 ])
-                ->filter(fn($x) => $x['id'] !== '')
+                ->filter(fn ($x) => $x['id'] !== '')
                 ->values();
 
             // Pagination manual
@@ -601,7 +606,7 @@ class SdtController extends Controller
             }
 
             $years = collect($resp['data'])
-                ->map(fn($y) => ['id' => (string) $y, 'text' => (string) $y])
+                ->map(fn ($y) => ['id' => (string) $y, 'text' => (string) $y])
                 ->sortDesc()
                 ->values();
 
@@ -625,14 +630,14 @@ class SdtController extends Controller
                 'required',
                 Rule::unique('sdt', 'NAMA_SDT')
                     ->ignore($id, 'ID')
-                    ->where(fn($q) => $q->where('STATUS', 1)),
+                    ->where(fn ($q) => $q->where('STATUS', 1)),
             ],
             'TGL_MULAI'   => 'required|date',
             'TGL_SELESAI' => 'required|date',
         ]);
 
         $user = \App\Models\Pengguna::find(session('auth_uid'));
-        abort_if(! $user, 403);
+        abort_if(!$user, 403);
 
         $sdt = Sdt::findOrFail($id);
 
@@ -653,7 +658,7 @@ class SdtController extends Controller
         ]);
 
         /* ===================== TIDAK ADA PERUBAHAN → STOP ===================== */
-        if (! $sdt->wasChanged()) {
+        if (!$sdt->wasChanged()) {
             return response()->json([
                 'ok'  => true,
                 'msg' => 'Tidak ada perubahan data.',
@@ -691,7 +696,7 @@ class SdtController extends Controller
         $nop   = preg_replace('/\D+/', '', $r->query('nop', ''));
         $tahun = $r->query('tahun', '');
 
-        if ($nop === '' || ! preg_match('/^\d{4}$/', $tahun)) {
+        if ($nop === '' || !preg_match('/^\d{4}$/', $tahun)) {
             return response()->json(['ok' => false, 'exists' => false]);
         }
 
@@ -702,7 +707,7 @@ class SdtController extends Controller
             ->select(['ID', 'PETUGAS_SDT'])
             ->first();
 
-        if (! $row) {
+        if (!$row) {
             return response()->json([
                 'ok'     => true,
                 'exists' => false,
@@ -805,7 +810,7 @@ class SdtController extends Controller
 
     private function ymdOrNull($in): ?string
     {
-        if (! $in) {
+        if (!$in) {
             return null;
         }
 
@@ -815,13 +820,13 @@ class SdtController extends Controller
             if ($d && $d->format($fmt) === $in) {
                 return $d->format('Y-m-d');
             }
-
         }
         if (is_numeric($in)) {
             try {
                 $ts = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToTimestamp($in);
                 return gmdate('Y-m-d', $ts);
-            } catch (\Throwable) {}
+            } catch (\Throwable) {
+            }
         }
         return null;
     }
@@ -887,7 +892,7 @@ class SdtController extends Controller
         }
 
         $json = json_decode($response, true);
-        if (! is_array($json)) {
+        if (!is_array($json)) {
             throw new \RuntimeException('Response API tidak valid (bukan JSON)');
         }
 
@@ -902,7 +907,7 @@ class SdtController extends Controller
 
         // auth manual kamu
         $user = \App\Models\Pengguna::find(session('auth_uid'));
-        abort_if(! $user, 403);
+        abort_if(!$user, 403);
 
         // pastikan petugas valid
         $petugas = \App\Models\Pengguna::where('ID', $request->petugas)
@@ -911,7 +916,7 @@ class SdtController extends Controller
             })
             ->first();
 
-        if (! $petugas) {
+        if (!$petugas) {
             return response()->json([
                 'ok'  => false,
                 'msg' => 'Petugas tidak valid',
