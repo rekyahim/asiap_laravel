@@ -322,13 +322,13 @@
             const RAW = {!! json_encode(
                 $rows->map(
                     fn($r) => [
-                        'id' => $r->ID,
+                        'id' => $r->dtsdt_id,
                         'nop' => $r->NOP,
                         'tahun' => $r->TAHUN,
-                        'petugas' => $r->PETUGAS_SDT,
+                        'petugas' => $r->NAMA,
                         'nama_wp' => $r->NAMA_WP,
                         'alamat_wp' => $r->ALAMAT_WP,
-                        'status' => $r->status_penyampaian,
+                        'status' => $r->sts_penyampaian,
                     ],
                 ),
             ) !!};
@@ -356,11 +356,20 @@
 
             function normalizeStatusOp(v) {
                 if (v === null) return '-';
-                return (v == 1) ? "Ditemukan" : (v == 2 ? "Tidak ditemukan" : "-");
+                if (v == 1) return 'Belum Diproses Petugas';
+                if (v == 2) return 'Ditemukan';
+                if (v == 3) return 'Tidak Ditemukan';
+                if (v == 4) return 'Sudah Dijual';
+                return '-';
             }
 
             function normalizeStatusWp(v) {
-                return normalizeStatusOp(v);
+                if (v === null) return '-';
+                if (v == 1) return 'Belum Diproses Petugas';
+                if (v == 2) return 'Ditemukan';
+                if (v == 3) return 'Tidak Ditemukan';
+                if (v == 4) return 'Luar Kota';
+                return '-';
             }
 
             /* render petugas chips */
@@ -472,14 +481,14 @@
                                 <div class="detail-value">${value ?? '-'}</div>
                             </div>
                         `;
-
+                        console.log(statusWp, statusOp);
                         body.innerHTML = `
                             <h6 class="fw-bold mb-2">Informasi Umum</h6>
                             ${L('NOP', d.nop)} ${L('Tahun', d.tahun)} ${L('Petugas', d.petugas)}
 
                             <hr>
                             <h6 class="fw-bold mb-2">Objek Pajak</h6>
-                            ${L('Alamat OP', d.alamat_op)}
+                            ${L('Alamat', d.alamat_op)}
                             ${L('Blok/Kav', d.blok_kav_no_op)}
                             ${L('RT/RW', d.rt_op + '/' + d.rw_op)}
                             ${L('Kelurahan', d.kel_op)}
@@ -487,11 +496,19 @@
 
                             <hr>
                             <h6 class="fw-bold mb-2">Wajib Pajak</h6>
-                            ${L('Nama WP', d.nama_wp)}
-                            ${L('Alamat WP', d.alamat_wp)}
-                            ${L('RT/RW', d.rt_wp + '/' + d.rw_wp)}
+                            ${L('Nama', d.nama_wp)}
+                            ${L('Alamat', d.alamat_wp)}
+                            ${L('Blok/Kav', d.blok_kav_no_wp)}
+                            ${L('RT/RW', (d.rt_wp ?? '-') + '/' + (d.rw_wp ?? '-'))}
                             ${L('Kelurahan', d.kel_wp)}
                             ${L('Kota', d.kota_wp)}
+
+                            <hr>
+                            <h6 class="fw-bold mb-2">Nilai Pajak</h6>
+                            ${L('Jatuh Tempo', d.jatuh_tempo)}
+                            ${L('Terhutang', 'Rp ' + (d.terhutang ?? '-'))}
+                            ${L('Pengurangan', 'Rp ' + (d.pengurangan ?? '-'))}
+
 
                             <hr>
                             <h6 class="fw-bold mb-2">Status Penyampaian</h6>

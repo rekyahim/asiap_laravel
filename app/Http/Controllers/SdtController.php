@@ -25,8 +25,7 @@ class SdtController extends Controller
         $user   = \App\Models\Pengguna::find(session('auth_uid'));
         $kdUnit = $user->KD_UNIT ?? null;
 
-        $q = trim((string) $r->query('q', ''));
-
+        $q    = trim((string) $r->query('q', ''));
         $list = Sdt::query()
             ->select(['ID', 'NAMA_SDT', 'TGL_MULAI', 'TGL_SELESAI'])
             ->withCount('details')
@@ -237,6 +236,7 @@ class SdtController extends Controller
 
     public function show($id)
     {
+
         $user = \App\Models\Pengguna::find(session('auth_uid'));
         abort_if(! $user, 403);
 
@@ -252,11 +252,13 @@ class SdtController extends Controller
         $sdt->TGL_MULAI   = optional($sdt->TGL_MULAI)->format('Y-m-d');
         $sdt->TGL_SELESAI = optional($sdt->TGL_SELESAI)->format('Y-m-d');
 
-        $rows = DtSdt::where('ID_SDT', $sdt->ID)
-            ->where('STATUS', 1)
-            ->orderBy('ID', 'asc')
+        $rows = DtSdt::where('dt_sdt.ID_SDT', $sdt->ID)
+            ->join('pengguna', 'pengguna.ID', '=', 'dt_sdt.PETUGAS_SDT')
+            ->leftjoin('status_penyampaian', 'status_penyampaian.ID_DT_SDT', '=', 'dt_sdt.ID')
+            ->where('dt_sdt.STATUS', 1)
+            ->orderBy('dt_sdt.ID', 'asc')
+            ->select('dt_sdt.*', 'pengguna.*', 'dt_sdt.ID as dtsdt_id', 'status_penyampaian.STATUS_PENYAMPAIAN as sts_penyampaian')
             ->get();
-
         $petugas = $rows->pluck('PETUGAS_SDT')->filter()->unique()->values();
 
         // Tambahkan status penyampaian
@@ -268,7 +270,6 @@ class SdtController extends Controller
             $r->status_penyampaian = $latest->STATUS_PENYAMPAIAN ?? null;
             return $r;
         });
-
         $totalPbb          = DtSdt::where('ID_SDT', $sdt->ID)->sum('PBB_HARUS_DIBAYAR');
         $totalPbbFormatted = 'Rp ' . number_format($totalPbb, 0, ',', '.');
 
@@ -299,20 +300,18 @@ class SdtController extends Controller
         $details = DtSdt::query()
             ->where('dt_sdt.ID_SDT', $sdt->ID)
             ->where('dt_sdt.STATUS', 1)
-            ->leftJoin('pengguna', 'pengguna.ID', '=', 'dt_sdt.PENGGUNA_ID')
+            ->leftJoin('pengguna', 'pengguna.ID', '=', 'dt_sdt.PETUGAS_SDT')
             ->orderBy('dt_sdt.ID')
             ->select([
                 'dt_sdt.*',
-                'dt_sdt.PENGGUNA_ID', // 🔥 WAJIB
-                DB::raw('COALESCE(pengguna.NAMA, dt_sdt.PETUGAS_SDT) as petugas_nama'),
+                DB::raw('pengguna.NAMA as petugas_nama'),
             ])
-
             ->get();
 
         $petugas = $details
             ->filter(fn($d) => filled($d->petugas_nama))
             ->map(fn($d) => [
-                'id'   => $d->PENGGUNA_ID,
+                'id'   => $d->PETUGAS_SDT, // ini ID
                 'nama' => $d->petugas_nama,
             ])
             ->unique('id')
@@ -478,8 +477,7 @@ class SdtController extends Controller
         $created = DtSdt::create([
             'ID_SDT'            => $id,
             'STATUS'            => 1,
-            'PENGGUNA_ID'       => $petugas->ID,
-            'PETUGAS_SDT'       => $petugas->NAMA,
+            'PETUGAS_SDT'       => $petugas->ID,
             'NOP'               => $nop,
             'TAHUN'             => $tahun,
 
@@ -701,7 +699,7 @@ class SdtController extends Controller
             ->where('STATUS', 1)
             ->where('NOP', $nop)
             ->where('TAHUN', $tahun)
-            ->select(['ID', 'PENGGUNA_ID'])
+            ->select(['ID', 'PETUGAS_SDT'])
             ->first();
 
         if (! $row) {
@@ -714,7 +712,7 @@ class SdtController extends Controller
         return response()->json([
             'ok'          => true,
             'exists'      => true,
-            'has_petugas' => filled($row->PENGGUNA_ID),
+            'has_petugas' => filled($row->PETUGAS_SDT),
             'petugas'     => $row->PETUGAS_SDT,
         ]);
     }
@@ -896,146 +894,40 @@ class SdtController extends Controller
         return $json;
     }
 
-    public function editPetugas($id)
+    public function updateRowPetugas(Request $request, $id)
     {
-        $sdt = Sdt::findOrFail($id);
+        $request->validate([
+            'petugas' => 'required|integer',
+        ]);
 
-        $rows = DtSdt::where('ID_SDT', $id)
-            ->orderBy('ID')
-            ->get();
+        // auth manual kamu
+        $user = \App\Models\Pengguna::find(session('auth_uid'));
+        abort_if(! $user, 403);
 
-        return response()->json([
-            'nama'           => $sdt->NAMA_SDT,
-
-            'petugas_list'   => $rows->map(fn($r) => [
-                'id'      => $r->ID,
-                'petugas' => $r->NAMA_PETUGAS,
-            ]),
-
-            // daftar semua petugas sistem
-            'master_petugas' => \App\Models\Pengguna::whereHas('hakAkses', function ($q) {
+        // pastikan petugas valid
+        $petugas = \App\Models\Pengguna::where('ID', $request->petugas)
+            ->whereHas('hakakses', function ($q) {
                 $q->whereRaw('LOWER(HAKAKSES) = "petugas"');
             })
-                ->pluck('NAMA', 'ID')
-                ->toArray(),
-        ]);
-    }
-    public function savePetugas($id, Request $req)
-    {
-        $req->validate([
-            'petugas' => 'required|integer',
-        ]);
-
-        $user = \App\Models\Pengguna::find(session('auth_uid'));
-        abort_if(! $user, 403);
-
-        // Ambil petugas (harus role PETUGAS)
-        $pengguna = \App\Models\Pengguna::where('ID', $req->petugas)
-            ->whereHas('hakakses', fn($q) =>
-                $q->whereRaw('LOWER(HAKAKSES) = "petugas"')
-            )
             ->first();
 
-        if (! $pengguna) {
+        if (! $petugas) {
             return response()->json([
                 'ok'  => false,
-                'msg' => 'Petugas tidak valid.',
+                'msg' => 'Petugas tidak valid',
             ], 422);
         }
 
-        $row = DtSdt::findOrFail($id);
+        $row = \App\Models\DtSdt::findOrFail($id);
 
-        // Jika tidak berubah → stop (no log)
-        if ($row->PETUGAS_SDT === $pengguna->NAMA) {
-            return response()->json([
-                'ok'      => true,
-                'msg'     => 'Tidak ada perubahan petugas.',
-                'petugas' => $row->PETUGAS_SDT,
-            ]);
-        }
-
-        $oldPetugas = $row->PETUGAS_SDT;
-
-        // Update
+        // update SATU kolom saja
         $row->update([
-            'PENGGUNA_ID' => $pengguna->ID,
-            'PETUGAS_SDT' => $pengguna->NAMA, // legacy
+            'PETUGAS_SDT' => $petugas->ID,
         ]);
-
-        // LOG
-        activity('SDT')
-            ->event('updated')
-            ->performedOn($row)
-            ->causedBy($user)
-            ->withProperties([
-                'id_detail' => $row->ID,
-                'old'       => ['petugas' => $oldPetugas],
-                'new'       => ['petugas' => $pengguna->NAMA],
-            ])
-            ->log('Ubah petugas detail SDT');
 
         return response()->json([
             'ok'      => true,
-            'msg'     => 'Petugas berhasil diperbarui.',
-            'petugas' => $row->PETUGAS_SDT,
-        ]);
-    }
-    public function updateRowPetugas(Request $req, $id)
-    {
-        $req->validate([
-            'petugas' => 'required|integer',
-        ]);
-
-        $user = \App\Models\Pengguna::find(session('auth_uid'));
-        abort_if(! $user, 403);
-
-        $pengguna = \App\Models\Pengguna::where('ID', $req->petugas)
-            ->whereHas('hakakses', fn($q) =>
-                $q->whereRaw('LOWER(HAKAKSES) = "petugas"')
-            )
-            ->first();
-
-        if (! $pengguna) {
-            return response()->json([
-                'ok'  => false,
-                'msg' => 'Petugas tidak valid.',
-            ], 422);
-        }
-
-        $row = DtSdt::findOrFail($id);
-
-        // Tidak berubah → no log
-        if ($row->PETUGAS_SDT === $pengguna->NAMA) {
-            return response()->json([
-                'ok'      => true,
-                'msg'     => 'Tidak ada perubahan petugas.',
-                'petugas' => $row->PETUGAS_SDT,
-            ]);
-        }
-
-        $oldPetugas = $row->PETUGAS_SDT;
-
-        $row->update([
-            'PENGGUNA_ID' => $pengguna->ID,
-            'PETUGAS_SDT' => $pengguna->NAMA, // legacy
-        ]);
-
-        // LOG
-        activity('SDT')
-            ->event('updated')
-            ->performedOn($row)
-            ->causedBy($user)
-            ->withProperties([
-                'id_detail' => $row->ID,
-                'old'       => ['petugas' => $oldPetugas],
-                'new'       => ['petugas' => $pengguna->NAMA],
-            ])
-            ->log('Update petugas detail SDT');
-
-        return response()->json([
-            'ok'      => true,
-            'msg'     => 'Petugas berhasil diperbarui.',
-            'petugas' => $row->PETUGAS_SDT,
+            'petugas' => $petugas->NAMA,
         ]);
     }
 }

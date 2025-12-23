@@ -62,36 +62,46 @@ class RiwayatController extends Controller
     }
     public function detailRow($id)
     {
-        $row = \App\Models\DtSdt::find($id);
+
+        $row = \App\Models\DtSdt::query()
+            ->Join('pengguna', 'pengguna.ID', '=', 'dt_sdt.PETUGAS_SDT')
+            ->where('dt_sdt.ID', $id)
+            ->select([
+                'dt_sdt.*',
+                \DB::raw('pengguna.NAMA AS petugas_nama'),
+            ])
+            ->first();
+
         if (! $row) {
-            return response()->json(['error' => true, 'message' => 'Data tidak ditemukan']);
+            return response()->json([
+                'error'   => true,
+                'message' => 'Data tidak ditemukan',
+            ]);
         }
 
         $sp = \App\Models\StatusPenyampaian::where('ID_DT_SDT', $row->ID)
             ->orderBy('id', 'desc')
             ->first();
 
-        // Safe status values
-        $statusPenyampaian = $sp ? $sp->STATUS_PENYAMPAIAN : null;
-        $statusOP          = $sp ? $sp->STATUS_OP : null;
-        $statusWP          = $sp ? $sp->STATUS_WP : null;
+        // Status aman
+        $statusPenyampaian = $sp?->STATUS_PENYAMPAIAN;
+        $statusOP          = $sp?->STATUS_OP;
+        $statusWP          = $sp?->STATUS_WP;
 
         // Evidence
         $evidenceHtml = '<div class="text-muted small">Tidak ada evidence</div>';
 
         if ($sp && $sp->EVIDENCE) {
-
             $paths = preg_split('/[|,]+/', $sp->EVIDENCE);
             $imgs  = '';
 
             foreach ($paths as $p) {
-                $p = trim($p);
-                $p = str_replace('\\', '/', $p);
+                $p = trim(str_replace('\\', '/', $p));
 
                 if ($p !== '' && \Storage::disk('public')->exists($p)) {
                     $imgs .= '<img src="' . asset("storage/$p") . '"
-                          class="img-fluid rounded mb-2"
-                          style="max-width:150px;"> ';
+                    class="img-fluid rounded mb-2"
+                    style="max-width:150px;"> ';
                 }
             }
 
@@ -103,10 +113,14 @@ class RiwayatController extends Controller
         return response()->json([
             'id'                 => $row->ID,
             'id_sdt'             => $row->ID_SDT,
-            'petugas'            => $row->PETUGAS_SDT,
+
+            // 🔥 INI YANG PENTING
+            'petugas'            => $row->petugas_nama ?? '-',
+
             'nop'                => $row->NOP,
             'tahun'              => $row->TAHUN,
 
+            // OP
             'alamat_op'          => $row->ALAMAT_OP,
             'blok_kav_no_op'     => $row->BLOK_KAV_NO_OP,
             'rt_op'              => $row->RT_OP,
@@ -114,6 +128,7 @@ class RiwayatController extends Controller
             'kel_op'             => $row->KEL_OP,
             'kec_op'             => $row->KEC_OP,
 
+            // WP
             'nama_wp'            => $row->NAMA_WP,
             'alamat_wp'          => $row->ALAMAT_WP,
             'blok_kav_no_wp'     => $row->BLOK_KAV_NO_WP,
@@ -122,21 +137,24 @@ class RiwayatController extends Controller
             'kel_wp'             => $row->KEL_WP,
             'kota_wp'            => $row->KOTA_WP,
 
-            'jatuh_tempo'        => optional($row->JATUH_TEMPO)->format("Y-m-d"),
-            'terhutang'          => number_format($row->TERHUTANG, 0, ',', '.'),
-            'pengurangan'        => number_format($row->PENGURANGAN, 0, ',', '.'),
-            'pbb_harus_dibayar'  => number_format($row->PBB_HARUS_DIBAYAR, 0, ',', '.'),
+            // PBB
+            'jatuh_tempo'        => optional($row->JATUH_TEMPO)->format('Y-m-d'),
+            'terhutang'          => number_format((int) $row->TERHUTANG, 0, ',', '.'),
+            'pengurangan'        => number_format((int) $row->PENGURANGAN, 0, ',', '.'),
+            'pbb_harus_dibayar'  => number_format((int) $row->PBB_HARUS_DIBAYAR, 0, ',', '.'),
 
+            // Status
             'status_penyampaian' => $statusPenyampaian,
             'status_op'          => $statusOP,
             'status_wp'          => $statusWP,
 
-            'nop_benar'          => $sp->NOP_BENAR ?? '-',
-            'keterangan_petugas' => $sp->KETERANGAN_PETUGAS ?? '-',
-            'tgl_penyampaian'    => $sp->TGL_PENYAMPAIAN ?? '-',
-            'nama_penerima'      => $sp->NAMA_PENERIMA ?? '-',
-            'hp_penerima'        => $sp->HP_PENERIMA ?? '-',
-            'koordinat_op'       => $sp->KOORDINAT_OP ?? '-',
+            // Tambahan
+            'nop_benar'          => $sp?->NOP_BENAR ?? '-',
+            'keterangan_petugas' => $sp?->KETERANGAN_PETUGAS ?? '-',
+            'tgl_penyampaian'    => $sp?->TGL_PENYAMPAIAN ?? '-',
+            'nama_penerima'      => $sp?->NAMA_PENERIMA ?? '-',
+            'hp_penerima'        => $sp?->HP_PENERIMA ?? '-',
+            'koordinat_op'       => $sp?->KOORDINAT_OP ?? '-',
 
             'evidence_html'      => $evidenceHtml,
         ]);

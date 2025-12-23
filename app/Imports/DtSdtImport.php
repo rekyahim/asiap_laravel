@@ -203,10 +203,11 @@ class DtSdtImport implements ToCollection, WithHeadingRow
                 $r['JATUH_TEMPO'] = null;
             }
 
-            $filtered                = array_intersect_key($r, array_flip($actualCols));
+            $filtered = array_intersect_key($r, array_flip($actualCols));
+
             $filtered['ID_SDT']      = $this->sdtId;
             $filtered['NOP']         = $nop;
-            $filtered['PENGGUNA_ID'] = $penggunaId;
+            $filtered['PETUGAS_SDT'] = $penggunaId;
             $filtered['KD_UNIT']     = $this->kdUnit;
 
             $out[] = $filtered;
