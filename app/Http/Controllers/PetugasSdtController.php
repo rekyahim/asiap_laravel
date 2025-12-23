@@ -32,19 +32,19 @@ class PetugasSdtController extends Controller
 
                 // 1. SUBQUERY: Hitung Total NOP (Khusus User Ini & STATUS Detail = 1)
                 DB::raw("(
-            SELECT COUNT(id) 
-            FROM dt_sdt 
-            WHERE dt_sdt.ID_SDT = sdt.ID 
+            SELECT COUNT(id)
+            FROM dt_sdt
+            WHERE dt_sdt.ID_SDT = sdt.ID
             AND dt_sdt.PETUGAS_SDT = '$user_id'
             AND dt_sdt.STATUS = 1   -- Filter Tambahan
         ) as JUMLAH_NOP"),
 
                 // 2. SUBQUERY: Hitung Progress (Khusus User Ini & STATUS Detail = 1)
                 DB::raw("(
-            SELECT COUNT(a.id) 
+            SELECT COUNT(a.id)
             FROM dt_sdt a
             JOIN status_penyampaian b ON b.ID_DT_SDT = a.ID
-            WHERE a.ID_SDT = sdt.ID 
+            WHERE a.ID_SDT = sdt.ID
             AND a.PETUGAS_SDT = '$user_id'
             AND a.STATUS = 1       -- Filter Tambahan
         ) as SUDAH_DIPROSES")
@@ -227,13 +227,16 @@ class PetugasSdtController extends Controller
         /* ============================================================
         RETURN KE VIEW
          ============================================================ */
+
+         $ID_SDT = $id;
         return view('petugas.sdt-detail', compact(
             'sdt',
             'rows',
             'summary',
             'dataKO',
             'totalBiaya',
-            'dataNOP' // <-- tambahkan ini supaya dropdown NOP di modal tidak error
+            'dataNOP', // <-- tambahkan ini supaya dropdown NOP di modal tidak error
+            'ID_SDT'
         ));
     }
 
@@ -247,6 +250,7 @@ class PetugasSdtController extends Controller
      */
     public function komplekMassUpdate(Request $request): RedirectResponse
     {
+
         $request->validate([
             'sdt_id' => 'required|exists:sdt,ID',
             'action_type' => 'required|in:ko,nop,status_ko,status_nop',
@@ -393,6 +397,75 @@ class PetugasSdtController extends Controller
             return back()->with('error', $e->getMessage());
         }
     }
+
+    //KO
+public function massUpdateKO(Request $request): RedirectResponse
+{
+
+
+    // $request->validate([
+    //     'KO'  => 'required|string',
+    //     'STATUS' => 'required|string',
+    // ]);
+
+    $userId = session('auth_uid');
+    $now    = now();
+
+    DB::beginTransaction();
+    try {
+//->where('ALAMAT_OP', 'LIKE', $request->KO . ' %')
+        // 🔑 Ambil SEMUA DT_SDT dengan KO yang sama
+        $rows = DtSdt::where('ID_SDT', $request->ID_SDT)
+            ->where('ALAMAT_OP', 'LIKE', $request->KO . ' %')
+             ->where('PETUGAS_SDT',$userId)
+            ->pluck('ID');
+        dd($rows);
+        if ($rows->isEmpty()) {
+            return 'Data KO tidak ditemukan.';
+
+        }
+
+
+        // ==========================
+        // 2️⃣ UPDATE STATUS PENYAMPAIAN
+        // ==========================
+        $payload = [];
+        foreach ($rows as $dtId) {
+            $payload[] = [
+                'ID_DT_SDT'          => $dtId,
+                'ID_SDT'             => $request->ID_SDT,
+                'ID_PETUGAS'         => $userId,
+                'STATUS_PENYAMPAIAN' => $request->STATUS_PENYAMPAIAN,
+                'TGL_PENYAMPAIAN'    => $now,
+                'created_at'         => $now,
+                'updated_at'         => $now,
+            ];
+        }
+
+        StatusPenyampaian::upsert(
+            $payload,
+            ['ID_DT_SDT'], // UNIQUE KEY
+            [
+                'ID_PETUGAS',
+                'STATUS_PENYAMPAIAN',
+                'TGL_PENYAMPAIAN',
+                'updated_at'
+            ]
+        );
+
+        DB::commit();
+
+        return back()->with(
+            'success',
+            'Mass KO berhasil (' . count($payload) . ' data diperbarui)'
+        );
+
+    } catch (\Throwable $e) {
+        DB::rollBack();
+        dd($e);
+        return back()->with('error', $e->getMessage());
+    }
+}
 
 
     // FUNCTION NOP \\

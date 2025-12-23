@@ -43,20 +43,25 @@
 @endphp
 
 <header class="app-header">
-    <nav class="navbar navbar-expand-lg navbar-light">
+    <nav class="navbar navbar-expand-lg navbar-light px-3">
 
-        <ul class="navbar-nav align-items-center">
-            <li class="nav-item d-block d-xl-none">
-                <a class="nav-link sidebartoggler nav-icon-hover" id="headerCollapse" href="#"><i
-                        class="ti ti-menu-2"></i></a>
-            </li>
-        </ul>
+        {{-- LEFT --}}
+        
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <a href="#" class="nav-link d-none d-xl-block" id="sidebarMiniToggle" aria-label="Toggle sidebar">
+                <i class="ti ti-layout-sidebar-left fs-5"></i>
+            </a>
 
-        {{-- Search SDT di header (hanya di halaman index SDT) --}}
-        @if ($headerSearch)
-            <li class="nav-item ms-2 header-search">
-                <form method="GET" action="{{ $headerSearch['action'] }}" class="m-0">
+            {{-- Hamburger (mobile) --}}
+            <a href="#" class="nav-link sidebartoggler d-xl-none">
+                <i class="ti ti-menu-2 fs-5"></i>
+            </a>
+
+            {{-- SEARCH HEADER (TAMPILAN LAMA) --}}
+            @if ($headerSearch)
+                <form method="GET" action="{{ $headerSearch['action'] }}" class="header-search ms-2 flex-grow-1">
                     <div class="input-group header-search-group">
+
                         <span class="input-group-text">
                             <i class="ti ti-search"></i>
                         </span>
@@ -65,43 +70,53 @@
                             placeholder="{{ $headerSearch['placeholder'] }}"
                             value="{{ request($headerSearch['name']) }}" autocomplete="off">
 
-                        <button type="submit" class="btn btn-primary">Cari</button>
+                        <button type="submit" class="btn btn-primary">
+                            Cari
+                        </button>
+
                     </div>
                 </form>
-            </li>
-        @endif
-        </ul>
-
-
-        <div class="navbar-collapse justify-content-end px-0" id="navbarNav">
-            <ul class="navbar-nav flex-row ms-auto align-items-center">
-
-                <li class="nav-item dropdown">
-                    <a class="nav-link nav-icon-hover d-flex gap-2 align-items-center" href="#"
-                        data-bs-toggle="dropdown">
-                        <img src="{{ $foto }}" class="rounded-circle" width="35" height="35">
-                        <span class="small text-muted">{{ $user->NAMA }}</span>
-                    </a>
-
-                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-animate-up">
-                        <li><a href="{{ route('profile.show') }}" class="dropdown-item"><i class="ti ti-user"></i> My
-                                Profile</a></li>
-                        <li><a href="{{ route('profile.change.password') }}" class="dropdown-item"><i
-                                    class="ti ti-lock"></i> Ganti Password</a></li>
-
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-
-                        <li>
-                            <form action="{{ route('logout') }}" method="POST" class="px-3">@csrf
-                                <button class="btn btn-outline-primary w-100">Logout</button>
-                            </form>
-                        </li>
-                    </ul>
-                </li>
-
-            </ul>
+            @endif
         </div>
+
+        {{-- RIGHT --}}
+        <ul class="navbar-nav ms-auto align-items-center">
+
+            <li class="nav-item dropdown">
+                <a class="nav-link d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
+                    <img src="{{ $foto }}" class="rounded-circle" width="35" height="35">
+                    <span class="d-none d-md-inline small text-muted">
+                        {{ $user->NAMA }}
+                    </span>
+                </a>
+
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a href="{{ route('profile.show') }}" class="dropdown-item">
+                            <i class="ti ti-user"></i> My Profile
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('profile.change.password') }}" class="dropdown-item">
+                            <i class="ti ti-lock"></i> Ganti Password
+                        </a>
+                    </li>
+
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+
+                    <li>
+                        <form action="{{ route('logout') }}" method="POST" class="px-3">
+                            @csrf
+                            <button class="btn btn-outline-primary w-100">
+                                Logout
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </li>
+
+        </ul>
     </nav>
 </header>
