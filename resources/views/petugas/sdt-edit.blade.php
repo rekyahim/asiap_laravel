@@ -247,8 +247,8 @@
             <div class="mt-3" style="font-size:13px;opacity:.92;">
                 <div><strong>NOP:</strong> {{ $row->NOP }}</div>
                 <div><strong>Tahun:</strong> {{ $row->TAHUN }}</div>
-                <div><strong>Alamat OP:</strong> {{ $row->ALAMAT_OP }}</div>
-                <div><strong>Nama WP:</strong> {{ $row->NAMA_WP }}</div>
+                <div><strong>Alamat OP:</strong> {{ $row->ALAMAT_OP.' , '.$row->BLOK_KAV_NO_OP.' RT '.$row->RT_OP.' RW '.$row->RW_OP.' , '.$row->KEL_OP.' , '.$row->KEC_OP }}</div>
+                <div><strong>Nama WP:</strong> {{ $row->NAMA_WP.' , '.$row->ALAMAT_WP.' , '.$row->BLOK_KAV_NO_.' RT '.$row->RT_WP.' RW '.$row->RW_WP.' , '.$row->KEL_WP.' , '.$row->KOTA_WP}}</div>
             </div>
         </div>
 

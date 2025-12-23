@@ -103,6 +103,15 @@ class PetugasSdtController extends Controller
 
         $query = DtSdt::where('ID_SDT', $id)->where('PETUGAS_SDT', $user_id)->with('latestStatus', 'sdt');
 
+        if ($req->filled('search')) {
+            $search = $req->search;
+            $query->where(function($q) use ($search) {
+                $q->where('NOP', 'like', "%{$search}%")
+                ->orWhere('NAMA_WP', 'like', "%{$search}%");
+            });
+        }
+
+
         if ($req->filled('nop')) {
             $query->where('NOP', 'like', "%{$req->nop}%");
         }
@@ -398,71 +407,87 @@ class PetugasSdtController extends Controller
         }
     }
 
+
     //KO
-public function massUpdateKO(Request $request): RedirectResponse
+   public function massUpdateKO(Request $request): RedirectResponse
 {
-
-
-    // $request->validate([
-    //     'KO'  => 'required|string',
-    //     'STATUS' => 'required|string',
-    // ]);
-
     $userId = session('auth_uid');
     $now    = now();
 
     DB::beginTransaction();
+
     try {
-//->where('ALAMAT_OP', 'LIKE', $request->KO . ' %')
-        // 🔑 Ambil SEMUA DT_SDT dengan KO yang sama
+        // Ambil semua DT_SDT dengan KO yang sama dan milik user
         $rows = DtSdt::where('ID_SDT', $request->ID_SDT)
-            ->where('ALAMAT_OP', 'LIKE', $request->KO . ' %')
-             ->where('PETUGAS_SDT',$userId)
+            ->where('ALAMAT_OP', 'LIKE', $request->KO . '%') // semua KO yang dimulai dengan input
+            ->where('PETUGAS_SDT', $userId)
             ->pluck('ID');
-        dd($rows);
+
         if ($rows->isEmpty()) {
-            return 'Data KO tidak ditemukan.';
-
+            return back()->with('error', 'Data KO tidak ditemukan.');
         }
 
+        // Default status jika kosong
+        $status = $request->STATUS_PENYAMPAIAN ?? 'Belum';
 
-        // ==========================
-        // 2️⃣ UPDATE STATUS PENYAMPAIAN
-        // ==========================
         $payload = [];
+
         foreach ($rows as $dtId) {
-            $payload[] = [
-                'ID_DT_SDT'          => $dtId,
-                'ID_SDT'             => $request->ID_SDT,
-                'ID_PETUGAS'         => $userId,
-                'STATUS_PENYAMPAIAN' => $request->STATUS_PENYAMPAIAN,
-                'TGL_PENYAMPAIAN'    => $now,
-                'created_at'         => $now,
-                'updated_at'         => $now,
-            ];
+            $existing = StatusPenyampaian::where('ID_DT_SDT', $dtId)->first();
+
+            if ($existing) {
+                // Hitung selisih jam
+                $createdDiff = $existing->created_at->diffInHours($now);
+                $updatedDiff = $existing->updated_at->diffInHours($now);
+
+                // Lewat 6 jam, skip update
+                if ($createdDiff >= 6 || $updatedDiff >= 6) {
+                    continue;
+                }
+
+                // Update record existing
+                $payload[] = [
+                    'ID_DT_SDT'          => $dtId,
+                    'ID_SDT'             => $request->ID_SDT,
+                    'ID_PETUGAS'         => $userId,
+                    'STATUS_PENYAMPAIAN' => $status,
+                    'TGL_PENYAMPAIAN'    => $now,
+                    'created_at'         => $existing->created_at, // tetap sama
+                    'updated_at'         => $now, // diupdate setiap kali update
+                ];
+            } else {
+                // Insert baru
+                $payload[] = [
+                    'ID_DT_SDT'          => $dtId,
+                    'ID_SDT'             => $request->ID_SDT,
+                    'ID_PETUGAS'         => $userId,
+                    'STATUS_PENYAMPAIAN' => $status,
+                    'TGL_PENYAMPAIAN'    => $now,
+                    'created_at'         => $now, // pertama kali insert
+                    'updated_at'         => $now, // pertama kali insert
+                ];
+            }
         }
 
-        StatusPenyampaian::upsert(
-            $payload,
-            ['ID_DT_SDT'], // UNIQUE KEY
-            [
-                'ID_PETUGAS',
-                'STATUS_PENYAMPAIAN',
-                'TGL_PENYAMPAIAN',
-                'updated_at'
-            ]
-        );
+        // Upsert batch
+        if (!empty($payload)) {
+            StatusPenyampaian::upsert(
+                $payload,
+                ['ID_DT_SDT'], // UNIQUE KEY
+                ['ID_PETUGAS', 'STATUS_PENYAMPAIAN', 'TGL_PENYAMPAIAN', 'updated_at']
+            );
+        }
 
         DB::commit();
 
         return back()->with(
             'success',
-            'Mass KO berhasil (' . count($payload) . ' data diperbarui)'
+            'Mass KO berhasil (' . count($payload) . ' data diperbarui/ditambahkan)'
         );
 
     } catch (\Throwable $e) {
         DB::rollBack();
-        dd($e);
+        \Log::error($e->getMessage());
         return back()->with('error', $e->getMessage());
     }
 }
@@ -744,4 +769,47 @@ public function massUpdateKO(Request $request): RedirectResponse
             ->route('petugas.sdt.detail', $row->ID_SDT)
             ->with('success', 'Data berhasil disimpan.');
     }
+
+    public function massUpdateNOP(Request $request)
+{
+    // Validasi input
+    $request->validate([
+        'NOP' => 'required|string',
+        'STATUS' => 'required|string',
+        'NOP_BENAR' => 'required|string',
+        'NAMA_PENERIMA' => 'nullable|string|max:100',
+        'HP_PENERIMA' => 'nullable|string|max:20',
+        'STATUS_OP' => 'nullable|string',
+        'STATUS_WP' => 'nullable|string',
+        'FOTO_BASE64_NOP' => 'nullable|string',
+        'LATITUDE_NOP' => 'nullable|numeric',
+        'LONGITUDE_NOP' => 'nullable|numeric',
+    ]);
+
+    $sdtId = $request->input('sdt_id'); // Pastikan sdt_id dikirim dari form
+    $nopTerpilih = $request->input('NOP');
+
+    // Ambil semua record dt_sdt yang sesuai ID_SDT dan NOP
+    $update = DtSdt::where('ID_SDT', $sdtId)
+        ->where('NOP', $nopTerpilih)
+        ->update([
+            'STATUS_PENYAMPAIAN' => $request->input('STATUS'),
+            'NOP_BENAR' => $request->input('NOP_BENAR'),
+            'NAMA_PENERIMA' => $request->input('NAMA_PENERIMA'),
+            'HP_PENERIMA' => $request->input('HP_PENERIMA'),
+            'STATUS_OP' => $request->input('STATUS_OP'),
+            'STATUS_WP' => $request->input('STATUS_WP'),
+            'FOTO_BASE64_NOP' => $request->input('FOTO_BASE64_NOP'),
+            'LATITUDE_NOP' => $request->input('LATITUDE_NOP'),
+            'LONGITUDE_NOP' => $request->input('LONGITUDE_NOP'),
+            'UPDATED_AT' => now(), // update timestamp
+        ]);
+
+    if ($update) {
+        return back()->with('success', 'Data NOP berhasil diperbarui untuk semua record yang sama.');
+    } else {
+        return back()->with('error', 'Tidak ada record yang diperbarui. Pastikan NOP dan SDT sudah benar.');
+    }
+}
+
 }
