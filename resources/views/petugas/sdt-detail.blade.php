@@ -528,7 +528,7 @@
                 <div class="kpis">
                     <div class="kpi-row">
                         <div class="kpi">
-                            <div class="t">Total NOP</div>
+                            <div class="t">Total SDT</div>
                             <div class="v">{{ number_format($summary['total']) }}</div>
                         </div>
                         <div class="kpi">
@@ -550,7 +550,7 @@
                             <div class="bar"><i style="width:{{ $progress }}%"></i></div>
                         </div>
                         <div class="kpi">
-                            <div class="t">Potensi Biaya</div>
+                            <div class="t">Potensi Pajak</div>
                             <div class="v text-primary">Rp {{ number_format($totalBiaya, 0, ',', '.') }}</div>
                         </div>
                     </div>

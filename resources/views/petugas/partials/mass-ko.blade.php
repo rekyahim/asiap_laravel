@@ -198,12 +198,8 @@
 
                 {{-- FOOTER --}}
                 <div class="modal-footer border-0 p-4 pt-0">
-                    <button type="button" class="btn btn-link text-muted" data-bs-dismiss="modal">
-                        Batal
-                    </button>
-                    <button type="submit" class="btn btn-primary px-5 rounded-pill fw-bold">
-                        Simpan Data
-                    </button>
+                    <button type="button" class="btn btn-link text-muted" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary px-5 rounded-pill fw-bold">Simpan Data</button>
                 </div>
             </form>
         </div>
@@ -226,29 +222,129 @@
             inputHp.setAttribute('required', 'required');
         } else {
             divPenerima.style.display = 'none';
-            // Bersihkan value jika status diubah jadi Tidak Tersampaikan
             inputNama.value = '';
             inputHp.value = '';
-            // Hapus required agar tidak menghambat submit
             inputNama.removeAttribute('required');
             inputHp.removeAttribute('required');
         }
     }
 
-    /**
-     * Reset Form saat Modal ditutup
-     */
-    $('#modalMassKO').on('hidden.bs.modal', function() {
-        const form = document.getElementById('formMassKO');
-        form.reset();
+    document.addEventListener('DOMContentLoaded', function() {
+        // ==========================================
+        // 1. LOGIKA PENGAMBILAN KOORDINAT (GPS)
+        // ==========================================
+        const modalKO = document.getElementById('modalMassKO');
+        const latInput = document.getElementById('LATITUDE_KO');
+        const longInput = document.getElementById('LONGITUDE_KO');
+        const dispInput = document.getElementById('KOORDINAT_KO');
+        const badgeGPS = document.getElementById('lockBadgeKO');
 
-        // Reset UI Manual
-        document.getElementById('divPenerimaMass').style.display = 'none';
-        document.getElementById('thumbPrevKO').style.display = 'none';
-        document.getElementById('placeholderKO').style.display = 'block';
-        document.getElementById('btnRetakeKO').style.display = 'none';
-        document.getElementById('btnOpenCamKO').style.display = 'block';
-        document.getElementById('lockBadgeKO').style.display = 'none';
+        // Bikin tombol refresh manual di dalam input
+        const refreshBtn = document.createElement('button');
+        refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+        refreshBtn.className =
+            'btn btn-sm btn-outline-secondary position-absolute end-0 top-0 mt-1 me-1 border-0';
+        refreshBtn.type = 'button';
+        refreshBtn.onclick = function() {
+            getGeoLocationKO(true);
+        };
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'position-relative';
+        if (dispInput) {
+            dispInput.parentNode.insertBefore(wrapper, dispInput);
+            wrapper.appendChild(dispInput);
+            wrapper.appendChild(refreshBtn);
+        }
+
+        // Jalankan saat modal terbuka
+        if (modalKO) {
+            modalKO.addEventListener('shown.bs.modal', function() {
+                if (!latInput.value || !longInput.value) {
+                    getGeoLocationKO(true); // Mulai dengan High Accuracy
+                }
+            });
+
+            // Reset Form saat Modal ditutup
+            modalKO.addEventListener('hidden.bs.modal', function() {
+                const form = document.getElementById('formMassKO');
+                form.reset();
+
+                // Reset UI Manual
+                document.getElementById('divPenerimaMass').style.display = 'none';
+                document.getElementById('thumbPrevKO').style.display = 'none';
+                document.getElementById('placeholderKO').style.display = 'block';
+                document.getElementById('btnRetakeKO').style.display = 'none';
+                document.getElementById('btnOpenCamKO').style.display = 'block';
+                badgeGPS.style.display = 'none';
+                dispInput.classList.remove('text-success', 'fw-bold', 'text-danger');
+            });
+        }
+
+        function getGeoLocationKO(isHighAccuracy) {
+            if (navigator.geolocation) {
+                dispInput.value = isHighAccuracy ? "Mencari GPS Satelit..." : "Mencari via Jaringan...";
+                dispInput.classList.remove('text-danger', 'text-success', 'fw-bold');
+                dispInput.classList.add('text-muted');
+
+                const options = {
+                    enableHighAccuracy: isHighAccuracy,
+                    timeout: 20000, // 20 Detik
+                    maximumAge: 0
+                };
+
+                navigator.geolocation.getCurrentPosition(
+                    showPositionKO,
+                    function(error) {
+                        handleErrorKO(error, isHighAccuracy)
+                    },
+                    options
+                );
+            } else {
+                alert("Browser tidak mendukung Geolocation.");
+            }
+        }
+
+        function showPositionKO(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+
+            latInput.value = lat;
+            longInput.value = lng;
+            dispInput.value = `${lat}, ${lng}`;
+
+            badgeGPS.style.display = 'inline-flex';
+            dispInput.classList.remove('text-muted', 'text-danger');
+            dispInput.classList.add('text-success', 'fw-bold');
+        }
+
+        function handleErrorKO(error, wasHighAccuracy) {
+            // Jika Timeout saat Mode GPS -> Pindah ke Mode Jaringan
+            if (error.code === error.TIMEOUT && wasHighAccuracy) {
+                console.log("GPS Timeout, beralih ke Network...");
+                getGeoLocationKO(false);
+                return;
+            }
+
+            badgeGPS.style.display = 'none';
+            dispInput.classList.remove('text-muted', 'text-success');
+            dispInput.classList.add('text-danger');
+
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("Izin Lokasi Ditolak. Harap izinkan akses lokasi di browser.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    dispInput.value = "Sinyal lokasi tidak ditemukan.";
+                    break;
+                case error.TIMEOUT:
+                    dispInput.value = "Gagal. Klik tombol panah di kanan untuk coba lagi.";
+                    break;
+                default:
+                    dispInput.value = "Error tidak diketahui.";
+                    break;
+            }
+        }
     });
 </script>
 

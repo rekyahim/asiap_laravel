@@ -197,7 +197,6 @@ class PetugasSdtController extends Controller
             ->where('PETUGAS_SDT', $user_id)
             ->whereNotNull('NOP')
             ->where('NOP', '!=', '')
-            ->distinct('NOP')
             ->count();
 
         $tersampaikan = StatusPenyampaian::whereIn(
@@ -403,7 +402,7 @@ class PetugasSdtController extends Controller
     //KO
     public function massUpdateKO(Request $request): RedirectResponse
     {
-        // 1. Validasi awal (seperti sebelumnya)
+        // 1. Validasi awal
         $validator = Validator::make($request->all(), [
             'KO' => 'required',
             'ID_SDT' => 'required',
@@ -413,6 +412,9 @@ class PetugasSdtController extends Controller
             'STATUS_WP' => 'required',
             'LATITUDE_KO' => 'required',
             'LONGITUDE_KO' => 'required',
+        ], [
+            'KO.required' => 'Kolom KO tidak boleh kosong.',
+            'STATUS.required' => 'Status penyampaian wajib dipilih.',
         ]);
 
         if ($validator->fails()) {
@@ -420,12 +422,12 @@ class PetugasSdtController extends Controller
         }
 
         $userId = session('auth_uid');
-        $now = now(); // Jam saat ini
+        $now = now();
         $KETERANGAN_PETUGAS = $request->input('KETERANGAN_PETUGAS', '-');
 
         DB::beginTransaction();
         try {
-            // 2. Ambil semua ID yang akan diproses
+            // 2. Ambil semua ID yang akan diproses berdasarkan ALAMAT_OP
             $rows = DtSdt::where('ID_SDT', $request->ID_SDT)
                 ->where('ALAMAT_OP', 'LIKE', $request->KO . '%')
                 ->where('PETUGAS_SDT', $userId)
@@ -436,19 +438,14 @@ class PetugasSdtController extends Controller
             }
 
             // 3. 🛡️ PENGECEKAN EXPIRED (6 JAM)
-            // Cari apakah ada data yang sudah di-input sebelumnya 
-            // DAN created_at nya sudah lebih lama dari 6 jam yang lalu.
             $sixHoursAgo = now()->subHours(6);
-
             $expiredData = StatusPenyampaian::whereIn('ID_DT_SDT', $rows)
                 ->where('created_at', '<', $sixHoursAgo)
-                ->first(); // Kita ambil satu saja untuk sampel pengecekan
+                ->first();
 
             if ($expiredData) {
-                // Hitung sudah berapa jam berlalu untuk pesan error yang lebih informatif
                 $diffInHours = $expiredData->created_at->diffInHours($now);
-
-                return back()->with('error', "Data KO {$request->KO} sudah tidak bisa diupdate massal karena sudah $diffInHours jam berlalu (Batas 6 jam). Silakan update satu-persatu.");
+                return back()->with('error', "Data KO {$request->KO} sudah tidak bisa diupdate massal karena sudah $diffInHours jam berlalu (Batas 6 jam).");
             }
 
             // 4. Proses Simpan Foto (Logic Storage)
@@ -461,7 +458,7 @@ class PetugasSdtController extends Controller
                 $imagePath = $fullPath;
             }
 
-            // 5. Mapping Status Angka (1-4)
+            // 5. Mapping Status & Koordinat
             $statusWP = match ($request->STATUS_WP) {
                 'Belum Diproses Petugas' => 1,
                 'Ditemukan' => 2,
@@ -478,47 +475,147 @@ class PetugasSdtController extends Controller
                 default => 0
             };
 
-            $STATUS_PENYAMPAIAN = ($request->STATUS == 'TERSAMPAIKAN') ? 1 : 0;
+            $statusPenyampaian = ($request->STATUS == 'TERSAMPAIKAN') ? 1 : 0;
             $koordinat = $request->LATITUDE_KO . ', ' . $request->LONGITUDE_KO;
 
-            // 6. Susun Payload & Jalankan Upsert
-            $payload = [];
+            // 6. Loop dan Eksekusi updateOrCreate (Satu per satu ID_DT_SDT)
             foreach ($rows as $dtId) {
-                $payload[] = [
-                    'ID_DT_SDT'          => $dtId,
-                    'ID_PETUGAS'         => $userId,
-                    'STATUS_PENYAMPAIAN' => $STATUS_PENYAMPAIAN,
-                    'STATUS_OP'          => $statusOP,
-                    'STATUS_WP'          => $statusWP,
-                    'NOP_BENAR'          => $request->NOP_BENAR,
-                    'EVIDENCE'           => $imagePath,
-                    'KOORDINAT_OP'       => $koordinat,
-                    'NAMA_PENERIMA'      => $request->NAMA_PENERIMA,
-                    'HP_PENERIMA'        => $request->HP_PENERIMA,
-                    'TGL_PENYAMPAIAN'    => $now,
-                    'created_at'         => $now,
-                    'updated_at'         => $now,
-                    'KETERANGAN_PETUGAS' => $KETERANGAN_PETUGAS,
-                ];
+                StatusPenyampaian::updateOrCreate(
+                    // Kondisi cek: Apakah ID_DT_SDT ini sudah ada di tabel?
+                    ['ID_DT_SDT' => $dtId],
+
+                    // Data yang akan di-Insert atau di-Update
+                    [
+                        'ID_PETUGAS'         => $userId,
+                        'ID_DT_SDT'          => $dtId,
+                        'STATUS_PENYAMPAIAN' => $statusPenyampaian,
+                        'STATUS_OP'          => $statusOP,
+                        'STATUS_WP'          => $statusWP,
+                        'NOP_BENAR'          => $request->NOP_BENAR,
+                        'EVIDENCE'           => $imagePath,
+                        'KOORDINAT_OP'       => $koordinat,
+                        'NAMA_PENERIMA'      => ($statusPenyampaian == 1) ? $request->NAMA_PENERIMA : null,
+                        'HP_PENERIMA'        => ($statusPenyampaian == 1) ? $request->HP_PENERIMA : null,
+                        'TGL_PENYAMPAIAN'    => $now,
+                        'KETERANGAN_PETUGAS' => $KETERANGAN_PETUGAS,
+                        'updated_at'         => $now,
+                        // created_at otomatis hanya diisi oleh Eloquent jika datanya baru (Insert)
+                    ]
+                );
             }
 
-            StatusPenyampaian::upsert(
-                $payload,
-                ['ID_DT_SDT'],
-                [
-                    'ID_PETUGAS', 'STATUS_PENYAMPAIAN', 'STATUS_OP', 'STATUS_WP',
-                    'NOP_BENAR', 'EVIDENCE', 'KOORDINAT_OP', 'NAMA_PENERIMA',
-                    'HP_PENERIMA', 'TGL_PENYAMPAIAN', 'updated_at', 'KETERANGAN_PETUGAS'
-                ]
-            );
-
             DB::commit();
-            return back()->with('success', "Berhasil update massal " . count($payload) . " data.");
+            return back()->with('success', "Berhasil update massal berdasarkan KO (" . count($rows) . " data).");
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
+
+    public function massUpdateNOP(Request $request): RedirectResponse
+    {
+        // 1. Validasi Input
+        $validator = Validator::make($request->all(), [
+            'NOP'          => 'required',
+            'ID_SDT'        => 'required',
+            'STATUS'        => 'required',
+            'NOP_BENAR'     => 'required',
+            'STATUS_OP'     => 'required',
+            'STATUS_WP'     => 'required',
+            'LATITUDE_NOP'  => 'required',
+            'LONGITUDE_NOP' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->with('error', 'Validasi Gagal: ' . $validator->errors()->first())->withInput();
+        }
+
+        $userId = session('auth_uid');
+        $now = now();
+        $KETERANGAN_PETUGAS = $request->input('KETERANGAN_PETUGAS', '-');
+
+        DB::beginTransaction();
+        try {
+            // 2. Ambil semua ID DT_SDT yang masuk dalam kriteria NOP
+            $rows = DtSdt::where('ID_SDT', $request->ID_SDT)
+                ->where('NOP', 'LIKE', $request->NOP . '%')
+                ->where('PETUGAS_SDT', $userId)
+                ->pluck('ID');
+
+            if ($rows->isEmpty()) {
+                return back()->with('error', 'Data NOP tidak ditemukan.');
+            }
+
+            // 3. Pengecekan Expired 6 Jam
+            $sixHoursAgo = now()->subHours(6);
+            $expiredData = StatusPenyampaian::whereIn('ID_DT_SDT', $rows)
+                ->where('created_at', '<', $sixHoursAgo)
+                ->first();
+
+            if ($expiredData) {
+                return back()->with('error', "Data sudah tidak bisa diupdate massal (Sudah lewat 6 jam).");
+            }
+
+            // 4. Simpan Foto
+            $imagePath = null;
+            if ($request->filled('FOTO_BASE64_NOP')) {
+                $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $request->FOTO_BASE64_NOP));
+                $fileName = Str::random(20) . '.jpg';
+                $imagePath = "EVIDENCE/" . $now->format('Y/m') . "/" . $fileName;
+                Storage::disk('public')->put($imagePath, $imageData);
+            }
+
+            // 5. Mapping Data
+            $statusPenyampaian = ($request->STATUS == 'TERSAMPAIKAN') ? 1 : 0;
+            $koordinat = $request->LATITUDE_NOP . ', ' . $request->LONGITUDE_NOP;
+
+            // 6. LOOPING updateOrCreate (Cara Alternatif selain Upsert)
+            foreach ($rows as $dtId) {
+                StatusPenyampaian::updateOrCreate(
+                    // Parameter 1: Kolom kunci untuk mencari data (Harus ID_DT_SDT)
+                    ['ID_DT_SDT' => $dtId],
+
+                    // Parameter 2: Data yang akan disimpan/diperbarui
+                    [
+                        'ID_PETUGAS'         => $userId,
+                        'ID_DT_SDT'             => $dtId, // Jika kolom ini ada
+                        'STATUS_PENYAMPAIAN' => $statusPenyampaian,
+                        'STATUS_OP'          => match ($request->STATUS_OP) {
+                            'Belum Diproses Petugas' => 1,
+                            'Ditemukan' => 2,
+                            'Tidak Ditemukan' => 3,
+                            'Sudah Dijual' => 4,
+                            default => 0
+                        },
+                        'STATUS_WP'          => match ($request->STATUS_WP) {
+                            'Belum Diproses Petugas' => 1,
+                            'Ditemukan' => 2,
+                            'Tidak Ditemukan' => 3,
+                            'Luar Kota' => 4,
+                            default => 0
+                        },
+                        'NOP_BENAR'          => $request->NOP_BENAR,
+                        'EVIDENCE'           => $imagePath,
+                        'KOORDINAT_OP'       => $koordinat,
+                        'NAMA_PENERIMA'      => ($statusPenyampaian == 1) ? $request->NAMA_PENERIMA : null,
+                        'HP_PENERIMA'        => ($statusPenyampaian == 1) ? $request->HP_PENERIMA : null,
+                        'TGL_PENYAMPAIAN'    => $now,
+                        'KETERANGAN_PETUGAS' => $KETERANGAN_PETUGAS,
+                        'updated_at'         => $now,
+                        // created_at tidak perlu diisi di sini karena updateOrCreate 
+                        // otomatis mengisinya HANYA saat data baru dibuat (INSERT).
+                    ]
+                );
+            }
+
+            DB::commit();
+            return back()->with('success', "Berhasil memproses " . count($rows) . " data NOP.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
 
 
     // FUNCTION NOP \\
