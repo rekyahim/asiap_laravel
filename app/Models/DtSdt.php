@@ -1,9 +1,8 @@
 <?php
-
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class DtSdt extends Model
 {
@@ -50,9 +49,13 @@ class DtSdt extends Model
     {
         return $this->belongsTo(Sdt::class, 'ID_SDT', 'ID');
     }
+    public function petugas()
+    {
+        return $this->belongsTo(Pengguna::class, 'PETUGAS_SDT', 'ID');
+    }
     public function pengguna()
     {
-        return $this->belongsTo(\App\Models\Pengguna::class, 'PENGGUNA_ID', 'ID');
+        return $this->belongsTo(Pengguna::class, 'PENGGUNA_ID', 'ID');
     }
 
     // Semua riwayat status
@@ -73,7 +76,7 @@ class DtSdt extends Model
        ========================================================== */
     public function isExpired(int $hours = 6): bool
     {
-        if (!$this->latestStatus || !$this->latestStatus->updated_at) {
+        if (! $this->latestStatus || ! $this->latestStatus->updated_at) {
             return false; // belum pernah diinput
         }
 
@@ -100,7 +103,7 @@ class DtSdt extends Model
 
     private function formatRupiah($value): string
     {
-        $num = preg_replace('/[^0-9\-]/', '', (string)$value);
-        return $num === '' || $num === '-' ? '-' : 'Rp.' . number_format((int)$num, 0, ',', '.');
+        $num = preg_replace('/[^0-9\-]/', '', (string) $value);
+        return $num === '' || $num === '-' ? '-' : 'Rp.' . number_format((int) $num, 0, ',', '.');
     }
 }

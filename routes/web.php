@@ -44,6 +44,9 @@ use Spatie\Activitylog\Models\Activity;
 Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+Route::get('/logout', function () {
+    return redirect()->route('login');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -67,7 +70,7 @@ Route::middleware(AuthOnly::class)->group(function () {
 Route::middleware(AuthOnly::class)->group(function () {
 
     // Dashboard
-    Route::get('/', fn () => view('dashboard'))->name('dashboard');
+    Route::get('/', fn() => view('dashboard'))->name('dashboard');
 
     /*
     |--------------------------------------------------------------------------
@@ -230,98 +233,94 @@ Route::middleware(AuthOnly::class)->group(function () {
             Route::get('{id}/nops', [SdtController::class, 'listNops'])
                 ->whereNumber('id')->name('nops');
 
-            Route::get('{id}/edit-petugas', [SdtController::class, 'editPetugas'])
-                ->whereNumber('id')->name('editPetugas');
+            Route::post(
+                'row/{id}/update-petugas',
+                [\App\Http\Controllers\SdtController::class, 'updateRowPetugas']
+            )->name('sdt.row.update-petugas');
+            
+        Route::get('{id}/export', [RiwayatController::class, 'exportSdt'])
+            ->whereNumber('id')->name('export');
+    });
 
-            Route::post('{id}/save-petugas', [SdtController::class, 'savePetugas'])
-                ->whereNumber('id')->name('savePetugas');
-
-            Route::post('row/{id}/update-petugas', [SdtController::class, 'updatePetugasRow'])
-                ->whereNumber('id')->name('row.updatePetugas');
-
-            Route::get('{id}/export', [RiwayatController::class, 'exportSdt'])
-                ->whereNumber('id')->name('export');
-        });
-
-        /*
+    /*
         |--------------------------------------------------------------------------
         | LEGACY ROUTES (TIDAK DIUBAH)
         |--------------------------------------------------------------------------
         */
-        Route::get('/koor/sdt/{id}/detail', fn ($id) => redirect()->route('sdt.detail', $id))
-            ->whereNumber('id');
+    Route::get('/koor/sdt/{id}/detail', fn($id) => redirect()->route('sdt.detail', $id))
+        ->whereNumber('id');
 
-        Route::delete('/koor/sdt/{id}', [SdtController::class, 'destroy'])
-            ->name('sdt.destroy.legacy')->whereNumber('id');
+    Route::delete('/koor/sdt/{id}', [SdtController::class, 'destroy'])
+        ->name('sdt.destroy.legacy')->whereNumber('id');
 
-        Route::get(
-            '/koor/sdt/{id}/edit',
-            fn ($id) =>
-            redirect()->route('sdt.index', ['openEdit' => $id])
-        )->name('sdt.edit')->whereNumber('id');
+    Route::get(
+        '/koor/sdt/{id}/edit',
+        fn($id) =>
+        redirect()->route('sdt.index', ['openEdit' => $id])
+    )->name('sdt.edit')->whereNumber('id');
 
-        /*
+    /*
         |--------------------------------------------------------------------------
         | IMPORT SDT LAMA
         |--------------------------------------------------------------------------
         */
-        Route::get('/import-sdt', [ImportSdtController::class, 'form'])->name('sdt.import.form');
-        Route::post('/import-sdt', [ImportSdtController::class, 'store'])->name('sdt.import.store');
+    Route::get('/import-sdt', [ImportSdtController::class, 'form'])->name('sdt.import.form');
+    Route::post('/import-sdt', [ImportSdtController::class, 'store'])->name('sdt.import.store');
 
-        /*
+    /*
         |--------------------------------------------------------------------------
         | RIWAYAT PETUGAS
         |--------------------------------------------------------------------------
         */
-        Route::get('/riwayat-petugas', [RiwayatController::class, 'petugas'])
-            ->name('riwayat.petugas');
+    Route::get('/riwayat-petugas', [RiwayatController::class, 'petugas'])
+        ->name('riwayat.petugas');
 
-        Route::get('/riwayat/{id}/detail', [RiwayatController::class, 'detailRow'])
-            ->whereNumber('id')->name('riwayat.detail');
+    Route::get('/riwayat/{id}/detail', [RiwayatController::class, 'detailRow'])
+        ->whereNumber('id')->name('riwayat.detail');
 
-        /*
+    /*
         |--------------------------------------------------------------------------
         | API PENGGUNA
         |--------------------------------------------------------------------------
         */
-        Route::get('/api/pengguna-search', [ApiPenggunaController::class, 'search'])
-            ->name('api.pengguna.search');
+    Route::get('/api/pengguna-search', [ApiPenggunaController::class, 'search'])
+        ->name('api.pengguna.search');
 
-        Route::get('/api/pengguna/{id}', [ApiPenggunaController::class, 'show'])
-            ->name('api.pengguna.show');
-    });
+    Route::get('/api/pengguna/{id}', [ApiPenggunaController::class, 'show'])
+        ->name('api.pengguna.show');
+});
 
-    /*
+/*
     |--------------------------------------------------------------------------
     | PETUGAS SDT
     |--------------------------------------------------------------------------
     */
-    Route::prefix('petugas/sdt')->name('petugas.sdt.')->group(function () {
+Route::prefix('petugas/sdt')->name('petugas.sdt.')->group(function () {
 
-        Route::get('/', [PetugasSdtController::class, 'index'])->name('index');
+    Route::get('/', [PetugasSdtController::class, 'index'])->name('index');
 
-        Route::get('{id}/detail', [PetugasSdtController::class, 'detail'])
-            ->whereNumber('id')->name('detail');
+    Route::get('{id}/detail', [PetugasSdtController::class, 'detail'])
+        ->whereNumber('id')->name('detail');
 
-        Route::get('row/{id}/show', [PetugasSdtController::class, 'showPage'])
-            ->whereNumber('id')->name('show');
+    Route::get('row/{id}/show', [PetugasSdtController::class, 'showPage'])
+        ->whereNumber('id')->name('show');
 
-        Route::get('row/{id}/edit', [PetugasSdtController::class, 'edit'])
-            ->whereNumber('id')->name('edit');
+    Route::get('row/{id}/edit', [PetugasSdtController::class, 'edit'])
+        ->whereNumber('id')->name('edit');
 
-        Route::post('row/{id}/update', [PetugasSdtController::class, 'update'])
-            ->whereNumber('id')->name('update');
+    Route::post('row/{id}/update', [PetugasSdtController::class, 'update'])
+        ->whereNumber('id')->name('update');
 
-        Route::post('row/{id}/status/store', [PetugasSdtController::class, 'storeStatusPenyampaian'])
-            ->whereNumber('id')->name('status.store');
+    Route::post('row/{id}/status/store', [PetugasSdtController::class, 'storeStatusPenyampaian'])
+        ->whereNumber('id')->name('status.store');
 
-        Route::post('massupdate/ko/update', [PetugasSdtController::class, 'komplekMassUpdate'])
-            ->name('massupdate.ko.update');
+    Route::post('massupdate/ko/update', [PetugasSdtController::class, 'komplekMassUpdate'])
+        ->name('massupdate.ko.update');
 
-        Route::post('massupdate/nop/update', [PetugasSdtController::class, 'massUpdateNOP'])
-            ->name('massupdate.nop.update');
+    Route::post('massupdate/nop/update', [PetugasSdtController::class, 'massUpdateNOP'])
+        ->name('massupdate.nop.update');
 
-        Route::get('api/nop/search', [PetugasSdtController::class, 'searchNOP'])
-            ->name('api.nop');
-    });
+    Route::get('api/nop/search', [PetugasSdtController::class, 'searchNOP'])
+        ->name('api.nop');
+});
 });

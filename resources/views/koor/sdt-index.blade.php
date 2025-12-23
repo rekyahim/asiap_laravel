@@ -4,6 +4,8 @@
 @section('breadcrumb', '')
 
 @section('header_sdt_search')
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
     <form id="header-sdt-search-form" method="GET" action="{{ route('sdt.index') }}">
         <div class="input-group input-group-sm header-search" style="width:clamp(220px, 28vw, 360px);">
             <span class="input-group-text bg-white border-end-0">
@@ -850,6 +852,12 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.min.js"></script>
 
     <script>
+        $.ajaxSetup({
+    headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    }
+});
+
         (function() {
             const BASE = @json(url('/koor/sdt'));
 
@@ -1365,57 +1373,6 @@ data-current="${(r.petugas_nama || '').replace(/"/g,'&quot;')}"
 
             let initialPetugas = "";
 
-            // Saat modal Edit Petugas dibuka
-            modalEP.addEventListener("show.bs.modal", function(e) {
-                const btn = e.relatedTarget;
-
-                const id = btn.getAttribute("data-row-id");
-                const nop = btn.getAttribute("data-nop");
-                const tahun = btn.getAttribute("data-tahun");
-                const petugas = btn.getAttribute("data-petugas");
-
-                // Isi field
-                epNop.value = nop;
-                epTahun.value = tahun;
-
-                // Form action
-                formEP.action = `/koor/petugas/${id}`;
-
-                // Set petugas di select2
-                epPetugas.empty().append(new Option(petugas, petugas, true, true)).trigger("change");
-
-                initialPetugas = petugas;
-                epSubmit.disabled = true; // disable dulu
-            });
-
-            // Enable tombol simpan jika petugas berubah
-            epPetugas.on("change", function() {
-                const now = epPetugas.val();
-                epSubmit.disabled = now === initialPetugas;
-            });
-
-            // Submit update petugas
-            formEP.addEventListener("submit", function(e) {
-                e.preventDefault();
-
-                const fd = new FormData(formEP);
-                fd.set("_method", "PATCH");
-
-                fetch(formEP.action, {
-                        method: "POST",
-                        headers: {
-                            "X-CSRF-TOKEN": fd.get("_token"),
-                            "X-Requested-With": "XMLHttpRequest"
-                        },
-                        body: fd
-                    })
-                    .then(r => {
-                        if (!r.ok) throw new Error("Gagal menyimpan");
-                        return r.text();
-                    })
-                    .then(() => location.reload())
-                    .catch(err => alert(err));
-            });
 
             /* ====== TAMBAH PETUGAS MANUAL (BARU) ====== */
             const modalManual = document.getElementById('modalPetugasManual');
@@ -1804,33 +1761,35 @@ data-current="${(r.petugas_nama || '').replace(/"/g,'&quot;')}"
                 const current = btn.getAttribute("data-current") || "-";
 
                 const tr = btn.closest("tr");
-                const tdPetugas = tr.children[4]; // kolom petugas
+                const tdPetugas = tr.children[4]; // kolom PETUGAS
 
                 // Simpan tampilan lama
                 const oldHTML = tdPetugas.innerHTML;
 
-                // Ganti menjadi input Select2 + tombol
+                // Ubah jadi editor inline
                 tdPetugas.innerHTML = `
         <select id="edit-petugas-${rowId}" class="inline-editor"></select>
-        <button class="btn btn-success btn-sm inline-btn btn-save-row" data-id="${rowId}">
+        <button type="button" class="btn btn-success btn-sm inline-btn btn-save-row">
             Simpan
         </button>
-        <button class="btn btn-secondary btn-sm inline-btn btn-cancel-row">
+        <button type="button" class="btn btn-secondary btn-sm inline-btn btn-cancel-row">
             Batal
         </button>
     `;
 
-                // Init Select2
+                /* ============================
+                 * INIT SELECT2
+                 * ============================ */
                 const $select = $(`#edit-petugas-${rowId}`);
                 $select.select2({
-                    theme: 'bootstrap-5',
-                    width: '200px',
-                    placeholder: 'Pilih petugas...',
-                    dropdownParent: $('#modalDetail'),
+                    theme: "bootstrap-5",
+                    width: "200px",
+                    placeholder: "Pilih petugas...",
+                    dropdownParent: $("#modalDetail"),
                     ajax: {
                         url: `{{ route('api.pengguna.search') }}`,
-                        dataType: 'json',
-                        delay: 150,
+                        dataType: "json",
+                        delay: 200,
                         data: p => ({
                             q: p.term
                         }),
@@ -1840,47 +1799,71 @@ data-current="${(r.petugas_nama || '').replace(/"/g,'&quot;')}"
                     }
                 });
 
-                // Masukkan petugas saat ini
+                // Set petugas awal (teks saja, biar aman)
                 if (current && current !== "-") {
                     const opt = new Option(current, current, true, true);
                     $select.append(opt).trigger("change");
                 }
 
-                // === Tombol Batal ===
+                /* ============================
+                 * BATAL
+                 * ============================ */
                 tr.querySelector(".btn-cancel-row").addEventListener("click", () => {
                     tdPetugas.innerHTML = oldHTML;
                 });
 
-                // === Tombol Simpan ===
+                /* ============================
+                 * SIMPAN
+                 * ============================ */
                 tr.querySelector(".btn-save-row").addEventListener("click", async () => {
-                    const val = $select.val();
+                    const val = $select.val(); // ← ID pengguna (INTEGER)
 
                     if (!val) {
-                        alert("Pilih petugas!");
+                        alert("Pilih petugas terlebih dahulu");
                         return;
                     }
+
+                    const csrf = document
+                        .querySelector('meta[name="csrf-token"]')
+                        .getAttribute("content");
 
                     const fd = new FormData();
-                    fd.append("pengguna_id", val); // ini ID
-                    fd.append("_token", document.querySelector('meta[name="csrf-token"]')
-                        .content);
+                    fd.append("petugas", val);
 
-                    let res = await fetch(`/koor/sdt/${rowId}/savePetugas`, {
-
-
-                        method: "POST",
-                        body: fd
-                    });
-
-
-                    const json = await res.json();
-                    if (!json.ok) {
-                        alert(json.msg);
+                    let res;
+                    try {
+                        res = await fetch(`/koor/sdt/row/${rowId}/update-petugas`, {
+                            method: "POST",
+                            headers: {
+                                "X-Requested-With": "XMLHttpRequest"
+                                // "X-CSRF-TOKEN": csrf
+                            },
+                            credentials: "same-origin", // ⬅️ WAJIB
+                            body: fd
+                        });
+                    } catch (err) {
+                        alert("Request gagal (network error)");
+                        tdPetugas.innerHTML = oldHTML;
                         return;
                     }
 
+                    if (!res.ok) {
+                        alert("Gagal menyimpan (HTTP " + res.status + ")");
+                        tdPetugas.innerHTML = oldHTML;
+                        return;
+                    }
+
+                    const json = await res.json();
+
+                    if (!json.ok) {
+                        alert(json.msg || "Gagal menyimpan petugas");
+                        tdPetugas.innerHTML = oldHTML;
+                        return;
+                    }
+
+                    // SUCCESS → tampilkan nama petugas baru
                     tdPetugas.innerHTML =
-                        `<span class="text-success fw-semibold">${json.petugas}</span>`;
+                        `<span class="fw-semibold text-success">${json.petugas}</span>`;
                 });
             });
 
