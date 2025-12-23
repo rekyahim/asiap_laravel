@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Imports\DtSdtImport;
-use App\Models\DtSdt;
 use App\Models\Sdt;
-use App\Services\AsiapApiService;
+use App\Models\DtSdt;
+use App\Models\Pengguna;
+use App\Imports\DtSdtImport;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
+use App\Services\AsiapApiService;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Validation\ValidationException;
 
 class SdtController extends Controller
 {
@@ -407,7 +408,7 @@ class SdtController extends Controller
 
         $nop    = preg_replace('/\D+/', '', $r->NOP);
         $tahun  = $r->TAHUN;
-        $userId = (int) $r->NAMA_PETUGAS;
+        //$userId = (int) $r->NAMA_PETUGAS;
 
         /*
     |--------------------------------------------------------------------------
@@ -707,6 +708,11 @@ class SdtController extends Controller
             ->select(['ID', 'PETUGAS_SDT'])
             ->first();
 
+        $dtPengguna = Pengguna::where('ID', $row->PETUGAS_SDT)
+            ->where('STATUS', 1)
+            ->select(['ID', 'NAMA'])
+            ->first();
+
         if (!$row) {
             return response()->json([
                 'ok'     => true,
@@ -718,7 +724,7 @@ class SdtController extends Controller
             'ok'          => true,
             'exists'      => true,
             'has_petugas' => filled($row->PETUGAS_SDT),
-            'petugas'     => $row->PETUGAS_SDT,
+            'petugas'     => $dtPengguna->NAMA,
         ]);
     }
     public function destroy($id)

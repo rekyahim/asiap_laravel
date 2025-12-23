@@ -14,6 +14,189 @@
     {{-- Bootstrap Icons --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
+    {{-- ====== Global CSS ====== --}}
+    <style>
+        /* ================= PAGINATION ================= */
+        .pagination .page-link {
+            border-radius: .3rem
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: var(--bs-primary);
+            border-color: var(--bs-primary)
+        }
+
+        /* ================= HEADER SEARCH ================= */
+        .header-search {
+            width: 100%;
+            max-width: 520px;
+            margin-right: 16px;
+        }
+
+        .header-search .header-search-group {
+            --bd: rgba(0, 0, 0, .08);
+            display: flex;
+            align-items: stretch;
+            border: 1px solid var(--bd);
+            border-radius: .75rem;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .06);
+            overflow: hidden;
+            transition: box-shadow .18s ease, border-color .18s ease;
+        }
+
+        .header-search .header-search-group:focus-within {
+            border-color: #0d6efd;
+            box-shadow: 0 6px 18px rgba(13, 110, 253, .15);
+        }
+
+        .header-search .input-group-text {
+            background: transparent;
+            border: 0;
+            color: #6c757d;
+        }
+
+        .header-search .form-control {
+            border: 0;
+            box-shadow: none !important;
+        }
+
+        @media (max-width: 992px) {
+            .header-search {
+                max-width: 420px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .header-search {
+                margin-right: 8px;
+            }
+
+            .header-search-group button {
+                display: none;
+            }
+        }
+
+        /* ================= HEADER Z-INDEX ================= */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 1100;
+        }
+
+        /* ================= SIDEBAR BACK BUTTON ================= */
+        .brand-logo {
+            position: relative;
+        }
+
+        .sidebar-back-btn {
+            position: absolute;
+            top: 18px;
+            right: -16px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #fff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+            z-index: 1050;
+        }
+
+        .sidebar-back-btn i {
+            font-size: 18px;
+        }
+
+        /* ================= SIDEBAR & OVERLAY ================= */
+        .left-sidebar {
+            z-index: 1050;
+        }
+
+        .sidebar-overlay {
+            z-index: 1040;
+        }
+
+        /* =========================================================
+   COLLAPSIBLE SIDEBAR – IKUT SISTEM TEMPLATE
+========================================================= */
+
+        /* SIDEBAR NORMAL */
+        .page-wrapper:not(.mini-sidebar) .left-sidebar {
+            width: 260px !important;
+        }
+
+        /* SIDEBAR MINI */
+        .page-wrapper.mini-sidebar .left-sidebar {
+            width: 78px !important;
+        }
+
+        /* SEMBUNYIKAN TEKS MENU */
+        .page-wrapper.mini-sidebar .sidebar-link span,
+        .page-wrapper.mini-sidebar .nav-small-cap {
+            display: none !important;
+        }
+
+        /* ICON CENTER */
+        .page-wrapper.mini-sidebar .sidebar-link {
+            justify-content: center;
+        }
+
+        .page-wrapper.mini-sidebar .sidebar-link i {
+            font-size: 20px;
+        }
+
+        /* LOGO MINI */
+        .page-wrapper.mini-sidebar .logo-img img {
+            width: 40px;
+        }
+
+        /* HIDE BACK BUTTON DI MINI */
+        .page-wrapper.mini-sidebar .sidebar-back-btn {
+            display: none !important;
+        }
+
+        /* ============================================
+   COLLAPSIBLE SIDEBAR – IKUT TEMPLATE
+============================================ */
+
+        /* sidebar width */
+        .page-wrapper:not(.mini-sidebar) .left-sidebar {
+            width: 260px !important;
+        }
+
+        .page-wrapper.mini-sidebar .left-sidebar {
+            width: 78px !important;
+        }
+
+        /* sembunyikan teks menu saat mini */
+        .page-wrapper.mini-sidebar .sidebar-link span,
+        .page-wrapper.mini-sidebar .nav-small-cap {
+            display: none !important;
+        }
+
+        /* icon center */
+        .page-wrapper.mini-sidebar .sidebar-link {
+            justify-content: center;
+        }
+
+        .page-wrapper.mini-sidebar .sidebar-link i {
+            font-size: 20px;
+        }
+
+        /* logo mini */
+        .page-wrapper.mini-sidebar .logo-img img {
+            width: 40px;
+        }
+
+        /* hide back button di mini */
+        .page-wrapper.mini-sidebar .sidebar-back-btn {
+            display: none !important;
+        }
+    </style>
+
+    {{-- Halaman boleh push CSS tambahan di sini --}}
+    @stack('styles')
 </head>
 
 <body>
