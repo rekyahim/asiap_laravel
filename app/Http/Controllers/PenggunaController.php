@@ -122,13 +122,21 @@ class PenggunaController extends Controller
         ->log("Menambahkan pengguna baru");
 
     return back()->with([
-        'success'      => 'Pengguna dibuat.',
-        'created_user' => [
-            'USERNAME'         => $user->USERNAME,
-            'INITIAL_PASSWORD' => '123456',
-            'ID'               => $user->ID,
-        ],
-    ]);
+    'created_user' => [
+        'USERNAME'         => $user->USERNAME,
+        'INITIAL_PASSWORD' => '123456',
+        'ID'               => $user->ID,
+    ],
+
+    'swal' => [
+        'title'    => 'Pengguna berhasil dibuat',
+        'text'     => "Username: {$user->USERNAME}\nPassword: 123456",
+        'icon'     => 'success',
+        'position' => 'center',
+        'timer'    => 2500,
+    ],
+]);
+
 }
  /* =========================
        🔹 UPDATE
@@ -209,7 +217,12 @@ class PenggunaController extends Controller
         ])
         ->log('Update data pengguna');
 
-    return back()->with('success', 'Data pengguna diperbarui.');
+    return back()->with('swal', [
+    'title' => 'Data pengguna berhasil di perbarui',
+    'icon'  => 'success',
+    'position' => 'center',
+    'timer' => 1500,
+]);
 }
 
 
@@ -255,7 +268,15 @@ class PenggunaController extends Controller
         ])
         ->log('Pengguna dinonaktifkan');
 
-    return back()->with('success', 'Pengguna dinonaktifkan.');
+    return back()->with('swal', [
+    'title' => 'Pengguna Berhasil di Nonaktifkan',
+    'icon'  => 'success',
+    'position' => 'center',
+    'timer' => 1500,
+]);
+
+
+
 }
 
     /* =========================
@@ -317,7 +338,12 @@ class PenggunaController extends Controller
         ])
         ->log("Perubahan hak akses pengguna");
 
-    return back()->with('success', 'Hak akses pengguna diperbarui.');
+    return back()->with('swal', [
+    'title' => 'Hak akses pengguna berhasil di perbarui',
+    'icon'  => 'success',
+    'position' => 'center',
+    'timer' => 1500,
+]);
 }
 
     /* =========================
@@ -365,10 +391,12 @@ class PenggunaController extends Controller
         ])
         ->log("Reset password pengguna ke default (123456)");
 
-    return back()->with(
-        'success',
-        "Password pengguna {$user->USERNAME} berhasil direset ke 123456."
-    );
+    return back()->with('swal', [
+    'title' => 'Password Direset',
+    'text'  => "Password berhasil direset ke 123456.",
+    'icon'  => 'info',
+]);
+
 }
 
     /* =========================
@@ -410,8 +438,13 @@ class PenggunaController extends Controller
         $user->INITIAL_PASSWORD = null;
         $user->save();
 
-        return back()->with('success', 'Password berhasil diganti.');
-    }
+return back()->with('swal', [
+    'title' => 'Password berhasil di ganti',
+    'icon'  => 'success',
+    'position' => 'center',
+    'timer' => 1500,
+]);   
+ }
 
     /* ================================
        🔹 FORM WAJIB GANTI PASSWORD
@@ -530,7 +563,12 @@ class PenggunaController extends Controller
         $u->STATUS = 1;
         $u->save();
 
-        return back()->with('success', 'Pengguna diaktifkan kembali.');
+        return back()->with('swal', [
+    'title' => 'Pengguna berhasil di aktifkan',
+    'icon'  => 'success',
+    'position' => 'center',
+    'timer' => 1500,
+]);
     }
 
 }

@@ -249,6 +249,7 @@
         </div>
     </div>
 
+<<<<<<< HEAD
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -272,4 +273,53 @@
             });
         </script>
     @endpush
+=======
+@push('scripts')
+
+{{-- SweetAlert CDN --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // =====================
+    // TOOLTIP
+    // =====================
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        new bootstrap.Tooltip(el);
+    });
+
+    // =====================
+    // MODAL EDIT
+    // =====================
+    const modal = document.getElementById('modalEdit');
+    if (modal) {
+        modal.addEventListener('show.bs.modal', e => {
+            const b = e.relatedTarget;
+            document.getElementById('editNama').value   = b.dataset.nama ?? '';
+            document.getElementById('editLokasi').value = b.dataset.lokasi ?? '';
+            document.getElementById('editTgl').value    = b.dataset.tgl ?? '';
+            document.getElementById('formEditModul').action =
+                "{{ url('admin/modul') }}/" + b.dataset.id;
+        });
+    }
+
+    // =====================
+    // SWEETALERT (FLASH)
+    // =====================
+    @if(session('swal'))
+        Swal.fire({
+            icon: "{{ session('swal.icon') }}",
+            title: "{{ session('swal.title') }}",
+            position: "{{ session('swal.position') ?? 'center' }}",
+            showConfirmButton: false,
+            timer: {{ session('swal.timer') ?? 1500 }},
+        });
+    @endif
+
+});
+</script>
+
+@endpush
+>>>>>>> edf07a0e45aae85e5e57261fc3c911949ed4dc91
 @endsection

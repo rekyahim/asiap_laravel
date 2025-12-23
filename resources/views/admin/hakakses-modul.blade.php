@@ -190,6 +190,7 @@
         </div>
     </div>
 
+<<<<<<< HEAD
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', () => {
@@ -204,4 +205,44 @@
             });
         </script>
     @endpush
+=======
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // EDIT MODAL
+    const modalEdit = document.getElementById('modalEditRole');
+    modalEdit.addEventListener('show.bs.modal', e => {
+        const btn = e.relatedTarget;
+        document.getElementById('editRoleName').value = btn.dataset.name;
+        document.getElementById('editRoleStatusHidden').value = btn.dataset.status;
+        document.getElementById('formEditRole').action =
+            "{{ url('admin/hak-akses') }}/" + btn.dataset.id;
+    });
+
+    // TOOLTIP INIT (BOOTSTRAP 5)
+    const tooltipList = [].slice.call(
+        document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+    tooltipList.map(el => new bootstrap.Tooltip(el));
+
+});
+</script>
+@endpush
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@if(session('swal'))
+<script>
+Swal.fire({
+    icon: "{{ session('swal.icon') }}",
+    title: "{{ session('swal.title') }}",
+    position: "{{ session('swal.position') ?? 'center' }}",
+    showConfirmButton: false,
+    timer: {{ session('swal.timer') ?? 1500 }},
+});
+</script>
+@endif
+>>>>>>> edf07a0e45aae85e5e57261fc3c911949ed4dc91
 @endsection

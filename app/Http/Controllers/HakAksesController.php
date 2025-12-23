@@ -54,8 +54,16 @@ class HakAksesController extends Controller
             ->log("Hak Akses \"{$item->HAKAKSES}\" ditambahkan");
 
         return redirect()
-            ->route('admin.hakakses.modul.edit', $item->getKey())
-            ->with('success', 'Hak akses ditambahkan. Silakan atur modulnya.');
+    ->route('admin.hakakses.modul.edit', $item->getKey())
+    ->with([
+        'swal' => [
+            'title'    => 'Berhasil di tambah',
+            'text'     => 'Hak akses berhasil ditambahkan. Silakan atur modulnya.',
+            'icon'     => 'success',
+            'position' => 'center',
+            'timer'    => 2000,
+        ],
+    ]);
     }
 
     // GET /admin/hak-akses/{id}/edit
@@ -119,8 +127,17 @@ class HakAksesController extends Controller
             ->log("Hak Akses \"{$item->HAKAKSES}\" diperbarui");
 
         return redirect()
-            ->route('admin.hakakses.modul.edit', $item->getKey())
-            ->with('success', 'Hak akses diperbarui. Silakan lanjut atur modul.');
+    ->route('admin.hakakses.modul.edit', $item->getKey())
+    ->with([
+        'swal' => [
+            'title'    => 'Berhasil di perbarui',
+            'text'     => 'Hak akses berhasil diperbarui. Silakan lanjut atur modul.',
+            'icon'     => 'success',
+            'position' => 'center',
+            'timer'    => 2000,
+        ],
+    ]);
+
     }
 
     // DELETE /admin/hak-akses/{id} (soft delete: STATUS=0)
@@ -155,11 +172,37 @@ class HakAksesController extends Controller
         if ($fromMap) {
             $next = HakAkses::where('STATUS', 1)->orderBy('ID')->first();
             return $next
-                ? redirect()->route('admin.hakakses.modul.edit', $next->getKey())->with('success', 'Hak akses dinonaktifkan.')
-                : redirect()->route('hakakses.index')->with('success', 'Hak akses dinonaktifkan.');
+    ? redirect()
+        ->route('admin.hakakses.modul.edit', $next->getKey())
+        ->with('swal', [
+            'icon'     => 'success',
+            'title'    => 'Hak akses dinonaktifkan',
+            'position' => 'center', // bisa: top, top-end, bottom, dll
+            'timer'    => 1500,
+        ])
+    : redirect()
+        ->route('hakakses.index')
+        ->with('swal', [
+            'icon'     => 'success',
+            'title'    => 'Hak akses dinonaktifkan',
+            'position' => 'center',
+            'timer'    => 1500,
+        ]);
+
         }
 
-        return redirect()->route('hakakses.index')->with('success', 'Hak akses dinonaktifkan.');
+        return redirect()
+    ->route('hakakses.index')
+    ->with([
+        'swal' => [
+            'title'    => 'Dinonaktifkan',
+            'text'     => 'Hak akses berhasil dinonaktifkan.',
+            'icon'     => 'success',
+            'position' => 'center',
+            'timer'    => 1800,
+        ],
+    ]);
+
     }
 
     // PATCH /admin/hak-akses/{id}/toggle
