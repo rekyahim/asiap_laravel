@@ -1,6 +1,7 @@
 @extends('layouts.admin')
 
 @section('title', 'Activity Log')
+@section('breadcrumb', '')
 
 @section('content')
     @php
@@ -26,16 +27,22 @@
             'modul' => 'Modul',
         ];
     @endphp
+    {{-- breadcrumb --}}
+    <div class="page-breadcrumb">
+        <div class="crumbs">
+            <span class="crumb active">Riwayat Aktivitas</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="card shadow-sm border-0">
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body">
 
             {{-- HEADER --}}
-            <div class="d-flex align-items-center justify-content-between mb-4">
+            {{-- <div class="d-flex align-items-center justify-content-between mb-4">
                 <h5 class="fw-semibold mb-0">
                     <i class="bi bi-clock-history me-2"></i>Activity Log
                 </h5>
-            </div>
+            </div> --}}
 
             {{-- FILTER --}}
             <form class="row g-2 mb-4">
@@ -302,17 +309,22 @@
                 1: 'Tersampaikan',
                 0: 'Belum Tersampaikan'
             },
-            STATUS_OP: {
-                1: 'Ditemukan',
-                2: 'Tidak Ditemukan',
-                0: 'Tidak Diketahui'
-            },
+
             STATUS_WP: {
-                1: 'Ditemukan',
-                2: 'Tidak Ditemukan',
-                0: 'Tidak Diketahui'
+                1: 'Belum Diproses Petugas',
+                2: 'Ditemukan',
+                3: 'Tidak Ditemukan',
+                4: 'Luar Kota'
+            },
+
+            STATUS_OP: {
+                1: 'Belum Diproses Petugas',
+                2: 'Ditemukan',
+                3: 'Tidak Ditemukan',
+                4: 'Sudah Dijual'
             }
         };
+
 
         /* LABEL RAMAH */
         const FIELD_LABEL = {
@@ -327,19 +339,69 @@
             STATUS_WP: 'Status Wajib Pajak',
             KETERANGAN_PETUGAS: 'Keterangan',
             NAMA_PENERIMA: 'Nama Penerima',
-            HP_PENERIMA: 'HP Penerima'
+            HP_PENERIMA: 'HP Penerima',
+            KD_UNIT: 'Unit',
+
         };
+        const UNIT_TRANSLATE = {
+            1: 'BAPENDA',
+            2: 'PD I',
+            3: 'DALJAK',
+            4: 'UPT I',
+            5: 'UPT II',
+            6: 'UPT III',
+            7: 'UPT IV',
+            8: 'UPT V',
+            9: 'SEKRETARIAT',
+            10: 'PD II',
+            11: 'P3D',
+        };
+
+        function formatTanggal(value) {
+            if (!value) return '-';
+
+            // cek ISO date (2025-12-24T17:00:00Z)
+            if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+                const d = new Date(value);
+                if (isNaN(d)) return value;
+
+                return d.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            }
+
+            return value;
+        }
 
         function humanValue(field, value) {
             if (value === null || value === undefined) return '-';
 
-            if (typeof value === 'number' && STATUS_TRANSLATE[field]?.[value] !== undefined) {
+            /* ===============================
+             * STATUS ENUM (OP / WP / PENYAMPAIAN)
+             * =============================== */
+            if (STATUS_TRANSLATE[field]?.[value] !== undefined) {
                 return STATUS_TRANSLATE[field][value];
             }
-            if (value === '') return '-';
-            return value;
-        }
 
+            /* ===============================
+             * KD_UNIT → NAMA UNIT
+             * =============================== */
+            if (
+                (field === 'KD_UNIT' || field === 'kd_unit') &&
+                UNIT_TRANSLATE[value] !== undefined
+            ) {
+                return UNIT_TRANSLATE[value];
+            }
+
+            /* ===============================
+             * FORMAT TANGGAL (ISO → HUMAN)
+             * =============================== */
+            const formatted = formatTanggal(value);
+
+            return formatted === '' ? '-' : formatted;
+        }
         /* ==============================
          * OPSI D – PERUBAHAN
          * ============================== */
@@ -439,18 +501,7 @@
                 <th>Aksi</th>
                 <td>${res.event ?? '-'}</td>
             </tr>
-            <tr>
-  <th>Pelaku</th>
-  <td>
-    ${
-      res.causer
-        ? `${res.causer.NAMA}
-               ${res.causer.NAMA_UNIT ? ' — ' + res.causer.NAMA_UNIT : ''}
-               ${res.causer.HAKAKSES ? ' (' + res.causer.HAKAKSES + ')' : ''}`
-        : 'System'
-    }
-  </td>
-</tr>
+
 
             <tr>
                 <th>Waktu</th>

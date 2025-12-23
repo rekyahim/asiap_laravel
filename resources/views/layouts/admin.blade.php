@@ -16,6 +16,106 @@
 
     {{-- ====== Global CSS ====== --}}
     <style>
+        /* ================= BREADCRUMB GENERIC ================= */
+        .page-breadcrumb {
+            margin: -.25rem 0 1rem 0
+        }
+
+        .crumbs {
+            font-size: 1.0rem
+        }
+
+        .crumb {
+            color: #6c757d;
+            text-decoration: none;
+            transition: color .15s ease
+        }
+
+        .crumb:hover {
+            color: #212529;
+            text-decoration: underline
+        }
+
+        .crumb.active {
+            font-weight: 600;
+            color: #212529;
+            pointer-events: none;
+            text-decoration: none
+        }
+
+        .crumb-sep {
+            margin: 0 .35rem;
+            color: #adb5bd
+        }
+
+        /* ================= TABLE HEADER GENERIC ================= */
+        .table thead th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: .85rem;
+            letter-spacing: .5px
+        }
+
+        /* ================= AKSI BUTTON GENERIC ================= */
+        .aksi-btns .btn-icon {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: .5rem;
+            color: #fff;
+        }
+
+        .aksi-btns .btn-icon i {
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        /* hover effect */
+        @media (prefers-reduced-motion:no-preference) {
+
+            .aksi-btns .btn-icon:hover,
+            .aksi-btns .btn-icon:focus {
+                transform: translateY(-1px);
+                filter: brightness(.98);
+                background-color: inherit !important;
+                color: #fff !important;
+            }
+        }
+        /* ================= AKSI BUTTON FIX ================= */
+        .aksi-btns .btn-icon {
+            color: #fff;
+        }
+
+        .aksi-btns .btn-icon i {
+            color: inherit;
+        }
+
+
+        .btn-add {
+            background: #5D87FF;
+            /* hijau */
+        }
+
+        .btn-brand {
+            background: #5965e8;
+            border-color: #5965e8;
+        }
+
+        .btn-brand:hover {
+            background: #7380ff;
+            border-color: #7380ff;
+        }
+
+        /* ===== GLOBAL CARD (MASTER) ===== */
+        .app-card {
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .06), 0 2px 6px rgba(0, 0, 0, .04);
+            border: 1px solid rgba(0, 0, 0, .03);
+            border-radius: .75rem
+        }
+
         /* ================= PAGINATION ================= */
         .pagination .page-link {
             border-radius: .3rem

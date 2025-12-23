@@ -90,8 +90,6 @@
     <div class="container-lg px-0">
         <div class="page-breadcrumb">
             <div class="crumbs">
-                <a href="{{ url('/koor') }}" class="crumb">Koordinator</a>
-                <span class="crumb-sep">•</span>
                 <a href="{{ url('/koor/sdt') }}" class="crumb">Daftar SDT</a>
                 <span class="crumb-sep">•</span>
                 <span class="crumb active">Tambah SDT</span>
