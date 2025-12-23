@@ -65,131 +65,311 @@ class PenggunaController extends Controller
     /* =========================
        🔹 CREATE
     ========================= */
-    public function store(Request $r)
-    {
-        $data = $r->validate([
-            'USERNAME'    => ['required', 'string', 'max:100', 'regex:/^[a-z0-9_.-]+$/', Rule::unique('pengguna', 'USERNAME')],
-            'NAMA'        => ['required', 'string', 'max:255'],
-            'JABATAN'     => ['required', Rule::in(['PNS', 'NON PNS'])],
-            'NIP'         => ['nullable', 'string', 'max:50'],
-            'KD_UNIT'     => ['nullable', 'integer', 'between:1,11'],
-            'HAKAKSES_ID' => ['nullable', 'integer', 'exists:hak_akses,ID'],
-        ]);
+   public function store(Request $r)
+{
+    $data = $r->validate([
+        'USERNAME'    => ['required', 'string', 'max:100', 'regex:/^[a-z0-9_.-]+$/', Rule::unique('pengguna', 'USERNAME')],
+        'NAMA'        => ['required', 'string', 'max:255'],
+        'JABATAN'     => ['required', Rule::in(['PNS', 'NON PNS'])],
+        'NIP'         => ['nullable', 'string', 'max:50'],
+        'KD_UNIT'     => ['nullable', 'integer', 'between:1,11'],
+        'HAKAKSES_ID' => ['nullable', 'integer', 'exists:hak_akses,ID'],
+    ]);
 
-        $role     = isset($data['HAKAKSES_ID']) ? HakAkses::find($data['HAKAKSES_ID']) : null;
-        $unitName = $data['KD_UNIT'] ? ($this->unitMap[$data['KD_UNIT']] ?? null) : null;
+    $role     = isset($data['HAKAKSES_ID']) ? HakAkses::find($data['HAKAKSES_ID']) : null;
+    $unitName = $data['KD_UNIT'] ? ($this->unitMap[$data['KD_UNIT']] ?? null) : null;
 
-        $user = Pengguna::create([
-            'USERNAME'         => strtolower(trim($data['USERNAME'])),
-            'NAMA'             => strtoupper(trim($data['NAMA'])),
-            'JABATAN'          => $data['JABATAN'],
-            'NIP'              => $data['NIP'] ?? null,
-            'KD_UNIT'          => $data['KD_UNIT'] ?? null,
-            'NAMA_UNIT'        => $unitName,
-            'HAKAKSES_ID'      => $data['HAKAKSES_ID'] ?? null,
-            'HAKAKSES'         => $role?->HAKAKSES,
-            'STATUS'           => 1,
-            'TGLPOST'          => now(),
-            'INITIAL_PASSWORD' => '123456',
-            'PASSWORD'         => bcrypt('123456'),
-        ]);
-        // 🔥 LOG otomatis: created
+    /* =========================
+     * 1. CREATE USER
+     * ========================= */
+    $user = Pengguna::create([
+        'USERNAME'         => strtolower(trim($data['USERNAME'])),
+        'NAMA'             => strtoupper(trim($data['NAMA'])),
+        'JABATAN'          => $data['JABATAN'],
+        'NIP'              => $data['NIP'] ?? null,
+        'KD_UNIT'          => $data['KD_UNIT'] ?? null,
+        'NAMA_UNIT'        => $unitName,
+        'HAKAKSES_ID'      => $data['HAKAKSES_ID'] ?? null,
+        'HAKAKSES'         => $role?->HAKAKSES,
+        'STATUS'           => 1,
+        'TGLPOST'          => now(),
+        'INITIAL_PASSWORD' => '123456',
+        'PASSWORD'         => bcrypt('123456'),
+    ]);
 
-        return back()->with([
-            'success'      => 'Pengguna dibuat.',
-            'created_user' => [
-                'USERNAME'         => $user->USERNAME,
-                'INITIAL_PASSWORD' => '123456',
-                'ID'               => $user->ID,
+    /* =========================
+     * 2. ACTIVITY LOG (CREATED)
+     * ========================= */
+    $causer = Pengguna::find(session('auth_uid'));
+
+    activity('PENGGUNA')
+        ->event('created')
+        ->performedOn($user)
+        ->causedBy($causer)
+        ->withProperties([
+            'old' => null,
+            'new' => [
+                'USERNAME'    => $user->USERNAME,
+                'NAMA'        => $user->NAMA,
+                'JABATAN'     => $user->JABATAN,
+                'NIP'         => $user->NIP,
+                'KD_UNIT'     => $user->KD_UNIT,
+                'NAMA_UNIT'   => $user->NAMA_UNIT,
+                'HAKAKSES'    => $user->HAKAKSES,
+                'STATUS'      => $user->STATUS,
             ],
-        ]);
-    } /* =========================
+        ])
+        ->log("Menambahkan pengguna baru");
+
+    return back()->with([
+        'success'      => 'Pengguna dibuat.',
+        'created_user' => [
+            'USERNAME'         => $user->USERNAME,
+            'INITIAL_PASSWORD' => '123456',
+            'ID'               => $user->ID,
+        ],
+    ]);
+}
+ /* =========================
        🔹 UPDATE
     ========================= */
     public function update(Request $r, $id)
-    {
-        $user = Pengguna::findOrFail($id);
+{
+    $user = Pengguna::findOrFail($id);
 
-        $data = $r->validate([
-            'USERNAME' => [
-                'required', 'string', 'max:100',
-                'regex:/^[a-z0-9_.-]+$/',
-                Rule::unique('pengguna', 'USERNAME')->ignore($user->ID, 'ID'),
-            ],
-            'NAMA'     => ['required', 'string', 'max:255'],
-            'JABATAN'  => ['required', Rule::in(['PNS', 'NON PNS'])],
-            'NIP'      => ['nullable', 'string', 'max:50'],
-            'KD_UNIT'  => ['nullable', 'integer', 'between:1,11'],
-        ]);
+    /* =========================
+     * 1. DATA SEBELUM
+     * ========================= */
+    $before = $user->only([
+        'USERNAME',
+        'NAMA',
+        'JABATAN',
+        'NIP',
+        'KD_UNIT',
+        'NAMA_UNIT',
+    ]);
 
-        $unitName = $data['KD_UNIT'] ? ($this->unitMap[$data['KD_UNIT']] ?? null) : null;
+    /* =========================
+     * 2. VALIDASI
+     * ========================= */
+    $data = $r->validate([
+        'USERNAME' => [
+            'required',
+            'string',
+            'max:100',
+            'regex:/^[a-z0-9_.-]+$/',
+            Rule::unique('pengguna', 'USERNAME')->ignore($user->ID, 'ID'),
+        ],
+        'NAMA'    => ['required', 'string', 'max:255'],
+        'JABATAN' => ['required', Rule::in(['PNS', 'NON PNS'])],
+        'NIP'     => ['nullable', 'string', 'max:50'],
+        'KD_UNIT' => ['nullable', 'integer', 'between:1,11'],
+    ]);
 
-        $user->update([
-            'USERNAME'  => strtolower(trim($data['USERNAME'])),
-            'NAMA'      => strtoupper(trim($data['NAMA'])),
-            'JABATAN'   => $data['JABATAN'],
-            'NIP'       => $data['NIP'] ?? null,
-            'KD_UNIT'   => $data['KD_UNIT'] ?? null,
-            'NAMA_UNIT' => $unitName,
-        ]);
-        // 🔥 LOG otomatis: updated (old → new jelas)
+    /* =========================
+     * 3. UPDATE DATA
+     * ========================= */
+    $unitName = $data['KD_UNIT']
+        ? ($this->unitMap[$data['KD_UNIT']] ?? null)
+        : null;
 
-        return back()->with('success', 'Data pengguna diperbarui.');
-    }
+    $user->update([
+        'USERNAME'  => strtolower(trim($data['USERNAME'])),
+        'NAMA'      => strtoupper(trim($data['NAMA'])),
+        'JABATAN'   => $data['JABATAN'],
+        'NIP'       => $data['NIP'] ?? null,
+        'KD_UNIT'   => $data['KD_UNIT'] ?? null,
+        'NAMA_UNIT' => $unitName,
+    ]);
+
+    /* =========================
+     * 4. DATA SESUDAH
+     * ========================= */
+    $after = $user->fresh()->only([
+        'USERNAME',
+        'NAMA',
+        'JABATAN',
+        'NIP',
+        'KD_UNIT',
+        'NAMA_UNIT',
+    ]);
+
+    /* =========================
+     * 5. ACTIVITY LOG (FINAL)
+     * ========================= */
+    $causer = Pengguna::find(session('auth_uid'));
+
+    activity('PENGGUNA')
+        ->event('updated')
+        ->performedOn($user)
+        ->causedBy($causer)
+        ->withProperties([
+            'old' => $before,
+            'new' => $after, // 🔥 HARUS "new"
+        ])
+        ->log('Update data pengguna');
+
+    return back()->with('success', 'Data pengguna diperbarui.');
+}
+
+
     /* =========================
        🔹 DELETE (Soft Delete)
     ========================= */
     public function destroy($id)
-    {
-        $user         = Pengguna::findOrFail($id);
-        $user->STATUS = 0;
-        $user->save();
-        // 🔥 LOG otomatis → event = deleted
+{
+    $user = Pengguna::findOrFail($id);
 
-        return back()->with('success', 'Pengguna dinonaktifkan.');
-    }
+    /* =========================
+     * 1. DATA SEBELUM
+     * ========================= */
+    $before = [
+        'STATUS' => $user->STATUS,
+    ];
+
+    /* =========================
+     * 2. NONAKTIFKAN
+     * ========================= */
+    $user->STATUS = 0;
+    $user->save();
+
+    /* =========================
+     * 3. DATA SESUDAH
+     * ========================= */
+    $after = [
+        'STATUS' => $user->STATUS,
+    ];
+
+    /* =========================
+     * 4. ACTIVITY LOG (FINAL)
+     * ========================= */
+    $causer = Pengguna::find(session('auth_uid'));
+
+    activity('PENGGUNA')
+        ->event('deleted') // sesuai filter event
+        ->performedOn($user)
+        ->causedBy($causer)
+        ->withProperties([
+            'old' => $before,
+            'new' => $after,
+        ])
+        ->log('Pengguna dinonaktifkan');
+
+    return back()->with('success', 'Pengguna dinonaktifkan.');
+}
+
     /* =========================
        🔹 UPDATE HAK AKSES
     ========================= */
     public function updateHakAkses(Request $r, $id)
-    {
-        $data = $r->validate([
-            'hakakses_id' => ['nullable', 'integer', Rule::exists('hak_akses', 'ID')->where('STATUS', 1)],
-        ]);
+{
+    $data = $r->validate([
+        'hakakses_id' => ['nullable', 'integer', Rule::exists('hak_akses', 'ID')->where('STATUS', 1)],
+    ]);
 
-        $user = Pengguna::findOrFail($id);
+    $user = Pengguna::findOrFail($id);
 
-        $role = $data['hakakses_id']
-            ? HakAkses::find($data['hakakses_id'])
-            : null;
+    $role = $data['hakakses_id']
+        ? HakAkses::find($data['hakakses_id'])
+        : null;
 
-        // jika sama → stop (no log)
-        if ((int) $user->HAKAKSES_ID === (int) ($role?->ID)) {
-            return back()->with('success', 'Hak akses tidak berubah.');
-        }
+    // =========================
+    // 1. DATA SEBELUM
+    // =========================
+    $before = [
+        'HAKAKSES_ID' => $user->HAKAKSES_ID,
+        'HAKAKSES'    => $user->HAKAKSES,
+    ];
 
-        $user->update([
-            'HAKAKSES_ID' => $role?->ID,
-            'HAKAKSES'    => $role?->HAKAKSES,
-        ]);
-        // 🔥 LOG otomatis:
-        // old: HAKAKSES_ID + HAKAKSES
-        // new: HAKAKSES_ID + HAKAKSES
-
-        return back()->with('success', 'Hak akses pengguna diperbarui.');
+    // jika sama → stop (no log)
+    if ((int) $user->HAKAKSES_ID === (int) ($role?->ID)) {
+        return back()->with('success', 'Hak akses tidak berubah.');
     }
+
+    // =========================
+    // 2. UPDATE DATA
+    // =========================
+    $user->update([
+        'HAKAKSES_ID' => $role?->ID,
+        'HAKAKSES'    => $role?->HAKAKSES,
+    ]);
+
+    // =========================
+    // 3. DATA SESUDAH
+    // =========================
+    $after = [
+        'HAKAKSES_ID' => $role?->ID,
+        'HAKAKSES'    => $role?->HAKAKSES,
+    ];
+
+    // =========================
+    // 4. ACTIVITY LOG (FIX)
+    // =========================
+    $causer = Pengguna::find(session('auth_uid'));
+
+    activity('PENGGUNA')
+        ->event('updated')
+        ->performedOn($user)
+        ->causedBy($causer)
+        ->withProperties([
+            'old' => $before,
+            'new' => $after, // 🔥 HARUS "new"
+        ])
+        ->log("Perubahan hak akses pengguna");
+
+    return back()->with('success', 'Hak akses pengguna diperbarui.');
+}
+
     /* =========================
        🔹 RESET PASSWORD
     ========================= */
     public function resetPassword($id)
-    {
-        $u                   = Pengguna::findOrFail($id);
-        $u->PASSWORD         = bcrypt('123456');
-        $u->INITIAL_PASSWORD = '123456';
-        $u->save();
+{
+    $user = Pengguna::findOrFail($id);
 
-        return back()->with('success', "Password pengguna {$u->USERNAME} berhasil direset ke 123456.");
-    }
+    /* =========================
+     * 1. DATA SEBELUM
+     * ========================= */
+    $before = [
+        'PASSWORD'         => '******',
+        'INITIAL_PASSWORD' => $user->INITIAL_PASSWORD,
+    ];
+
+    /* =========================
+     * 2. RESET PASSWORD
+     * ========================= */
+    $user->PASSWORD         = bcrypt('123456');
+    $user->INITIAL_PASSWORD = '123456';
+    $user->save();
+
+    /* =========================
+     * 3. DATA SESUDAH
+     * ========================= */
+    $after = [
+        'PASSWORD'         => '******',
+        'INITIAL_PASSWORD' => '123456',
+    ];
+
+    /* =========================
+     * 4. ACTIVITY LOG (FIX)
+     * ========================= */
+    $causer = Pengguna::find(session('auth_uid'));
+
+    activity('PENGGUNA')
+        ->event('updated')
+        ->performedOn($user)
+        ->causedBy($causer)
+        ->withProperties([
+            'old' => $before,
+            'new' => $after,
+        ])
+        ->log("Reset password pengguna ke default (123456)");
+
+    return back()->with(
+        'success',
+        "Password pengguna {$user->USERNAME} berhasil direset ke 123456."
+    );
+}
 
     /* =========================
        🔹 UPDATE PROFILE SENDIRI
