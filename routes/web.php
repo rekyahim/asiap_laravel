@@ -237,7 +237,7 @@ Route::middleware(AuthOnly::class)->group(function () {
                 'row/{id}/update-petugas',
                 [\App\Http\Controllers\SdtController::class, 'updateRowPetugas']
             )->name('sdt.row.update-petugas');
-            
+
         Route::get('{id}/export', [RiwayatController::class, 'exportSdt'])
             ->whereNumber('id')->name('export');
     });
@@ -295,6 +295,7 @@ Route::middleware(AuthOnly::class)->group(function () {
     | PETUGAS SDT
     |--------------------------------------------------------------------------
     */
+});
 Route::prefix('petugas/sdt')->name('petugas.sdt.')->group(function () {
 
     Route::get('/', [PetugasSdtController::class, 'index'])->name('index');
@@ -322,5 +323,8 @@ Route::prefix('petugas/sdt')->name('petugas.sdt.')->group(function () {
 
     Route::get('api/nop/search', [PetugasSdtController::class, 'searchNOP'])
         ->name('api.nop');
+        Route::get('api/nop/detail', [PetugasSdtController::class, 'getDetailNOP'])
+        ->name('api.nop.detail');
 });
-});
+
+

@@ -21,15 +21,61 @@ class PetugasSdtController extends Controller
     {
         $user_id = session('auth_uid');
 
-        // Menggunakan whereHas jauh lebih aman & "Laravel way"
-        $master = Sdt::query()
-            ->orderBy('ID')
-            ->whereHas('details', function ($query) use ($user_id) {
-                // 'details' adalah nama fungsi relasi di model Sdt Anda
-                // Filter: hanya ambil SDT yang punya detail dengan PETUGAS_SDT = user login
-                $query->where('PETUGAS_SDT', $user_id);
+        $master = DB::table('sdt')
+            ->select([
+                'sdt.ID',
+                'sdt.NAMA_SDT',
+                'sdt.TGL_MULAI',
+                'sdt.TGL_SELESAI',
+                'sdt.STATUS_SDT',
+                'sdt.STATUS',
+
+                // 1. SUBQUERY: Hitung Total NOP (Khusus User Ini & STATUS Detail = 1)
+                DB::raw("(
+            SELECT COUNT(id) 
+            FROM dt_sdt 
+            WHERE dt_sdt.ID_SDT = sdt.ID 
+            AND dt_sdt.PETUGAS_SDT = '$user_id'
+            AND dt_sdt.STATUS = 1   -- Filter Tambahan
+        ) as JUMLAH_NOP"),
+
+                // 2. SUBQUERY: Hitung Progress (Khusus User Ini & STATUS Detail = 1)
+                DB::raw("(
+            SELECT COUNT(a.id) 
+            FROM dt_sdt a
+            JOIN status_penyampaian b ON b.ID_DT_SDT = a.ID
+            WHERE a.ID_SDT = sdt.ID 
+            AND a.PETUGAS_SDT = '$user_id'
+            AND a.STATUS = 1       -- Filter Tambahan
+        ) as SUDAH_DIPROSES")
+            ])
+            // 3. MAIN FILTER: Pastikan Master SDT Aktif (STATUS = 1)
+            ->where('sdt.STATUS', 1)
+
+            // 4. EXISTS FILTER: User punya tugas aktif di SDT ini
+            ->whereExists(function ($query) use ($user_id) {
+                $query->select(DB::raw(1))
+                    ->from('dt_sdt')
+                    ->whereColumn('dt_sdt.ID_SDT', 'sdt.ID')
+                    ->where('dt_sdt.PETUGAS_SDT', $user_id)
+                    ->where('dt_sdt.STATUS', 1); // Filter Tambahan
             })
-            ->get(['ID', 'NAMA_SDT', 'TGL_MULAI', 'TGL_SELESAI']);
+            ->orderBy('sdt.ID', 'DESC')
+            ->get();
+
+        // --- Logic Matematika Persentase (Sama seperti sebelumnya) ---
+        $master->transform(function ($item) {
+            if ($item->JUMLAH_NOP > 0) {
+                $item->PROGRESS = round(($item->SUDAH_DIPROSES / $item->JUMLAH_NOP) * 100, 1);
+            } else {
+                $item->PROGRESS = 0;
+            }
+
+            $item->TGL_MULAI_FMT = $item->TGL_MULAI ? date('d M Y', strtotime($item->TGL_MULAI)) : '-';
+            $item->TGL_SELESAI_FMT = $item->TGL_SELESAI ? date('d M Y', strtotime($item->TGL_SELESAI)) : '-';
+
+            return $item;
+        });
 
         return view('petugas.sdt-index', compact('master'));
     }
@@ -77,9 +123,10 @@ class PetugasSdtController extends Controller
             $status = $row->latestStatus;
             $sdt = $row->sdt;
             $row->expired = '2'; //belum
-            if ($status && $status->create_at) {
+            if ($status && $status->created_at) {
+
                 // 1. Define the past date (e.g., from a database)
-                $past_date_string = $status->create_at;
+                $past_date_string = $status->created_at;
 
                 // 2. Convert dates to timestamps
                 $past_timestamp = strtotime($past_date_string);
@@ -118,7 +165,7 @@ class PetugasSdtController extends Controller
             }
         }
 
-
+        //dd($rows);
         /* ============================================================
         DATA KO (TIDAK TERPENGARUH FILTER)
         ============================================================ */
@@ -155,7 +202,7 @@ class PetugasSdtController extends Controller
             'ID_DT_SDT',
             DtSdt::where('ID_SDT', $id)->where('PETUGAS_SDT', $user_id)->pluck('ID')
         )
-            ->where('STATUS_PENYAMPAIAN', 1)
+
             ->distinct('ID_DT_SDT')
             ->count();
 
@@ -174,7 +221,7 @@ class PetugasSdtController extends Controller
             ============================================================ */
         $totalBiaya = DtSdt::where('ID_SDT', $id)
             ->where('PETUGAS_SDT', $user_id)
-            ->whereIn('ALAMAT_OP', $dataKO->pluck('ALAMAT_OP'))
+            // ->whereIn('ALAMAT_OP', $dataKO->pluck('ALAMAT_OP'))
             ->sum('PBB_HARUS_DIBAYAR');
 
         /* ============================================================
@@ -198,84 +245,253 @@ class PetugasSdtController extends Controller
     /**
      * Handle mass update for NOP_BENAR or KOORDINAT_OP based on a list of NOPs.
      */
-public function komplekMassUpdate(Request $request): RedirectResponse
-{
-    $sdtId = $request->input('sdt_id');
+    public function komplekMassUpdate(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'sdt_id' => 'required|exists:sdt,ID',
+            'action_type' => 'required|in:ko,nop,status_ko,status_nop',
+            'list_nop' => 'required|string',
 
-    $request->validate([
-        'sdt_id' => 'required|exists:sdt,ID',
-        'action_type' => 'required|in:ko,nop',
-        'list_nop' => 'required|string',
-        'koordinat' => 'nullable|string|required_if:action_type,ko',
-        // Jika NOP_BENAR hanya pilihan YA/TIDAK, gunakan validation ini:
-        'nop_benar_baru' => 'nullable|string|required_if:action_type,nop|in:YA,TIDAK',
-    ]);
+            // khusus mode lama
+            'koordinat' => 'nullable|required_if:action_type,ko|string',
+            'nop_benar_baru' => 'nullable|required_if:action_type,nop|in:YA,TIDAK',
 
-    $actionType = $request->input('action_type');
-    $rawNops = $request->input('list_nop');
+            // khusus status
+            'STATUS_PENYAMPAIAN' => 'nullable|required_if:action_type,status_ko,status_nop',
+        ]);
 
-    // Bersihkan NOP dari spasi atau baris kosong
-    $listNop = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $rawNops)));
+        $sdtId      = $request->sdt_id;
+        $actionType = $request->action_type;
+        $userId     = auth()->user()->ID_PENGGUNA;
+        $now        = now();
 
-    if (empty($listNop)) {
-        return back()->with('error', 'Daftar NOP tidak valid.');
-    }
+        // Pecah list NOP (textarea / multiline)
+        $listNop = array_filter(array_map(
+            'trim',
+            preg_split('/\r\n|\r|\n/', $request->list_nop)
+        ));
 
-    try {
-        DB::beginTransaction();
-
-        // Ambil semua ID sekaligus untuk meminimalkan query
-        $dtSdtIds = DtSdt::where('ID_SDT', $sdtId)
-            ->whereIn('NOP', $listNop)
-            ->pluck('ID');
-
-        if ($dtSdtIds->isEmpty()) {
-            throw new \Exception('Data NOP tidak ditemukan di sistem.');
+        if (empty($listNop)) {
+            return back()->with('error', 'Daftar NOP tidak valid.');
         }
 
-        $countUpdated = 0;
+        try {
+            DB::beginTransaction();
+
+            // Ambil semua DT_SDT ID berdasarkan NOP
+            $dtSdtIds = DtSdt::where('ID_SDT', $sdtId)
+                ->whereIn('NOP', $listNop)
+                ->pluck('ID');
+
+            if ($dtSdtIds->isEmpty()) {
+                throw new \Exception('Data NOP tidak ditemukan di sistem.');
+            }
+
+            $countUpdated = 0;
+
+            foreach ($dtSdtIds as $dtSdtId) {
+
+                // Data dasar (selalu ada)
+                $updateData = [
+                    'ID_SDT'          => $sdtId,
+                    'ID_PETUGAS'      => $userId,
+                    'TGL_PENYAMPAIAN' => $now,
+                ];
+
+                /* ===============================
+               MODE UPDATE
+            =============================== */
+                if ($actionType === 'ko') {
+                    // Update Koordinat OP
+                    $updateData['KOORDINAT_OP'] = $request->koordinat;
+                } elseif ($actionType === 'nop') {
+                    // Update NOP Benar
+                    $updateData['NOP_BENAR'] = $request->nop_benar_baru;
+                } elseif (in_array($actionType, ['status_ko', 'status_nop'])) {
+                    // Update Status Penyampaian
+                    $updateData['STATUS_PENYAMPAIAN'] = $request->STATUS_PENYAMPAIAN;
+                }
+
+                // Simpan / update status penyampaian
+                StatusPenyampaian::updateOrCreate(
+                    ['ID_DT_SDT' => $dtSdtId],
+                    $updateData
+                );
+
+                $countUpdated++;
+            }
+
+            DB::commit();
+
+            $msgLabel = match ($actionType) {
+                'ko' => 'Koordinat OP',
+                'nop' => 'Status NOP Benar',
+                'status_ko' => 'Status Penyampaian (KO)',
+                'status_nop' => 'Status Penyampaian (NOP)',
+            };
+
+            return redirect()
+                ->route('petugas.sdt.detail', $sdtId)
+                ->with('success', "Berhasil memperbarui {$msgLabel} pada {$countUpdated} data.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()
+                ->with('error', 'Error: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    // FUNCTION KO \\
+
+    public function updateStatusByKO(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'ID_SDT' => 'required|exists:sdt,ID',
+            'KO' => 'required|string',
+            'STATUS_PENYAMPAIAN' => 'required'
+        ]);
+
         $userId = auth()->user()->ID_PENGGUNA;
         $now = now();
 
-        foreach ($dtSdtIds as $dtSdtId) {
-            // Data yang akan diupdate/dibuat
-            $updateData = [
-                'ID_SDT' => $sdtId,
-                'ID_PETUGAS' => $userId,
-                'TGL_PENYAMPAIAN' => $now,
-            ];
+        DB::beginTransaction();
+        try {
 
-            if ($actionType === 'ko') {
-                $updateData['KOORDINAT_OP'] = $request->input('koordinat');
-            } else {
-                // Di sini diasumsikan nop_benar_baru berisi status "YA" atau "TIDAK"
-                $updateData['NOP_BENAR'] = $request->input('nop_benar_baru');
+            // Ambil semua dt_sdt dengan KO yang sama
+            $rows = DtSdt::where('ID_SDT', $request->ID_SDT)
+                ->where('ALAMAT_OP', $request->KO)
+                ->where('PETUGAS_SDT', $userId)
+                ->get();
+
+            if ($rows->isEmpty()) {
+                throw new \Exception('Data KO tidak ditemukan.');
             }
 
-            // Gunakan updateOrCreate agar data lama tidak hilang, hanya kolom tertentu yang tertimpa
-            StatusPenyampaian::updateOrCreate(
-                ['ID_DT_SDT' => $dtSdtId],
-                $updateData
+            foreach ($rows as $row) {
+
+                StatusPenyampaian::updateOrCreate(
+                    [
+                        'ID_DT_SDT' => $row->ID
+                    ],
+                    [
+                        'ID_SDT'             => $row->ID_SDT,
+                        'ID_PETUGAS'         => $userId,
+                        'STATUS_PENYAMPAIAN' => $request->STATUS_PENYAMPAIAN,
+                        'TGL_PENYAMPAIAN'    => $now,
+                    ]
+                );
+            }
+
+            DB::commit();
+
+            return back()->with(
+                'success',
+                'Status penyampaian berhasil diperbarui untuk seluruh KO.'
             );
-            $countUpdated++;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+
+    // FUNCTION NOP \\
+
+    public function updateStatusByNOP(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'ID_SDT' => 'required|exists:sdt,ID',
+            'NOP' => 'required|string',
+            'STATUS_PENYAMPAIAN' => 'required'
+        ]);
+
+        $userId = auth()->user()->ID_PENGGUNA;
+        $now = now();
+
+        DB::beginTransaction();
+        try {
+
+            // Ambil semua dt_sdt dengan NOP yang sama
+            $rows = DtSdt::where('ID_SDT', $request->ID_SDT)
+                ->where('NOP', $request->NOP)
+                ->where('PETUGAS_SDT', $userId)
+                ->get();
+
+            if ($rows->isEmpty()) {
+                throw new \Exception('Data NOP tidak ditemukan.');
+            }
+
+            foreach ($rows as $row) {
+
+                StatusPenyampaian::updateOrCreate(
+                    [
+                        'ID_DT_SDT' => $row->ID
+                    ],
+                    [
+                        'ID_SDT'             => $row->ID_SDT,
+                        'ID_PETUGAS'         => $userId,
+                        'STATUS_PENYAMPAIAN' => $request->STATUS_PENYAMPAIAN,
+                        'TGL_PENYAMPAIAN'    => $now,
+                    ]
+                );
+            }
+
+            DB::commit();
+
+            return back()->with(
+                'success',
+                'Status penyampaian berhasil diperbarui untuk seluruh NOP.'
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function getDetailNOP(Request $request)
+    {
+        $request->validate([
+            'sdt_id' => 'required|exists:sdt,ID',
+            'nop' => 'required|string'
+        ]);
+
+        $sdtId = $request->sdt_id;
+        $nop   = $request->nop;
+
+        // Data utama (1 baris)
+        $utama = DtSdt::where('ID_SDT', $sdtId)
+            ->where('NOP', $nop)
+            ->first();
+
+        if (!$utama) {
+            return response()->json(['message' => 'NOP tidak ditemukan'], 404);
         }
 
-        DB::commit();
+        // Semua tahun
+        $tahun = DtSdt::where('ID_SDT', $sdtId)
+            ->where('NOP', $nop)
+            ->orderBy('TAHUN')
+            ->pluck('TAHUN')
+            ->unique()
+            ->values();
 
-        $msgLabel = ($actionType === 'ko') ? "Koordinat" : "Status NOP Benar";
-        return redirect()->route('petugas.sdt.detail', $sdtId)
-            ->with('success', "Berhasil memperbarui {$msgLabel} pada {$countUpdated} data.");
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return redirect()->back()->with('error', 'Error: ' . $e->getMessage())->withInput();
+        return response()->json([
+            'nop'       => $utama->NOP,
+            'nama_wp'   => $utama->NAMA_WP,
+            'alamat_op' => $utama->ALAMAT_OP,
+            'tahun'     => $tahun
+        ]);
     }
-}
+
+
+
     /* =========================================================================
         SHOW A ROW
         ========================================================================= */
     public function showPage(Request $r, int $id): View|RedirectResponse
     {
+
+
         $row = DtSdt::find($id);
         if (!$row) {
             return redirect()->route('petugas.sdt.index')
@@ -299,24 +515,23 @@ public function komplekMassUpdate(Request $request): RedirectResponse
             }
         }
 
-        $lastTwoPetugas = StatusPenyampaian::where('NOP_BENAR', $row->NOP)
-            ->orWhere(function ($query) use ($row) {
-                $query->where('NOP_BENAR', '')
-                    ->whereIn('ID_DT_SDT', DtSdt::where('NOP', $row->NOP)->pluck('ID'));
-            })
-            ->with('petugas', 'dtSdt') // pastikan relasi dtSdt ada
-            ->where('status_penyampaian.ID', '!=', $sp->ID ?? 0)
-            ->get()
-            ->sortByDesc(fn ($item) => $item->dtSdt->TAHUN ?? 0)
-            ->sortByDesc('TGL_PENYAMPAIAN')
-            ->take(2);
+        $dtsdt_history = DB::table('dt_sdt')
+            ->join('status_penyampaian', 'dt_sdt.ID', '=', 'status_penyampaian.ID_DT_SDT')
+            ->join('pengguna', 'dt_sdt.PETUGAS_SDT', '=', 'pengguna.ID')
+            ->where('dt_sdt.NOP', $row->NOP)
+            ->where('dt_sdt.ID', '!=', $row->ID)
+            ->where('dt_sdt.ID', '<', $row->ID)
+            ->orderByDesc('dt_sdt.ID')
+            ->get();
+
+
 
 
         return view('petugas.sdt-show', [
             'row' => $row,
             'photos' => $photos,
             'konfirmasi' => $sp,
-            'lastTwoPetugas' => $lastTwoPetugas,
+            'historydt' => $dtsdt_history,
             'return' => $r->query('return'),
         ]);
     }

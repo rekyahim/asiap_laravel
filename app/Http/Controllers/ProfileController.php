@@ -79,7 +79,8 @@ class ProfileController extends Controller
     $user->ID_FOTO = $filename;
     $user->save();
 
-    return back()->with('success', 'Foto profil berhasil diperbarui!');
+    return back();
+
 }
 
     public function deletePhoto(Request $request)
@@ -109,7 +110,7 @@ class ProfileController extends Controller
         $user->ID_FOTO = null;
         $user->save();
 
-        return back()->with('success', 'Foto profil berhasil dihapus dan kembali ke foto default.');
+        return back();
     }
 
 }

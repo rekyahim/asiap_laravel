@@ -27,26 +27,40 @@ class PenggunaController extends Controller
        🔹 INDEX
     ========================= */
     public function index(Request $r)
-    {
-        $q = trim($r->query('q', ''));
+{
+    $q = trim($r->query('q', ''));
+    $status = $r->query('status', 'all'); // ⬅️ TAMBAHAN
 
-        $users = Pengguna::query()
-            ->when($q, fn($x) => $x->where(function ($w) use ($q) {
-                $w->where('USERNAME', 'like', "%{$q}%")
-                    ->orWhere('NAMA', 'like', "%{$q}%")
-                    ->orWhere('NIP', 'like', "%{$q}%");
-            }))
-            ->orderBy('ID')
-            ->paginate(25);
+    $users = Pengguna::query()
+        // ==========================
+        // SEARCH (SUDAH ADA)
+        // ==========================
+        ->when($q, fn($x) => $x->where(function ($w) use ($q) {
+            $w->where('USERNAME', 'like', "%{$q}%")
+              ->orWhere('NAMA', 'like', "%{$q}%")
+              ->orWhere('NIP', 'like', "%{$q}%");
+        }))
 
-        $roles = HakAkses::where('STATUS', 1)
-            ->orderBy('HAKAKSES')
-            ->get(['ID', 'HAKAKSES']);
+        // ==========================
+        // FILTER STATUS (TAMBAHAN)
+        // ==========================
+        ->when($status !== 'all', fn($x) =>
+            $x->where('STATUS', (int) $status)
+        )
 
-        $units = $this->unitMap;
+        ->orderBy('ID')
+        ->paginate(25)
+        ->appends($r->query()); // ⬅️ TAMBAHAN (biar pagination ingat filter)
 
-        return view('admin.pengguna', compact('users', 'roles', 'q', 'units'));
-    }
+    $roles = HakAkses::where('STATUS', 1)
+        ->orderBy('HAKAKSES')
+        ->get(['ID', 'HAKAKSES']);
+
+    $units = $this->unitMap;
+
+    return view('admin.pengguna', compact('users', 'roles', 'q', 'units', 'status'));
+}
+
 
     /* =========================
        🔹 CREATE

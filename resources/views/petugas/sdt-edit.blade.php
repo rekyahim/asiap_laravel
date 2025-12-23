@@ -233,7 +233,7 @@
         <div class="edit-card mb-4">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h5 class="edit-section-title mb-0">Edit Detail SDT</h5>
+                    <h5 class="edit-section-title mb-0 text-white">Edit Detail SDT</h5>
                     <div style="opacity:.95;font-size:13px;margin-top:6px;">
                         <strong>Master SDT :</strong>
                         <span style="font-weight:700;color:#ffd;">{{ $row->NAMA_SDT }}</span>
