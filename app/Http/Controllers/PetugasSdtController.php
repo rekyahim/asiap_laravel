@@ -448,6 +448,25 @@ class PetugasSdtController extends Controller
                 ->where('PETUGAS_SDT', $userId)
                 ->pluck('ID');
 
+            $sdt = Sdt::where('ID', $request->ID_SDT)
+                ->select('TGL_MULAI', 'TGL_SELESAI')
+                ->first();
+
+            if ($sdt) {
+                $today = Carbon::now(); // Mengambil tanggal & waktu saat ini
+
+                // 2. Pastikan kolom di-parse ke Carbon agar bisa dibandingkan
+                $mulai = Carbon::parse($sdt->TGL_MULAI)->startOfDay();
+                $selesai = Carbon::parse($sdt->TGL_SELESAI)->endOfDay();
+
+                // 3. Cek apakah hari ini berada di antara (between) mulai dan selesai
+                if (!$today->between($mulai, $selesai)) {
+                    return back()->with('error', "SDT sudah tidak aktif pada tanggal saat ini.");
+                }
+            }
+
+
+
             if ($rows->isEmpty()) {
                 return back()->with('error', 'Data KO tidak ditemukan.');
             }
@@ -557,8 +576,26 @@ class PetugasSdtController extends Controller
                 ->where('PETUGAS_SDT', $userId)
                 ->pluck('ID');
 
+
             if ($rows->isEmpty()) {
                 return back()->with('error', 'Data NOP tidak ditemukan.');
+            }
+
+            $sdt = Sdt::where('ID', $request->ID_SDT)
+                ->select('TGL_MULAI', 'TGL_SELESAI')
+                ->first();
+
+            if ($sdt) {
+                $today = Carbon::now(); // Mengambil tanggal & waktu saat ini
+
+                // 2. Pastikan kolom di-parse ke Carbon agar bisa dibandingkan
+                $mulai = Carbon::parse($sdt->TGL_MULAI)->startOfDay();
+                $selesai = Carbon::parse($sdt->TGL_SELESAI)->endOfDay();
+
+                // 3. Cek apakah hari ini berada di antara (between) mulai dan selesai
+                if (!$today->between($mulai, $selesai)) {
+                    return back()->with('error', "SDT sudah tidak aktif pada tanggal saat ini.");
+                }
             }
 
             // 3. Pengecekan Expired 6 Jam
