@@ -117,6 +117,14 @@ class PetugasSdtController extends Controller
             $query->where('NAMA_WP', 'like', "%{$req->nama}%");
         }
 
+        if ($req->filled('search')) {
+            $search = $req->search;
+            $query->where(function($q) use ($search) {
+                $q->where('NOP', 'like', "%{$search}%")
+                ->orWhere('NAMA_WP', 'like', "%{$search}%");
+            });
+        }
+
         // harus pakai ID Petugas
         $rows = $query->orderBy('ID')->paginate(20)->withQueryString();
 

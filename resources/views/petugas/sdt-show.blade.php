@@ -101,7 +101,7 @@
                         <td colspan="3">{{ $row->ALAMAT_OP .' , '.$row->BLOK_KAC_NO_OP.' RT '.$row->RT_OP.' RW '.$row->RW_OP.' , '.$row->KEL_OP.' , '.$row->KEC_OP}}</td>
                     </tr>
                     <tr>
-                        <th>Alamat OP</th>
+                        <th>Alamat WP</th>
                         <td colspan="3">{{ $row->ALAMAT_WP .' , '.$row->BLOK_KAC_NO_WP.' RT '.$row->RT_WP.' RW '.$row->RW_WP.' , '.$row->KEL_WP.' , '.$row->KOTA_WP}}</td>
                     </tr>
 

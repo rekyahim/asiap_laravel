@@ -561,28 +561,26 @@
                     <form method="GET" action="{{ route('petugas.sdt.detail', $sdt->ID) }}">
                         <div class="row g-3 p-3 align-items-end">
 
-                            {{-- NOP --}}
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">NOP</label>
-                                <input type="text" name="nop" value="{{ request('nop') }}" class="form-control"
-                                    placeholder="Cari NOP...">
+                            {{-- Satu input untuk NOP / Nama WP --}}
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Cari NOP / Nama WP</label>
+                                <input
+                                    type="text"
+                                    name="search"
+                                    value="{{ request('search') }}"
+                                    class="form-control"
+                                    placeholder="Masukkan NOP atau Nama WP"
+                                >
                             </div>
 
-                            {{-- Nama WP --}}
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Nama WP</label>
-                                <input type="text" name="nama" value="{{ request('nama') }}" class="form-control"
-                                    placeholder="Cari Nama WP...">
-                            </div>
-
-                            {{-- Tombol --}}
+                            {{-- Tombol Cari & Reset --}}
                             <div class="col-md-4 d-flex gap-2">
-                                <button type="submit" class="btn-blue w-100">
+                                <button type="submit" class="btn-blue w-auto">
                                     <i class="bi bi-search"></i> Cari
                                 </button>
 
-                                @if (request()->filled('nop') || request()->filled('nama'))
-                                    <a href="{{ route('petugas.sdt.detail', $sdt->ID) }}" class="btn-ghost w-100">
+                                @if(request()->filled('search'))
+                                    <a href="{{ route('petugas.sdt.detail', $sdt->ID) }}" class="btn-ghost w-auto">
                                         <i class="bi bi-x-circle"></i> Reset
                                     </a>
                                 @endif
@@ -591,6 +589,7 @@
                         </div>
                     </form>
                 </div>
+
 
 
 
