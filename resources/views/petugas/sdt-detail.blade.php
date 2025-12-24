@@ -509,11 +509,26 @@
 
             <div class="card-body p-4">
 
+                {{-- Pesan Sukses --}}
+                @if (session('success'))
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <strong>Berhasil!</strong> {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
+                {{-- Pesan Error --}}
+                @if (session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong>Gagal!</strong> {{ session('error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
                 {{-- KPI Section --}}
                 <div class="kpis">
                     <div class="kpi-row">
                         <div class="kpi">
-                            <div class="t">Total NOP</div>
+                            <div class="t">Total SDT</div>
                             <div class="v">{{ number_format($summary['total']) }}</div>
                         </div>
                         <div class="kpi">
@@ -535,7 +550,7 @@
                             <div class="bar"><i style="width:{{ $progress }}%"></i></div>
                         </div>
                         <div class="kpi">
-                            <div class="t">Potensi Biaya</div>
+                            <div class="t">Potensi Pajak</div>
                             <div class="v text-primary">Rp {{ number_format($totalBiaya, 0, ',', '.') }}</div>
                         </div>
                     </div>
@@ -546,26 +561,28 @@
                     <form method="GET" action="{{ route('petugas.sdt.detail', $sdt->ID) }}">
                         <div class="row g-3 p-3 align-items-end">
 
-                            {{-- Satu input untuk NOP / Nama WP --}}
-                            <div class="col-md-8">
-                                <label class="form-label fw-bold">Cari NOP / Nama WP</label>
-                                <input
-                                    type="text"
-                                    name="search"
-                                    value="{{ request('search') }}"
-                                    class="form-control"
-                                    placeholder="Masukkan NOP atau Nama WP"
-                                >
+                            {{-- NOP --}}
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">NOP</label>
+                                <input type="text" name="nop" value="{{ request('nop') }}" class="form-control"
+                                    placeholder="Cari NOP...">
                             </div>
 
-                            {{-- Tombol Cari & Reset --}}
+                            {{-- Nama WP --}}
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Nama WP</label>
+                                <input type="text" name="nama" value="{{ request('nama') }}" class="form-control"
+                                    placeholder="Cari Nama WP...">
+                            </div>
+
+                            {{-- Tombol --}}
                             <div class="col-md-4 d-flex gap-2">
-                                <button type="submit" class="btn-blue w-auto">
+                                <button type="submit" class="btn-blue w-100">
                                     <i class="bi bi-search"></i> Cari
                                 </button>
 
-                                @if(request()->filled('search'))
-                                    <a href="{{ route('petugas.sdt.detail', $sdt->ID) }}" class="btn-ghost w-auto">
+                                @if (request()->filled('nop') || request()->filled('nama'))
+                                    <a href="{{ route('petugas.sdt.detail', $sdt->ID) }}" class="btn-ghost w-100">
                                         <i class="bi bi-x-circle"></i> Reset
                                     </a>
                                 @endif
