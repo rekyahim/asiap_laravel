@@ -190,22 +190,6 @@
         </div>
     </div>
 
-<<<<<<< HEAD
-    @push('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const modalEdit = document.getElementById('modalEditRole');
-                modalEdit.addEventListener('show.bs.modal', e => {
-                    const btn = e.relatedTarget;
-                    document.getElementById('editRoleName').value = btn.dataset.name;
-                    document.getElementById('editRoleStatusHidden').value = btn.dataset.status;
-                    document.getElementById('formEditRole').action =
-                        "{{ url('admin/hak-akses') }}/" + btn.dataset.id;
-                });
-            });
-        </script>
-    @endpush
-=======
 
 @push('scripts')
 <script>
@@ -244,5 +228,4 @@ Swal.fire({
 });
 </script>
 @endif
->>>>>>> edf07a0e45aae85e5e57261fc3c911949ed4dc91
 @endsection

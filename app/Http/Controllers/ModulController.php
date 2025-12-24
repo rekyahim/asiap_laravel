@@ -18,7 +18,7 @@ class ModulController extends Controller
                 $w->where('nama_modul', 'like', "%{$q}%")
                     ->orWhere('lokasi_modul', 'like', "%{$q}%");
             }))
-            ->orderByDesc('ID') // konsisten pakai ID
+            ->orderBy('ID') // konsisten pakai ID
             ->paginate(15)
             ->withQueryString();
 

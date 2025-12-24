@@ -943,7 +943,6 @@ class PetugasSdtController extends Controller
         } else {
             StatusPenyampaian::create([
                 'ID_DT_SDT'          => $row->ID,
-                'ID_SDT'             => $row->ID_SDT,
                 'ID_PETUGAS'         => auth()->user()->ID_PENGGUNA,
                 'STATUS_PENYAMPAIAN' => $statusPenyampaian,
                 'STATUS_OP'          => $statusOP,
@@ -961,7 +960,7 @@ class PetugasSdtController extends Controller
         //$row->update(['STATUS' => $statusPenyampaian]);
 
         return redirect()
-            ->route('petugas.sdt.detail', $row->ID_SDT)
+            ->route('petugas.sdt.detail', $row->ID)
             ->with('success', 'Data berhasil disimpan.');
     }
 }
