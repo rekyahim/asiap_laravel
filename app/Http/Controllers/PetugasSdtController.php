@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DtSdt;
+use Carbon\Carbon;
 use App\Models\Sdt;
-use App\Models\StatusPenyampaian;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use App\Models\DtSdt;
 use Illuminate\View\View;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Models\StatusPenyampaian;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class PetugasSdtController extends Controller
 {
@@ -170,9 +171,13 @@ class PetugasSdtController extends Controller
 
             //JIKA sdt belum tanggal saat ini lebih kecil dari tanggal mulai di tabel sdt maka expired juga
             if ($sdt && $sdt->TGL_MULAI) {
-                $today = date('Y-m-d');
-                if ($today < $sdt->TGL_MULAI) {
-                    $row->expired = '1'; //udh expired
+                // Pastikan TGL_MULAI adalah object Carbon (jika belum otomatis dari Model)
+                $tglMulai = Carbon::parse($sdt->TGL_MULAI)->startOfDay();
+                $today = Carbon::now()->startOfDay();
+
+                // Jika hari ini lebih besar (setelah) dari tanggal mulai
+                if ($today->gt($tglMulai)) {
+                    $row->expired = '1';
                 }
             }
         }
