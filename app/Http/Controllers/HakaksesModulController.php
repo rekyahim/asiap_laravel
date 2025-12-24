@@ -18,7 +18,7 @@ class HakaksesModulController extends Controller
     {
         $roles = HakAkses::where('STATUS', 1)
             ->with(['moduls' => fn($q) => $q->where('modul.STATUS', 1)])
-            ->orderBy('HAKAKSES')
+            ->orderBy('ID')
             ->get(['ID', 'HAKAKSES', 'STATUS', 'TGLPOST']);
 
         $moduls = Modul::where('STATUS', 1)

@@ -240,10 +240,12 @@
     </div>
 
     @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
         <script>
             document.addEventListener('DOMContentLoaded', function() {
 
-                // Modal Edit
+                // MODAL EDIT
                 const modalEdit = document.getElementById('modalEdit');
                 modalEdit.addEventListener('show.bs.modal', e => {
                     const btn = e.relatedTarget;
@@ -252,128 +254,24 @@
                         "{{ url('admin/hak-akses') }}/" + btn.getAttribute('data-id');
                 });
 
-                // Tooltip Init (SESUAI PERMINTAAN)
-                const tooltipTriggerList = document.querySelectorAll('[data-bs-title]');
-                [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
+                // TOOLTIP
+                document.querySelectorAll('[data-bs-title]').forEach(el => {
+                    new bootstrap.Tooltip(el);
+                });
 
-<<<<<<< HEAD
+                // SWEETALERT
+                @if (session('swal'))
+                    Swal.fire({
+                        icon: "{{ session('swal.icon') }}",
+                        title: "{{ session('swal.title') }}",
+                        position: "{{ session('swal.position') ?? 'center' }}",
+                        showConfirmButton: false,
+                        timer: {{ session('swal.timer') ?? 1500 }},
+                    });
+                @endif
+
             });
         </script>
     @endpush
-=======
 
-
-{{-- HAPUS --}}
-<form
-    action="{{ route('hakakses.toggle', $row->ID) }}"
-    method="POST"
-    data-bs-title="Nonaktifkan"
-    data-bs-placement="top"
-    onsubmit="return confirm('Nonaktifkan hak akses ini?')">
-    @csrf
-    @method('PATCH')
-    <button class="btn-aksi delete">
-        <i class="bi bi-trash"></i>
-    </button>
-</form>
-
-</div>
-</td>
-</tr>
-@empty
-<tr>
-<td colspan="4" class="text-center text-muted py-4">Belum ada data</td>
-</tr>
-@endforelse
-</tbody>
-</table>
-</div>
-
-@if(method_exists($items,'hasPages') && $items->hasPages())
-<div class="mt-3 d-flex justify-content-center">
-{{ $items->links() }}
-</div>
-@endif
-</div>
-</div>
-</div>
-
-{{-- ===== MODAL CREATE ===== --}}
-<div class="modal fade" id="modalCreate" tabindex="-1">
-<div class="modal-dialog modal-dialog-centered">
-<form class="modal-content" method="POST" action="{{ route('hakakses.store') }}">
-@csrf
-<div class="modal-header">
-<h5 class="modal-title">Tambah Hak Akses</h5>
-<button class="btn-close" data-bs-dismiss="modal"></button>
-</div>
-<div class="modal-body">
-<input name="HAKAKSES" class="form-control" required>
-<input type="hidden" name="STATUS" value="1">
-</div>
-<div class="modal-footer">
-<button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-<button class="btn btn-primary">Simpan</button>
-</div>
-</form>
-</div>
-</div>
-
-{{-- ===== MODAL EDIT ===== --}}
-<div class="modal fade" id="modalEdit" tabindex="-1">
-<div class="modal-dialog modal-dialog-centered">
-<form id="formEdit" class="modal-content" method="POST">
-@csrf @method('PATCH')
-<div class="modal-header">
-<h5 class="modal-title">Edit Hak Akses</h5>
-<button class="btn-close" data-bs-dismiss="modal"></button>
-</div>
-<div class="modal-body">
-<input id="editName" name="HAKAKSES" class="form-control" required>
-<input type="hidden" name="STATUS" value="1">
-</div>
-<div class="modal-footer">
-<button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-<button class="btn btn-primary">Simpan</button>
-</div>
-</form>
-</div>
-</div>
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    // MODAL EDIT
-    const modalEdit = document.getElementById('modalEdit');
-    modalEdit.addEventListener('show.bs.modal', e => {
-        const btn = e.relatedTarget;
-        document.getElementById('editName').value = btn.getAttribute('data-name');
-        document.getElementById('formEdit').action =
-            "{{ url('admin/hak-akses') }}/" + btn.getAttribute('data-id');
-    });
-
-    // TOOLTIP
-    document.querySelectorAll('[data-bs-title]').forEach(el => {
-        new bootstrap.Tooltip(el);
-    });
-
-    // SWEETALERT
-    @if(session('swal'))
-    Swal.fire({
-        icon: "{{ session('swal.icon') }}",
-        title: "{{ session('swal.title') }}",
-        position: "{{ session('swal.position') ?? 'center' }}",
-        showConfirmButton: false,
-        timer: {{ session('swal.timer') ?? 1500 }},
-    });
-    @endif
-
-});
-</script>
-@endpush
-
->>>>>>> edf07a0e45aae85e5e57261fc3c911949ed4dc91
 @endsection
