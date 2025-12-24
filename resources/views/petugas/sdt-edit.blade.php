@@ -230,8 +230,8 @@
             <div class="mt-3" style="font-size:13px;opacity:.92;">
                 <div><strong>NOP:</strong> {{ $row->NOP }}</div>
                 <div><strong>Tahun:</strong> {{ $row->TAHUN }}</div>
-                <div><strong>Alamat OP:</strong> {{ $row->ALAMAT_OP }}</div>
-                <div><strong>Nama WP:</strong> {{ $row->NAMA_WP }}</div>
+                <div><strong>Alamat OP:</strong> {{ $row->ALAMAT_OP.' , '.$row->BLOK_KAV_NO_OP.' RT '.$row->RT_OP.' RW '.$row->RW_OP.' , '.$row->KEL_OP.' , '.$row->KEC_OP }}</div>
+                <div><strong>Nama WP:</strong> {{ $row->NAMA_WP.' , '.$row->ALAMAT_WP.' , '.$row->BLOK_KAV_NO_.' RT '.$row->RT_WP.' RW '.$row->RW_WP.' , '.$row->KEL_WP.' , '.$row->KOTA_WP}}</div>
             </div>
         </div>
 
@@ -482,16 +482,12 @@
                 ctx.drawImage(video, 0, 0);
 
                 // Add Watermark
-                const loc = koordInput.value || "Lokasi tidak diketahui";
                 const time = new Date().toLocaleString("id-ID");
                 ctx.font = "bold 22px Arial";
                 ctx.fillStyle = "white";
                 ctx.shadowColor = "black";
                 ctx.shadowBlur = 4;
-                ctx.fillText(`Petugas: ${petugas}`, 20, 40);
-                ctx.fillText(`SDT: ${nomorSDT}`, 20, 75);
-                ctx.fillText(`Lokasi: ${loc}`, 20, 110);
-                ctx.fillText(`Waktu: ${time}`, 20, 145);
+
 
                 const dataURL = canvas.toDataURL("image/jpeg", 0.8);
                 foto64.value = dataURL;
