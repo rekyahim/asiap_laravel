@@ -1,11 +1,10 @@
 <?php
-
 namespace App\Http\Middleware;
 
+use App\Models\Pengguna;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Pengguna;
 
 class AuthOnly
 {
@@ -17,29 +16,27 @@ class AuthOnly
         }
 
         // Cek session login
-        if (!session()->has('auth_uid')) {
+        if (! session()->has('auth_uid')) {
             return redirect()->route('login');
         }
 
         // Ambil user dari database
         $user = Pengguna::find(session('auth_uid'));
 
-        if (!$user) {
+        if (! $user) {
             // Jika user tidak ditemukan → hapus session dan logout
             session()->forget('auth_uid');
             return redirect()->route('login');
         }
 
         // **Inject user ke Laravel Auth**
-        if (!Auth::check()) {
-    Auth::login($user);
-}
-
-
+        if (! Auth::check()) {
+            Auth::login($user);
+        }
 
         // Jika password default → wajib ubah password
         if ($user->INITIAL_PASSWORD === '123456') {
-            if (!$request->routeIs('first.change.password', 'first.change.password.update')) {
+            if (! $request->routeIs('first.change.password', 'first.change.password.update')) {
                 return redirect()->route('first.change.password');
             }
         }

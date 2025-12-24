@@ -3,7 +3,7 @@
 @section('title', 'Daftar SDT Modern')
 @section('breadcrumb', '')
 
-@section('header_sdt_search')
+{{-- @section('header_sdt_search')
 
 
     <form id="header-sdt-search-form" method="GET" action="{{ route('sdt.index') }}">
@@ -15,7 +15,7 @@
                 placeholder="Cari SDT…" value="{{ request('q') }}" autocomplete="off">
         </div>
     </form>
-@endsection
+@endsection --}}
 
 @section('content')
     @once
@@ -30,57 +30,15 @@
     @endpush
 
     <style>
-        .page-breadcrumb {
-            margin: -.25rem 0 1rem 0
-        }
-
-        .crumbs {
-            font-size: .9rem
-        }
-
-        .crumb {
-            color: #6c757d;
-            text-decoration: none;
-            transition: color .15s ease
-        }
-
-        .crumb:hover {
-            color: #212529;
-            text-decoration: underline
-        }
-
-        .crumb.active {
-            font-weight: 700;
-            color: #212529;
-            pointer-events: none;
-            text-decoration: none
-        }
-
-        .crumb-sep {
-            margin: 0 .35rem;
-            color: #adb5bd
-        }
-
         .card-header h2 {
             margin-bottom: 0
         }
 
-        .table thead th {
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: .85rem;
-            letter-spacing: .5px
-        }
 
-        .sdt-card {
-            box-shadow: 0 6px 18px rgba(0, 0, 0, .06), 0 2px 6px rgba(0, 0, 0, .04);
-            border: 1px solid rgba(0, 0, 0, .03);
-            border-radius: .75rem
-        }
 
-        .sdt-card:hover {
-            box-shadow: 0 10px 24px rgba(0, 0, 0, .08), 0 3px 10px rgba(0, 0, 0, .05)
-        }
+        /* .app-card:hover {
+                box-shadow: 0 10px 24px rgba(0, 0, 0, .08), 0 3px 10px rgba(0, 0, 0, .05)
+            } */
 
         .stat-row {
             display: flex;
@@ -145,31 +103,6 @@
             border-color: #0d6efd
         }
 
-        .aksi-btns .btn-icon {
-            width: 36px;
-            height: 36px;
-            padding: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: .5rem;
-        }
-
-        .aksi-btns .btn-icon i {
-            font-size: 1rem;
-            line-height: 1;
-        }
-
-        @media (prefers-reduced-motion:no-preference) {
-            .aksi-btns .btn-icon {
-                transition: transform .12s ease, filter .12s ease;
-            }
-
-            .aksi-btns .btn-icon:hover {
-                transform: translateY(-1px);
-                filter: brightness(.98);
-            }
-        }
 
         /* ===== Modal Detail Responsive ===== */
         #modalDetail .modal-dialog {
@@ -493,14 +426,14 @@
         {{-- breadcrumb --}}
         <div class="page-breadcrumb">
             <div class="crumbs">
-                <a href="{{ url('/koor') }}" class="crumb">Koordinator</a>
-                <span class="crumb-sep">•</span>
+                {{-- <a href="{{ url('/koor') }}" class="crumb">Koordinator</a>
+                <span class="crumb-sep">•</span> --}}
                 <span class="crumb active">Daftar SDT</span>
             </div>
         </div>
 
         {{-- kartu daftar --}}
-        <div class="card sdt-card border-0">
+        <div class="card app-card border-0">
             <div class="card-header bg-white p-3 p-md-4 border-bottom-0 d-flex align-items-center justify-content-between">
                 <h2 class="h4 mb-0">Daftar SDT</h2>
                 <a class="btn btn-primary fw-semibold" href="{{ route('sdt.create') }}">
@@ -517,7 +450,7 @@
                 @endif
 
                 <div class="table-responsive">
-                    <table class="table table-hover table-striped align-middle">
+                    <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
                                 <th>NO</th>
@@ -611,7 +544,7 @@
     <div class="modal fade" id="modalDetail" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xxl modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
-                <div class="card sdt-card m-0 border-0">
+                <div class="card app-card m-0 border-0">
                     <div class="card-header d-flex align-items-center justify-content-between bg-white p-3 border-bottom">
                         <h5 class="fw-semibold mb-0">
                             <i class="bi bi-card-list me-2"></i> Detail SDT

@@ -1,6 +1,8 @@
 @extends('layouts.admin')
 
 @section('title', 'Daftar SDT Modern')
+@php($forceMenu = 'riwayat_petugas')
+
 @section('breadcrumb', '')
 
 @section('content')
@@ -130,8 +132,6 @@
         {{-- breadcrumbs (pakai gaya yang sekarang) --}}
         <div class="page-breadcrumb">
             <div class="crumbs">
-                <a href="{{ url('/koor') }}" class="crumb">Koordinator</a>
-                <span class="crumb-sep">•</span>
                 <span class="crumb active">Riwayat SDT Petugas</span>
             </div>
         </div>

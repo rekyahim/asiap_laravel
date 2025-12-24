@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('title', 'Pengguna')
-@section('breadcrumb', 'Admin / Pengguna')
+@section('breadcrumb', '')
 
 @section('content')
     @once
@@ -96,6 +96,14 @@
     </style>
 
     <div class="container-fluid">
+        {{-- breadcrumb --}}
+        <div class="page-breadcrumb">
+            <div class="crumbs">
+                {{-- <a href="{{ url('/koor') }}" class="crumb">Koordinator</a>
+                <span class="crumb-sep">•</span> --}}
+                <span class="crumb active">Kelola Pengguna</span>
+            </div>
+        </div>
         <div class="card shadow-sm mb-4">
             <div class="card-header">
                 <div class="row g-3 align-items-center">
@@ -401,5 +409,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@if(session('swal'))
+<script>
+Swal.fire({
+    icon: "{{ session('swal.icon') }}",
+    title: "{{ session('swal.title') }}",
+    position: "{{ session('swal.position') ?? 'center' }}",
+    showConfirmButton: false,
+    timer: {{ session('swal.timer') ?? 1500 }},
+});
+</script>
+@endif
+
 
 @endsection

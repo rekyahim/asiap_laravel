@@ -41,7 +41,12 @@ class ModulController extends Controller
         ]);
         // 🔥 LOG otomatis: event = created (dari model)
 
-        return back()->with('success', 'Modul berhasil dibuat.');
+        return back()->with('swal', [
+    'title' => 'Modul berhasil dibuat',
+    'icon'  => 'success',
+    'position' => 'center',
+    'timer' => 1500,
+]);
     }
 
 public function update(Request $r, $id)
@@ -63,7 +68,12 @@ public function update(Request $r, $id)
         'tglpost'      => $data['tglpost'] ?? $modul->tglpost,
     ]);
 
-    return back()->with('success', 'Modul berhasil diperbarui.');
+    return back()->with('swal', [
+    'title' => 'Modul berhasil diperbarui',
+    'icon'  => 'success',
+    'position' => 'center',
+    'timer' => 1500,
+]);
 }
 
 
@@ -75,6 +85,11 @@ public function update(Request $r, $id)
         $modul->status = 0;
         $modul->save();
 
-        return back()->with('success', 'Modul dinonaktifkan.');
+        return back()->with('swal', [
+    'title' => 'Modul berhasil dinonaktifkan',
+    'icon'  => 'success',
+    'position' => 'center',
+    'timer' => 1500,
+]);
     }
 }
