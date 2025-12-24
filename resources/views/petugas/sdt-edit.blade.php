@@ -482,16 +482,12 @@
                 ctx.drawImage(video, 0, 0);
 
                 // Add Watermark
-                const loc = koordInput.value || "Lokasi tidak diketahui";
                 const time = new Date().toLocaleString("id-ID");
                 ctx.font = "bold 22px Arial";
                 ctx.fillStyle = "white";
                 ctx.shadowColor = "black";
                 ctx.shadowBlur = 4;
-                ctx.fillText(`Petugas: ${petugas}`, 20, 40);
-                ctx.fillText(`SDT: ${nomorSDT}`, 20, 75);
-                ctx.fillText(`Lokasi: ${loc}`, 20, 110);
-                ctx.fillText(`Waktu: ${time}`, 20, 145);
+
 
                 const dataURL = canvas.toDataURL("image/jpeg", 0.8);
                 foto64.value = dataURL;

@@ -127,6 +127,7 @@ class PetugasSdtController extends Controller
             $status = $row->latestStatus;
             $sdt = $row->sdt;
             $row->expired = '2'; //belum
+
             if ($status && $status->created_at) {
 
                 // 1. Define the past date (e.g., from a database)
@@ -171,12 +172,13 @@ class PetugasSdtController extends Controller
 
             //JIKA sdt belum tanggal saat ini lebih kecil dari tanggal mulai di tabel sdt maka expired juga
             if ($sdt && $sdt->TGL_MULAI) {
-                // Pastikan TGL_MULAI adalah object Carbon (jika belum otomatis dari Model)
-                $tglMulai = Carbon::parse($sdt->TGL_MULAI)->startOfDay();
-                $today = Carbon::now()->startOfDay();
+                // 1. Parsing tanggal agar menjadi object Carbon
+                $tglMulai = \Carbon\Carbon::parse($sdt->TGL_MULAI)->startOfDay();
+                $today = \Carbon\Carbon::now()->startOfDay();
 
-                // Jika hari ini lebih besar (setelah) dari tanggal mulai
-                if ($today->gt($tglMulai)) {
+                // 2. Logika: Jika hari ini < tanggal mulai, maka expired
+                if ($today->lt($tglMulai)) {
+                    // lt() artinya Less Than (Lebih Kecil)
                     $row->expired = '1';
                 }
             }

@@ -135,17 +135,6 @@
             document.getElementById(`btnRetake${currentTarget}`).style.display = 'inline-block';
             document.getElementById(`btnOpenCam${currentTarget}`).style.display = 'none';
 
-            navigator.geolocation.getCurrentPosition(pos => {
-                document.getElementById(`LATITUDE_${currentTarget}`).value = pos.coords
-                .latitude;
-                document.getElementById(`LONGITUDE_${currentTarget}`).value = pos.coords
-                    .longitude;
-                document.getElementById(`KOORDINAT_${currentTarget}`).value =
-                    pos.coords.latitude + ', ' + pos.coords.longitude;
-                document.getElementById(`lockBadge${currentTarget}`).style.display =
-                    'inline-flex';
-            });
-
             closeCamera();
         });
 
