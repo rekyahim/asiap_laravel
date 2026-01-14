@@ -70,7 +70,7 @@ Route::middleware(AuthOnly::class)->group(function () {
 Route::middleware(AuthOnly::class)->group(function () {
 
     // Dashboard
-    Route::get('/', fn() => view('dashboard'))->name('dashboard');
+    Route::get('/', fn () => view('dashboard'))->name('dashboard');
 
     /*
     |--------------------------------------------------------------------------
@@ -247,7 +247,7 @@ Route::middleware(AuthOnly::class)->group(function () {
         | LEGACY ROUTES (TIDAK DIUBAH)
         |--------------------------------------------------------------------------
         */
-        Route::get('/koor/sdt/{id}/detail', fn($id) => redirect()->route('sdt.detail', $id))
+        Route::get('/koor/sdt/{id}/detail', fn ($id) => redirect()->route('sdt.detail', $id))
             ->whereNumber('id');
 
         Route::delete('/koor/sdt/{id}', [SdtController::class, 'destroy'])
@@ -255,7 +255,7 @@ Route::middleware(AuthOnly::class)->group(function () {
 
         Route::get(
             '/koor/sdt/{id}/edit',
-            fn($id) =>
+            fn ($id) =>
             redirect()->route('sdt.index', ['openEdit' => $id])
         )->name('sdt.edit')->whereNumber('id');
 

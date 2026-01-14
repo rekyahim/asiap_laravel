@@ -119,9 +119,9 @@ class PetugasSdtController extends Controller
 
         if ($req->filled('search')) {
             $search = $req->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('NOP', 'like', "%{$search}%")
-                ->orWhere('NAMA_WP', 'like', "%{$search}%");
+                    ->orWhere('NAMA_WP', 'like', "%{$search}%");
             });
         }
 
@@ -222,7 +222,6 @@ class PetugasSdtController extends Controller
             ->where('PETUGAS_SDT', $user_id)
             ->whereNotNull('NOP')
             ->where('NOP', '!=', '')
-            ->distinct('NOP')
             ->count();
 
         $tersampaikan = StatusPenyampaian::whereIn(
@@ -944,6 +943,7 @@ class PetugasSdtController extends Controller
             StatusPenyampaian::create([
                 'ID_DT_SDT'          => $row->ID,
                 'ID_PETUGAS'         => auth()->user()->ID_PENGGUNA,
+                'ID_SDT'             => $row->ID_SDT,
                 'STATUS_PENYAMPAIAN' => $statusPenyampaian,
                 'STATUS_OP'          => $statusOP,
                 'STATUS_WP'          => $statusWP,

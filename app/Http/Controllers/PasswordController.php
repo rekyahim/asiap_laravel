@@ -30,7 +30,6 @@ class PasswordController extends Controller
 
         $user = \App\Models\Pengguna::find(session('auth_id'));
         if (!$user) return redirect()->route('login');
-
         $user->PASSWORD = Hash::make($request->password);
         $user->INITIAL_PASSWORD = null; // tandai sudah diganti
         $user->save();
