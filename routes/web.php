@@ -303,7 +303,8 @@ Route::prefix('petugas/sdt')->name('petugas.sdt.')->group(function () {
 
     Route::get('{id}/detail', [PetugasSdtController::class, 'detail'])
         ->whereNumber('id')->name('detail');
-
+    Route::get('detail/{id}', [PetugasSdtController::class, 'detail'])
+        ->whereNumber('id')->name('detail');
     Route::get('row/{id}/show', [PetugasSdtController::class, 'showPage'])
         ->whereNumber('id')->name('show');
 

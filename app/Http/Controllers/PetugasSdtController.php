@@ -20,67 +20,79 @@ class PetugasSdtController extends Controller
     /* =========================================================================
         INDEX
         ========================================================================= */
-    public function index(Request $r): View
+    public function index(Request $r)
     {
         $user_id = session('auth_uid');
 
-        $master = DB::table('sdt')
-            ->select([
-                'sdt.ID',
-                'sdt.NAMA_SDT',
-                'sdt.TGL_MULAI',
-                'sdt.TGL_SELESAI',
-                'sdt.STATUS_SDT',
-                'sdt.STATUS',
+        if ($r->ajax()) {
+            // 1. Parameter dari DataTables
+            $draw   = $r->get('draw');
+            $start  = $r->get('start');
+            $length = $r->get('length');
+            $search = $r->get('search')['value']; // Input pencarian user
 
-                // 1. SUBQUERY: Hitung Total NOP (Khusus User Ini & STATUS Detail = 1)
-                DB::raw("(
-            SELECT COUNT(id)
-            FROM dt_sdt
-            WHERE dt_sdt.ID_SDT = sdt.ID
-            AND dt_sdt.PETUGAS_SDT = '$user_id'
-            AND dt_sdt.STATUS = 1   -- Filter Tambahan
-        ) as JUMLAH_NOP"),
+            // 2. Query Dasar
+            $query = DB::table('sdt')
+                ->select([
+                    'sdt.ID',
+                    'sdt.NAMA_SDT',
+                    'sdt.TGL_MULAI',
+                    'sdt.TGL_SELESAI',
+                    'sdt.STATUS_SDT',
+                    DB::raw("(SELECT COUNT(id) FROM dt_sdt WHERE dt_sdt.ID_SDT = sdt.ID AND dt_sdt.PETUGAS_SDT = '$user_id' AND dt_sdt.STATUS = 1) as JUMLAH_NOP"),
+                    DB::raw("(SELECT COUNT(a.id) FROM dt_sdt a JOIN status_penyampaian b ON b.ID_DT_SDT = a.ID WHERE a.ID_SDT = sdt.ID AND a.PETUGAS_SDT = '$user_id' AND a.STATUS = 1) as SUDAH_DIPROSES")
+                ])
+                ->where('sdt.STATUS', 1)
+                ->whereExists(function ($q) use ($user_id) {
+                    $q->select(DB::raw(1))
+                        ->from('dt_sdt')
+                        ->whereColumn('dt_sdt.ID_SDT', 'sdt.ID')
+                        ->where('dt_sdt.PETUGAS_SDT', $user_id)
+                        ->where('dt_sdt.STATUS', 1);
+                });
 
-                // 2. SUBQUERY: Hitung Progress (Khusus User Ini & STATUS Detail = 1)
-                DB::raw("(
-            SELECT COUNT(a.id)
-            FROM dt_sdt a
-            JOIN status_penyampaian b ON b.ID_DT_SDT = a.ID
-            WHERE a.ID_SDT = sdt.ID
-            AND a.PETUGAS_SDT = '$user_id'
-            AND a.STATUS = 1       -- Filter Tambahan
-        ) as SUDAH_DIPROSES")
-            ])
-            // 3. MAIN FILTER: Pastikan Master SDT Aktif (STATUS = 1)
-            ->where('sdt.STATUS', 1)
+            // 3. Hitung Total Data (Sebelum Filter)
+            $totalData = $query->count();
 
-            // 4. EXISTS FILTER: User punya tugas aktif di SDT ini
-            ->whereExists(function ($query) use ($user_id) {
-                $query->select(DB::raw(1))
-                    ->from('dt_sdt')
-                    ->whereColumn('dt_sdt.ID_SDT', 'sdt.ID')
-                    ->where('dt_sdt.PETUGAS_SDT', $user_id)
-                    ->where('dt_sdt.STATUS', 1); // Filter Tambahan
-            })
-            ->orderBy('sdt.ID', 'DESC')
-            ->get();
-
-        // --- Logic Matematika Persentase (Sama seperti sebelumnya) ---
-        $master->transform(function ($item) {
-            if ($item->JUMLAH_NOP > 0) {
-                $item->PROGRESS = round(($item->SUDAH_DIPROSES / $item->JUMLAH_NOP) * 100, 1);
-            } else {
-                $item->PROGRESS = 0;
+            // 4. Apply Pencarian (Jika ada)
+            if (!empty($search)) {
+                $query->where('sdt.NAMA_SDT', 'LIKE', "%{$search}%");
             }
 
-            $item->TGL_MULAI_FMT = $item->TGL_MULAI ? date('d M Y', strtotime($item->TGL_MULAI)) : '-';
-            $item->TGL_SELESAI_FMT = $item->TGL_SELESAI ? date('d M Y', strtotime($item->TGL_SELESAI)) : '-';
+            // 5. Hitung Total Setelah Filter
+            $totalFiltered = $query->count();
 
-            return $item;
-        });
+            // 6. Ambil Data dengan Limit (Pagination)
+            $data = $query->orderBy('sdt.ID', 'DESC')
+                ->offset($start)
+                ->limit($length)
+                ->get();
 
-        return view('petugas.sdt-index', compact('master'));
+            // 7. Mapping Data untuk View
+            $result = $data->map(function ($item) {
+                $prog = $item->JUMLAH_NOP > 0 ? round(($item->SUDAH_DIPROSES / $item->JUMLAH_NOP) * 100, 1) : 0;
+                return [
+                    'ID'            => $item->ID,
+                    'NAMA_SDT'      => $item->NAMA_SDT,
+                    'TGL_MULAI'     => $item->TGL_MULAI ? date('d M Y', strtotime($item->TGL_MULAI)) : '-',
+                    'TGL_SELESAI'   => $item->TGL_SELESAI ? date('d M Y', strtotime($item->TGL_SELESAI)) : '-',
+                    'JUMLAH_NOP'    => number_format($item->JUMLAH_NOP),
+                    'STATUS_SDT'    => $item->STATUS_SDT ?: 'AKTIF',
+                    'PROGRESS'      => $prog,
+                    'DETAIL_PROG'   => number_format($item->SUDAH_DIPROSES) . " / " . number_format($item->JUMLAH_NOP),
+                ];
+            });
+
+            // 8. Return JSON sesuai format DataTables
+            return response()->json([
+                "draw"            => intval($draw),
+                "recordsTotal"    => intval($totalData),
+                "recordsFiltered" => intval($totalFiltered),
+                "data"            => $result
+            ]);
+        }
+
+        return view('petugas.sdt-index');
     }
 
 

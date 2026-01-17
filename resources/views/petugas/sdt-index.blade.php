@@ -2,7 +2,10 @@
 
 @section('title', 'Petugas / Input Data SDT')
 @section('breadcrumb', 'Petugas / Input Data SDT')
-
+@push('styles')
+    {{-- DataTables CSS --}}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+@endpush
 @section('content')
     <style>
         /* ========== Design Tokens ========== */
@@ -371,6 +374,39 @@
                 padding: 10px;
             }
         }
+
+        /* Custom styling untuk search box DataTables */
+        .dataTables_filter input {
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            padding: 6px 12px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .dataTables_filter input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Custom styling untuk pagination */
+        .pagination .page-link {
+            border-radius: 8px !important;
+            margin: 0 3px;
+            border: none;
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .pagination .page-item.active .page-link {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Memperbaiki tampilan tabel saat loading DataTables */
+        #sdtTable_wrapper {
+            padding: 0;
+        }
     </style>
 
     <div class="section page-sdt">
@@ -378,22 +414,9 @@
             <div class="card-header">
                 <h5 class="page-title mb-0">Input Detail SDT</h5>
             </div>
-
             <div class="card-body" style="padding:20px 26px;">
-                <h6 class="text-muted fw-bold mb-3 d-none d-md-block" style="font-size:.9rem;">Daftar SDT</h6>
-
                 <div class="table-wrap">
-                    <table class="tbl align-middle">
-                        <colgroup>
-                            <col class="col-no">
-                            <col class="col-nama">
-                            <col class="col-date">
-                            <col class="col-date">
-                            <col class="col-nop">
-                            <col class="col-status">
-                            <col class="col-prog">
-                            <col class="col-aksi">
-                        </colgroup>
+                    <table id="sdtTable" class="tbl align-middle" style="width:100%">
                         <thead>
                             <tr>
                                 <th class="col-no">No</th>
@@ -406,70 +429,79 @@
                                 <th class="col-aksi">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @forelse(($master ?? []) as $m)
-                                @php
-                                    $mulai = !empty($m->TGL_MULAI) ? \Carbon\Carbon::parse($m->TGL_MULAI) : null;
-                                    $selesai = !empty($m->TGL_SELESAI) ? \Carbon\Carbon::parse($m->TGL_SELESAI) : null;
-                                    $now = now();
-                                    $statusDb = strtoupper(trim($m->STATUS_SDT ?? ''));
-                                    $status =
-                                        $statusDb ?:
-                                        ($mulai && $selesai && $now->between($mulai, $selesai)
-                                            ? 'AKTIF'
-                                            : ($selesai && $now->gt($selesai)
-                                                ? 'SELESAI'
-                                                : 'DRAFT'));
-                                    $chipType =
-                                        $status === 'AKTIF' ? 'success' : ($status === 'SELESAI' ? 'warn' : 'info');
-                                    $nop = is_numeric($m->JUMLAH_NOP ?? null) ? (int) $m->JUMLAH_NOP : 0;
-                                    $processed = is_numeric($m->SUDAH_DIPROSES ?? null) ? (int) $m->SUDAH_DIPROSES : 0;
-                                    $prog = isset($m->PROGRESS) ? max(0, min(100, (float) $m->PROGRESS)) : 0;
-                                    $progTxt = rtrim(rtrim(number_format($prog, 2, '.', ''), '0'), '.');
-
-                                    // Tentukan warna badge progress
-                                    $progClass = $prog >= 100 ? 'prog-100' : 'prog-low';
-                                @endphp
-
-                                <tr>
-                                    <td class="col-no mono" data-label="No">{{ $loop->iteration }}</td>
-                                    <td class="col-nama" data-label="Nama SDT" title="{{ $m->NAMA_SDT }}">
-                                        {{ $m->NAMA_SDT }}</td>
-                                    <td class="col-date" data-label="Tgl Mulai">
-                                        {{ $mulai ? $mulai->translatedFormat('d M Y') : '—' }}</td>
-                                    <td class="col-date" data-label="Tgl Selesai">
-                                        {{ $selesai ? $selesai->translatedFormat('d M Y') : '—' }}</td>
-                                    <td class="col-nop mono" data-label="Jumlah NOP">{{ number_format($nop) }}</td>
-                                    <td class="col-status" data-label="Status">
-                                        <span class="chip" data-type="{{ $chipType }}"><span
-                                                class="dot"></span>{{ $status }}</span>
-                                    </td>
-                                    <td class="col-prog" data-label="Progress">
-                                        <div style="text-align: center;">
-                                            <span class="badge-progress {{ $progClass }}">
-                                                {{ $progTxt }}%
-                                            </span>
-                                            <span class="prog-detail">
-                                                {{ number_format($processed) }} / {{ number_format($nop) }}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td class="col-aksi" data-label="">
-                                        <a href="{{ route('petugas.sdt.detail', $m->ID) }}" class="btn btn-detail btn-sm"
-                                            aria-label="Detail SDT {{ $m->NAMA_SDT }}">
-                                            <i class="bi bi-eye me-1"></i> Buka Detail
-                                        </a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="text-center text-muted py-4">Belum ada master SDT.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
+                        <tbody></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
+
 @endsection
+@push('scripts')
+    {{-- DataTables JS --}}
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#sdtTable').DataTable({
+                processing: true,
+                serverSide: true, // AKTIFKAN SERVER SIDE
+                ajax: {
+                    url: "{{ url('petugas/sdt') }}",
+                    type: 'GET',
+                    // DataTables secara otomatis mengirimkan parameter: start, length, draw, search
+                },
+                pageLength: 5,
+                columns: [{
+                        data: null,
+                        sortable: false,
+                        render: function(data, type, row, meta) {
+                            // Hitung nomor urut berdasarkan posisi halaman
+                            return meta.settings._iDisplayStart + meta.row + 1;
+                        }
+                    },
+                    {
+                        data: 'NAMA_SDT'
+                    },
+                    {
+                        data: 'TGL_MULAI'
+                    },
+                    {
+                        data: 'TGL_SELESAI'
+                    },
+                    {
+                        data: 'JUMLAH_NOP',
+                        className: 'mono'
+                    },
+                    {
+                        data: 'STATUS_SDT',
+                        render: function(data) {
+                            let status = data ? data.toUpperCase() : 'AKTIF';
+                            let type = status === 'SELESAI' ? 'warn' : 'success';
+                            return `<span class="chip" data-type="${type}"><span class="dot"></span>${status}</span>`;
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function(row) {
+                            let color = row.PROGRESS >= 100 ? 'prog-100' : 'prog-low';
+                            return `<div style="text-align: center;">
+                        <span class="badge-progress ${color}">${row.PROGRESS}%</span>
+                        <span class="prog-detail">${row.DETAIL_PROG}</span>
+                    </div>`;
+                        }
+                    },
+                    {
+                        data: 'ID',
+                        render: function(id) {
+                            return `<a href="{{ url('petugas/sdt/detail') }}/${id}" class="btn btn-detail btn-sm">
+                        <i class="bi bi-eye"></i> Buka Detail</a>`;
+                        }
+                    }
+                ],
+                dom: '<"d-flex justify-content-between align-items-center mb-3"lf>rt<"d-flex justify-content-between align-items-center mt-3"ip>'
+            });
+        });
+    </script>
+@endpush
