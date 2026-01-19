@@ -123,6 +123,24 @@ class PetugasSdtController extends Controller
 
             return DataTables::eloquent($query)
                 ->addIndexColumn()
+                ->editColumn('NOP', function ($row) {
+                    $nop = $row->NOP;
+
+                    // Pastikan data ada dan panjangnya 18 digit (Standar NOP)
+                    if ($nop && strlen($nop) == 18) {
+                        // Format: XX.XX.XXX.XXX.XXX.XXXX.X
+                        return substr($nop, 0, 2) . '.' .
+                            substr($nop, 2, 2) . '.' .
+                            substr($nop, 4, 3) . '.' .
+                            substr($nop, 7, 3) . '.' .
+                            substr($nop, 10, 3) . '.' .
+                            substr($nop, 13, 4) . '.' .
+                            substr($nop, 17, 1);
+                    }
+
+                    // Jika panjang tidak 18, kembalikan apa adanya agar tidak error
+                    return $nop;
+                })
                 ->addColumn('status_penyampaian', function ($row) {
                     $status = $row->latestStatus->STATUS_PENYAMPAIAN ?? null;
                     if ($status == '1') return '<span class="badge-soft bg-soft-green"><i class="bi bi-check-circle"></i> TERSAMPAIKAN</span>';
