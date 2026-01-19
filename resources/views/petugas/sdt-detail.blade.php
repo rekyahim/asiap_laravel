@@ -46,7 +46,7 @@
             border: 1px solid var(--line);
             border-radius: 18px;
             box-shadow: var(--shadow);
-            overflow: hidden
+            overflow: hidden;
         }
 
         .card-clean .card-header {
@@ -55,9 +55,7 @@
             justify-content: flex-start;
             padding: var(--py) 26px;
             border-bottom: 1px solid var(--line);
-            background:
-                radial-gradient(80% 140% at 100% 0%, rgba(37, 99, 235, .05) 0%, #fff 60%),
-                linear-gradient(180deg, #fff, #f8fafc);
+            background: radial-gradient(80% 140% at 100% 0%, rgba(37, 99, 235, .05) 0%, #fff 60%), linear-gradient(180deg, #fff, #f8fafc);
         }
 
         .page-title {
@@ -65,7 +63,7 @@
             color: var(--text);
             font-weight: 800;
             letter-spacing: .2px;
-            font-size: clamp(1rem, 1.1vw + .85rem, 1.25rem)
+            font-size: clamp(1rem, 1.1vw + .85rem, 1.25rem);
         }
 
         /* ========== Buttons ========== */
@@ -112,7 +110,6 @@
             color: white;
         }
 
-        /* Tombol Disabled (Expired) */
         .btn-disabled {
             background: #f1f5f9;
             border: 1px solid #e2e8f0;
@@ -133,7 +130,7 @@
             padding: .25rem .5rem;
         }
 
-        /* KPI GRID */
+        /* ========== KPI GRID ========== */
         .kpis {
             display: flex;
             flex-direction: column;
@@ -189,7 +186,7 @@
             border-radius: 999px;
         }
 
-        /* TABLE BASE STYLES */
+        /* ========== TABLE BASE STYLES ========== */
         .table-wrap {
             border: 1px solid var(--line);
             border-radius: 14px;
@@ -202,14 +199,11 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            /* Table layout fixed tetap direkomendasikan agar lebar kolom terkontrol */
             table-layout: fixed;
         }
 
-        /* LEBAR KOLOM */
         .col-no {
             width: 50px;
-
         }
 
         .col-nama {
@@ -252,7 +246,6 @@
             text-align: left;
         }
 
-        /* Alignment Header Desktop */
         .tbl thead th.col-no,
         .tbl thead th.col-nop {
             text-align: right;
@@ -271,21 +264,15 @@
             color: #334155;
             font-size: clamp(.82rem, 1vw, .95rem);
             line-height: 1.4;
-
-            /* PERBAIKAN: Izinkan text wrapping */
             white-space: normal;
             vertical-align: top;
-            /* Agar teks mulai dari atas sel */
             word-wrap: break-word;
-            /* Pecah kata jika terlalu panjang */
         }
 
         .tbl tbody td.col-aksi {
             vertical-align: middle;
-            /* Tombol aksi tetap di tengah vertikal */
         }
 
-        /* Alignment Body Desktop */
         .tbl tbody td.col-no,
         .tbl tbody td.col-nop {
             text-align: right;
@@ -310,7 +297,7 @@
             font-family: ui-monospace, Menlo, monospace;
         }
 
-        /* ========== Components (Chip & Progress) ========== */
+        /* ========== Components ========== */
         .chip {
             display: inline-flex;
             align-items: center;
@@ -323,7 +310,6 @@
             background: #f3f4f6;
             color: #334155;
             white-space: nowrap;
-            /* Chip tetap satu baris */
         }
 
         .chip .dot {
@@ -333,7 +319,6 @@
             background: #9ca3af;
         }
 
-        /* Badge Soft */
         .badge-soft {
             padding: 4px 8px;
             border-radius: 6px;
@@ -341,7 +326,6 @@
             font-weight: 700;
             letter-spacing: 0.3px;
             display: inline-block;
-            /* Agar padding berfungsi baik saat wrap */
             white-space: nowrap;
         }
 
@@ -370,10 +354,11 @@
             gap: 6px;
             justify-content: flex-end;
             flex-wrap: wrap;
-            /* Izinkan tombol turun ke bawah jika sempit */
         }
 
-        /* =========================================MOBILE CARD VIEW TRANSFORMATION========================================= */
+        /* =====================================================================
+           MOBILE RESPONSIVE FIXES (PAGINATION + NOP)
+           ===================================================================== */
         @media (max-width: 768px) {
             .page-sdt-detail {
                 margin-top: 0;
@@ -399,13 +384,18 @@
                 width: 100%;
             }
 
+            /* Reset Table untuk Mobile Card View */
             .table-wrap {
                 border: none;
                 background: transparent;
                 overflow: visible;
             }
 
-            .tbl {
+            .tbl,
+            .tbl thead,
+            .tbl tbody,
+            .tbl tbody tr,
+            .tbl tbody td {
                 display: block;
             }
 
@@ -413,12 +403,7 @@
                 display: none;
             }
 
-            .tbl tbody {
-                display: block;
-            }
-
             .tbl tbody tr {
-                display: block;
                 margin-bottom: 15px;
                 background: #fff;
                 border: 1px solid var(--line);
@@ -430,16 +415,17 @@
             .tbl tbody td {
                 display: flex;
                 justify-content: space-between;
-                align-items: center;
-                /* Kembali ke center di mobile card */
+                align-items: flex-start;
                 text-align: right !important;
                 padding: 8px 0;
                 border-bottom: 1px dashed #f1f5f9;
                 width: 100% !important;
                 box-sizing: border-box;
-                white-space: normal;
                 height: auto;
-                overflow: visible;
+                /* FIX NOP: Agar angka panjang turun ke bawah */
+                word-break: break-all;
+                overflow-wrap: break-word;
+                white-space: normal;
             }
 
             .tbl tbody td:last-child {
@@ -458,6 +444,7 @@
                 margin-right: 15px;
                 text-align: left;
                 min-width: 90px;
+                flex-shrink: 0;
             }
 
             .col-nama {
@@ -468,12 +455,54 @@
                 margin-bottom: 5px;
                 padding-bottom: 12px !important;
                 display: block !important;
-                /* Nama WP di mobile blok sendiri */
                 text-align: left !important;
             }
 
             .col-nama::before {
                 display: none;
+            }
+
+            /* ================= PAGINATION BOOTSTRAP 5 FIX ================= */
+            /* 1. Reset text alignment wrapper */
+            div.dataTables_wrapper div.dataTables_length,
+            div.dataTables_wrapper div.dataTables_filter,
+            div.dataTables_wrapper div.dataTables_info,
+            div.dataTables_wrapper div.dataTables_paginate {
+                text-align: center;
+                justify-content: center;
+            }
+
+            /* 2. Style Info (Showing 1 to X...) */
+            div.dataTables_wrapper div.dataTables_info {
+                white-space: normal;
+                margin-bottom: 12px;
+                font-size: 0.85rem;
+                color: var(--muted);
+            }
+
+            /* 3. Container Pagination */
+            div.dataTables_wrapper div.dataTables_paginate {
+                margin-top: 5px !important;
+                display: flex;
+                justify-content: center !important;
+            }
+
+            /* 4. MAGIC FIX: Target UL Pagination milik Bootstrap */
+            div.dataTables_wrapper div.dataTables_paginate ul.pagination {
+                flex-wrap: wrap !important;
+                /* Agar tombol turun ke bawah */
+                justify-content: center !important;
+                margin: 0;
+                gap: 5px;
+                /* Jarak antar tombol */
+            }
+
+            /* 5. Styling Tombol per Item */
+            div.dataTables_wrapper div.dataTables_paginate ul.pagination li.page-item .page-link {
+                border-radius: 6px;
+                padding: 0.4rem 0.75rem;
+                font-size: 0.85rem;
+                margin: 0 1px;
             }
         }
     </style>
