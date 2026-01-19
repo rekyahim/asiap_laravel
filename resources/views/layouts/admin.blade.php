@@ -84,6 +84,7 @@
                 color: #fff !important;
             }
         }
+
         /* ================= AKSI BUTTON FIX ================= */
         .aksi-btns .btn-icon {
             color: #fff;
@@ -325,7 +326,14 @@
     <script src="{{ asset('assets/js/app.min.js') }}"></script>
     <script src="{{ asset('assets/libs/apexcharts/dist/apexcharts.min.js') }}"></script>
     <script src="{{ asset('assets/libs/simplebar/dist/simplebar.js') }}"></script>
-
+    {{-- TAMBAHKAN INI: Setup Global CSRF Token untuk semua AJAX --}}
+    <script>
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+    </script>
     {{-- Halaman boleh push JS tambahan di sini --}}
     @stack('scripts')
 </body>

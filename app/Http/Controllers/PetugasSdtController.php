@@ -9,9 +9,12 @@ use Illuminate\View\View;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\StatusPenyampaian;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
+
+use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Validator;
 
 class PetugasSdtController extends Controller
@@ -99,154 +102,87 @@ class PetugasSdtController extends Controller
     /* =========================================================================
     DETAIL PER SDT
     ========================================================================= */
-    public function detail(Request $req, int $id): View|RedirectResponse
+    public function detail(Request $req, int $id): View|RedirectResponse|JsonResponse
     {
         $user_id = session('auth_uid');
         $sdt = Sdt::find($id);
 
         if (!$sdt) {
-            return redirect()
-                ->route('petugas.sdt.index')
+            return redirect()->route('petugas.sdt.index')
                 ->with('error', "Data SDT dengan ID {$id} tidak ditemukan.");
         }
 
-        /* ============================================================
-        QUERY TABEL (MENGIKUTI FILTER)
-        MENGGUNAKAN with('latestStatus') UNTUK PERFORMA
-        ============================================================ */
-        //perbaiki
+        // ==========================================================
+        // 1. REQUEST AJAX DATATABLES (Server-Side)
+        // ==========================================================
+        if ($req->ajax()) {
+            $query = DtSdt::where('ID_SDT', $id)
+                ->where('PETUGAS_SDT', $user_id)
+                ->with(['latestStatus', 'sdt']) // Eager Load biar cepat
+                ->select('DT_SDT.*'); // Select spesifik table utama agar tidak bentrok ID
 
-        $query = DtSdt::where('ID_SDT', $id)
-            ->where('PETUGAS_SDT', $user_id)->with('latestStatus', 'sdt');
+            return DataTables::eloquent($query)
+                ->addIndexColumn()
+                ->addColumn('status_penyampaian', function ($row) {
+                    $status = $row->latestStatus->STATUS_PENYAMPAIAN ?? null;
+                    if ($status == '1') return '<span class="badge-soft bg-soft-green"><i class="bi bi-check-circle"></i> TERSAMPAIKAN</span>';
+                    if ($status === '0' || $status === 0) return '<span class="badge-soft bg-soft-red"><i class="bi bi-x-circle"></i> TIDAK</span>';
+                    return '<span class="badge-soft bg-soft-gray">BELUM</span>';
+                })
+                ->addColumn('status_op_html', function ($row) {
+                    $val = $row->latestStatus->STATUS_OP ?? null;
+                    $map = [2 => 'Ditemukan', 3 => 'Tidak Ditemukan', 4 => 'Sudah Dijual'];
+                    return '<span class="badge-soft bg-soft-gray">' . ($map[$val] ?? '-') . '</span>';
+                })
+                ->addColumn('status_wp_html', function ($row) {
+                    $val = $row->latestStatus->STATUS_WP ?? null;
+                    $map = [2 => 'Ditemukan', 3 => 'Tidak Ditemukan', 4 => 'Luar Kota'];
+                    return '<span class="badge-soft bg-soft-gray">' . ($map[$val] ?? '-') . '</span>';
+                })
+                ->addColumn('aksi', function ($row) {
+                    // Logika Expired (Menggunakan Carbon)
+                    $now = Carbon::now();
+                    $isExpired = false;
 
-        if ($req->filled('nop')) {
-            $query->where('NOP', 'like', "%{$req->nop}%");
-        }
-        if ($req->filled('tahun')) {
-            $query->where('TAHUN', $req->tahun);
-        }
-        if ($req->filled('nama')) {
-            $query->where('NAMA_WP', 'like', "%{$req->nama}%");
-        }
+                    $statusCreated = $row->latestStatus->created_at ?? null;
+                    $tglSelesai = $row->sdt->TGL_SELESAI ?? null;
+                    $tglMulai = $row->sdt->TGL_MULAI ?? null;
 
-        if ($req->filled('search')) {
-            $search = $req->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('NOP', 'like', "%{$search}%")
-                    ->orWhere('NAMA_WP', 'like', "%{$search}%");
-            });
-        }
+                    // Cek Expired 6 jam setelah status dibuat / Tanggal selesai lewat / Belum mulai
+                    if (($statusCreated && Carbon::parse($statusCreated)->addHours(6)->isPast()) ||
+                        ($tglSelesai && Carbon::parse($tglSelesai)->addHours(6)->isPast()) ||
+                        ($tglMulai && $now->lt(Carbon::parse($tglMulai)->startOfDay()))
+                    ) {
+                        $isExpired = true;
+                    }
 
-        // harus pakai ID Petugas
-        $rows = $query->orderBy('ID')->paginate(20)->withQueryString();
+                    // Buat Tombol
+                    $btnDetail = '<a href="' . route('petugas.sdt.show', ['id' => $row->ID]) . '" class="btn-ghost btn-compact me-1"><i class="bi bi-eye"></i></a>';
 
+                    if ($isExpired) {
+                        $btnUpdate = '<span class="btn-disabled btn-compact"><i class="bi bi-lock-fill"></i></span>';
+                    } else {
+                        $btnUpdate = '<a href="' . route('petugas.sdt.edit', ['id' => $row->ID]) . '" class="btn-blue btn-compact"><i class="bi bi-pencil"></i></a>';
+                    }
 
-
-        // ==== HITUNG EXPIRED UNTUK TOMBOL UPDATE ====
-        foreach ($rows as $row) {
-            $status = $row->latestStatus;
-            $sdt = $row->sdt;
-            $row->expired = '2'; //belum
-
-            if ($status && $status->created_at) {
-
-                // 1. Define the past date (e.g., from a database)
-                $past_date_string = $status->created_at;
-
-                // 2. Convert dates to timestamps
-                $past_timestamp = strtotime($past_date_string);
-                $now_timestamp = time(); // or strtotime('now')
-
-                // 3. Calculate the difference in seconds
-                $difference_seconds = $now_timestamp - $past_timestamp;
-
-                // 4. Define the 6-hour threshold in seconds (6 hours * 60 minutes * 60 seconds)
-                $six_hours_in_seconds = 6 * 60 * 60; // 21600 seconds
-
-                // 5. Compare the difference
-                if ($difference_seconds > $six_hours_in_seconds) {
-                    $row->expired = '1'; //udh expired
-                }
-            }
-
-            if ($sdt && $sdt->TGL_SELESAI) {
-                // 1. Define the past date (e.g., from a database)
-                $past_date_string = $sdt->TGL_SELESAI;
-
-                // 2. Convert dates to timestamps
-                $past_timestamp = strtotime($past_date_string);
-                $now_timestamp = time(); // or strtotime('now')
-
-                // 3. Calculate the difference in seconds
-                $difference_seconds = $now_timestamp - $past_timestamp;
-
-                // 4. Define the 6-hour threshold in seconds (6 hours * 60 minutes * 60 seconds)
-                $six_hours_in_seconds = 6 * 60 * 60; // 21600 seconds
-
-                // 5. Compare the difference
-                if ($difference_seconds > $six_hours_in_seconds) {
-                    $row->expired = '1'; //udh expired
-                }
-            }
-
-
-            //JIKA sdt belum tanggal saat ini lebih kecil dari tanggal mulai di tabel sdt maka expired juga
-            if ($sdt && $sdt->TGL_MULAI) {
-                // 1. Parsing tanggal agar menjadi object Carbon
-                $tglMulai = \Carbon\Carbon::parse($sdt->TGL_MULAI)->startOfDay();
-                $today = \Carbon\Carbon::now()->startOfDay();
-
-                // 2. Logika: Jika hari ini < tanggal mulai, maka expired
-                if ($today->lt($tglMulai)) {
-                    // lt() artinya Less Than (Lebih Kecil)
-                    $row->expired = '1';
-                }
-            }
+                    return '<div class="td-actions">' . $btnDetail . $btnUpdate . '</div>';
+                })
+                ->rawColumns(['status_penyampaian', 'status_op_html', 'status_wp_html', 'aksi'])
+                ->make(true);
         }
 
-        //dd($rows);
-        /* ============================================================
-        DATA KO (TIDAK TERPENGARUH FILTER)
-        ============================================================ */
-        $dataKO = DtSdt::where('ID_SDT', $id)
-            ->where('ALAMAT_OP', 'LIKE', 'KO%')
-            ->where('PETUGAS_SDT', $user_id)
-            ->select('ALAMAT_OP')
-            ->distinct()
-            ->orderBy('ALAMAT_OP')
-            ->get();
+        // ==========================================================
+        // 2. DATA STATIS (KPI & SUMMARY)
+        // ==========================================================
+        // Gunakan clone agar query tidak didefinisikan ulang berkali-kali
+        $baseQuery = DtSdt::where('ID_SDT', $id)->where('PETUGAS_SDT', $user_id);
 
-        /* ============================================================
-        DATA NOP (UNTUK MODAL PILIH NOP)
-        ============================================================ */
-        $dataNOP = DtSdt::where('ID_SDT', $id)
-            ->where('PETUGAS_SDT', $user_id)
-            ->whereNotNull('NOP')
-            ->where('NOP', '!=', '')
-            ->distinct('NOP')
-            ->orderBy('NOP')
-            ->get(['NOP']);
+        $totalNOP = (clone $baseQuery)->whereNotNull('NOP')->where('NOP', '!=', '')->count();
 
-        /* ============================================================
-        TOTAL NOP & TERSAMPAIKAN (UNTUK SUMMARY KPI)
-            ============================================================ */
-        $totalNOP = DtSdt::where('ID_SDT', $id)
-            ->where('PETUGAS_SDT', $user_id)
-            ->whereNotNull('NOP')
-            ->where('NOP', '!=', '')
-            ->count();
+        // Optimasi: Ambil ID saja untuk query tersampaikan
+        $tersampaikan = StatusPenyampaian::whereIn('ID_DT_SDT', (clone $baseQuery)->pluck('ID'))
+            ->distinct('ID_DT_SDT')->count();
 
-        $tersampaikan = StatusPenyampaian::whereIn(
-            'ID_DT_SDT',
-            DtSdt::where('ID_SDT', $id)->where('PETUGAS_SDT', $user_id)->pluck('ID')
-        )
-
-            ->distinct('ID_DT_SDT')
-            ->count();
-
-        /* ============================================================
-        SUMMARY (KPI)
-            ============================================================ */
         $summary = [
             'total' => $totalNOP,
             'tersampaikan' => $tersampaikan,
@@ -254,28 +190,13 @@ class PetugasSdtController extends Controller
             'progress' => $totalNOP ? round(($tersampaikan / $totalNOP) * 100, 2) : 0,
         ];
 
-        /* ============================================================
-        TOTAL BIAYA
-            ============================================================ */
-        $totalBiaya = DtSdt::where('ID_SDT', $id)
-            ->where('PETUGAS_SDT', $user_id)
-            // ->whereIn('ALAMAT_OP', $dataKO->pluck('ALAMAT_OP'))
-            ->sum('PBB_HARUS_DIBAYAR');
+        // Data untuk Modal (tetap load biasa karena cuma NOP/Alamat)
+        $dataKO = (clone $baseQuery)->where('ALAMAT_OP', 'LIKE', 'KO%')->select('ALAMAT_OP')->distinct()->orderBy('ALAMAT_OP')->get();
+        $dataNOP = (clone $baseQuery)->whereNotNull('NOP')->where('NOP', '!=', '')->distinct('NOP')->orderBy('NOP')->get(['NOP']);
+        $totalBiaya = (clone $baseQuery)->sum('PBB_HARUS_DIBAYAR');
 
-        /* ============================================================
-        RETURN KE VIEW
-         ============================================================ */
-
-        $ID_SDT = $id;
-        return view('petugas.sdt-detail', compact(
-            'sdt',
-            'rows',
-            'summary',
-            'dataKO',
-            'totalBiaya',
-            'dataNOP', // <-- tambahkan ini supaya dropdown NOP di modal tidak error
-            'ID_SDT'
-        ));
+        return view('petugas.sdt-detail', compact('sdt', 'summary', 'dataKO', 'totalBiaya', 'dataNOP'))
+            ->with('ID_SDT', $id);
     }
 
 

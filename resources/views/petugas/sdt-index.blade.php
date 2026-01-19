@@ -449,8 +449,12 @@
                 serverSide: true, // AKTIFKAN SERVER SIDE
                 ajax: {
                     url: "{{ url('petugas/sdt') }}",
-                    type: 'GET',
+                    type: 'POST', // Ganti dari GET ke POST
                     // DataTables secara otomatis mengirimkan parameter: start, length, draw, search
+                },
+                headers: {
+                    // Wajib ada untuk POST request di Laravel
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 pageLength: 5,
                 columns: [{

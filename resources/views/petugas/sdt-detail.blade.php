@@ -477,7 +477,29 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <style>
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0;
+            margin-left: 2px;
+        }
 
+        div.dataTables_wrapper div.dataTables_filter {
+            text-align: right;
+            margin-bottom: 10px;
+        }
+
+        .dataTables_length select {
+            border-radius: 8px;
+            border: 1px solid var(--line);
+        }
+
+        .dataTables_filter input {
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            padding: 5px 10px;
+        }
+    </style>
     <div class="page-sdt-detail">
         <div class="card-clean">
 
@@ -564,13 +586,8 @@
                             {{-- Satu input untuk NOP / Nama WP --}}
                             <div class="col-md-8">
                                 <label class="form-label fw-bold">Cari NOP / Nama WP</label>
-                                <input
-                                    type="text"
-                                    name="search"
-                                    value="{{ request('search') }}"
-                                    class="form-control"
-                                    placeholder="Masukkan NOP atau Nama WP"
-                                >
+                                <input type="text" name="search" value="{{ request('search') }}" class="form-control"
+                                    placeholder="Masukkan NOP atau Nama WP">
                             </div>
 
                             {{-- Tombol Cari & Reset --}}
@@ -579,7 +596,7 @@
                                     <i class="bi bi-search"></i> Cari
                                 </button>
 
-                                @if(request()->filled('search'))
+                                @if (request()->filled('search'))
                                     <a href="{{ route('petugas.sdt.detail', $sdt->ID) }}" class="btn-ghost w-auto">
                                         <i class="bi bi-x-circle"></i> Reset
                                     </a>
@@ -594,129 +611,25 @@
 
 
                 {{-- Table Section --}}
-                <div class="table-wrap">
-                    <table class="tbl">
+                <div class="table-wrap p-3">
+                    <table id="tableSdt" class="tbl" style="width:100%">
                         <thead>
                             <tr>
-                                <th style="width: 50px; text-align:center;">No</th>
-                                <th width="18%">NOP</th>
-                                <th style="text-align:center;" width="7%">Tahun</th>
+                                <th class="col-no">No</th>
+                                <th>NOP</th>
+                                <th>Tahun</th>
                                 <th>Nama WP</th>
-                                <th width="16%">Status Penyampaian</th>
+                                <th>Penyampaian</th>
                                 <th>Status OP</th>
                                 <th>Status WP</th>
-                                <th style="text-align:right;" width="17%">Aksi</th>
+                                <th class="text-end">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @forelse($rows as $i => $r)
-                                @php
-                                    // 1. Status Penyampaian
-                                    $status = $r->latestStatus->STATUS_PENYAMPAIAN ?? null;
-                                    if ($status == '1') {
-                                        $badgePeny =
-                                            '<span class="badge-soft bg-soft-green"><i class="bi bi-check-circle me-1"></i> TERSAMPAIKAN</span>';
-                                    } elseif ($status == '0' || $status === 0) {
-                                        $badgePeny =
-                                            '<span class="badge-soft bg-soft-red"><i class="bi bi-x-circle me-1"></i> TIDAK TERSAMPAIKAN</span>';
-                                    } else {
-                                        $badgePeny = '<span class="badge-soft bg-soft-gray">BELUM DIPROSES</span>';
-                                    }
-
-                                    // 2. Mapping Status OP
-                                    $valOP = $r->latestStatus->STATUS_OP ?? null;
-                                    if ($valOP == 1) {
-                                        $statusOP = 'Belum Diproses Petugas';
-                                    } elseif ($valOP == 2) {
-                                        $statusOP = 'Ditemukan';
-                                    } elseif ($valOP == 3) {
-                                        $statusOP = 'Tidak Ditemukan';
-                                    } elseif ($valOP == 4) {
-                                        $statusOP = 'Sudah Dijual';
-                                    } else {
-                                        $statusOP = '-';
-                                    }
-
-                                    // 3. Mapping Status WP
-                                    $valWP = $r->latestStatus->STATUS_WP ?? null;
-                                    if ($valWP == 1) {
-                                        $statusWP = 'Belum Diproses Petugas';
-                                    } elseif ($valWP == 2) {
-                                        $statusWP = 'Ditemukan';
-                                    } elseif ($valWP == 3) {
-                                        $statusWP = 'Tidak Ditemukan';
-                                    } elseif ($valWP == 4) {
-                                        $statusWP = 'Luar Kota';
-                                    } else {
-                                        $statusWP = '-';
-                                    }
-
-                                    // 4. Cek Expired
-                                    $isExpired = isset($r->expired) && $r->expired == 1;
-                                @endphp
-
-                                <tr>
-                                    <td data-label="No" style="text-align:center;">{{ $rows->firstItem() + $i }}</td>
-
-                                    <td data-label="NOP" class="td-nop" style="font-family:monospace; font-weight:600;">
-                                        {{ $r->NOP }}
-                                    </td>
-
-                                    <td data-label="Tahun" style="text-align:center;">{{ $r->TAHUN }}</td>
-
-                                    {{-- Hapus Str::limit agar teks full --}}
-                                    <td data-label="Nama WP">
-                                        {{ $r->NAMA_WP ?: '—' }}
-                                    </td>
-
-                                    <td data-label="Penyampaian">{!! $badgePeny !!}</td>
-
-                                    <td data-label="Status OP">
-                                        <span class="badge-soft bg-soft-gray">{{ $statusOP }}</span>
-                                    </td>
-
-                                    <td data-label="Status WP">
-                                        <span class="badge-soft bg-soft-gray">{{ $statusWP }}</span>
-                                    </td>
-
-                                    <td data-label="">
-                                        <div class="td-actions">
-                                            <a href="{{ route('petugas.sdt.show', ['id' => $r->ID, 'return' => request()->fullUrl()]) }}"
-                                                class="btn-ghost btn-compact" title="Lihat Detail">
-                                                <i class="bi bi-eye"></i> Detail
-                                            </a>
-
-                                            {{-- LOGIKA TOMBOL EXPIRED --}}
-                                            @if ($isExpired)
-                                                <span class="btn-disabled btn-compact">
-                                                    <i class="bi bi-lock-fill"></i> Expired
-                                                </span>
-                                            @else
-                                                <a href="{{ route('petugas.sdt.edit', ['id' => $r->ID, 'back' => request()->fullUrl()]) }}"
-                                                    class="btn-blue btn-compact" title="Update Data">
-                                                    <i class="bi bi-pencil"></i> Update
-                                                </a>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="text-center py-5">
-                                        <div class="d-flex flex-column align-items-center">
-                                            <i class="bi bi-inbox fs-1 text-muted opacity-50 mb-2"></i>
-                                            <span class="text-muted fw-bold">Tidak ada data ditemukan</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
+                        <tbody></tbody> {{-- BIARKAN KOSONG --}}
                     </table>
                 </div>
 
-                <div class="mt-4">
-                    {{ $rows->withQueryString()->links('pagination::bootstrap-5') }}
-                </div>
+
 
             </div>
         </div>
@@ -734,6 +647,105 @@
     <script>
         $(document).ready(function() {
             // Script tambahan
+        });
+    </script>
+@endpush
+@push('scripts')
+    {{-- Pastikan urutan load: jQuery -> DataTables JS -> DataTables BS5 JS --}}
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var table = $('#tableSdt').DataTable({
+                processing: true,
+                serverSide: true, // INI KUNCINYA AGAR RINGAN
+                ajax: {
+                    url: "{{ route('petugas.sdt.detail', $sdt->ID) }}",
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    }
+                },
+                pageLength: 5,
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'NOP',
+                        name: 'NOP',
+                        className: 'mono fw-bold text-end'
+                    },
+                    {
+                        data: 'TAHUN',
+                        name: 'TAHUN',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'NAMA_WP',
+                        name: 'NAMA_WP',
+                        defaultContent: '—'
+                    },
+                    {
+                        data: 'status_penyampaian',
+                        name: 'latestStatus.STATUS_PENYAMPAIAN'
+                    }, // Mengarah ke relasi
+                    {
+                        data: 'status_op_html',
+                        name: 'latestStatus.STATUS_OP'
+                    },
+                    {
+                        data: 'status_wp_html',
+                        name: 'latestStatus.STATUS_WP'
+                    },
+                    {
+                        data: 'aksi',
+                        name: 'aksi',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-end'
+                    }
+                ],
+                // Konfigurasi Bahasa Indonesia
+                language: {
+                    search: "Cari NOP/Nama:",
+                    lengthMenu: "Tampilkan _MENU_ data",
+                    info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                    infoEmpty: "Tidak ada data",
+                    infoFiltered: "(difilter dari _MAX_ total data)",
+                    processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>',
+                    paginate: {
+                        first: "Awal",
+                        last: "Akhir",
+                        next: "&rarr;",
+                        previous: "&larr;"
+                    }
+                },
+                // Layout Filter
+                dom: '<"d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2"lf>rt<"d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2"ip>',
+
+                // ============================================================
+                // MAGIS AGAR TAMPILAN MOBILE CARD TETAP JALAN
+                // ============================================================
+                createdRow: function(row, data, dataIndex) {
+                    // Kita inject attr data-label agar CSS Mobile Card membacanya
+                    $('td', row).eq(0).attr('data-label', 'No');
+                    $('td', row).eq(1).attr('data-label', 'NOP');
+                    $('td', row).eq(2).attr('data-label', 'Tahun');
+                    $('td', row).eq(3).attr('data-label', 'Nama WP').addClass(
+                        'col-nama'); // Class khusus nama
+                    $('td', row).eq(4).attr('data-label', 'Penyampaian');
+                    $('td', row).eq(5).attr('data-label', 'Status OP');
+                    $('td', row).eq(6).attr('data-label', 'Status WP');
+                    // Kolom aksi tidak butuh label
+                }
+            });
         });
     </script>
 @endpush
