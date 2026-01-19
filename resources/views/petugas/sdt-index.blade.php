@@ -480,9 +480,18 @@
                     },
                     {
                         data: 'STATUS_SDT',
+                        name: 'STATUS_SDT',
+                        className: 'text-center',
                         render: function(data) {
                             let status = data ? data.toUpperCase() : 'AKTIF';
-                            let type = status === 'SELESAI' ? 'warn' : 'success';
+                            let type = 'success'; // Default: AKTIF (Hijau)
+
+                            if (status === 'DRAFT') {
+                                type = 'secondary'; // DRAFT (Abu-abu)
+                            } else if (status === 'SELESAI') {
+                                type = 'warn'; // SELESAI (Kuning)
+                            }
+
                             return `<span class="chip" data-type="${type}"><span class="dot"></span>${status}</span>`;
                         }
                     },

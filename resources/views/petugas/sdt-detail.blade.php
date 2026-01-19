@@ -357,8 +357,8 @@
         }
 
         /* =====================================================================
-               MOBILE RESPONSIVE FIXES (PAGINATION + NOP)
-               ===================================================================== */
+                           MOBILE RESPONSIVE FIXES (PAGINATION + NOP)
+                           ===================================================================== */
         @media (max-width: 768px) {
             .page-sdt-detail {
                 margin-top: 0;
@@ -645,7 +645,7 @@
                         <thead>
                             <tr>
                                 <th class="col-no">No</th>
-                                <th>NOP</th>
+                                <th width="200px">NOP</th>
                                 <th>Tahun</th>
                                 <th>Nama WP</th>
                                 <th>Penyampaian</th>

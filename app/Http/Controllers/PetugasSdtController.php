@@ -72,15 +72,40 @@ class PetugasSdtController extends Controller
                 ->get();
 
             // 7. Mapping Data untuk View
+            // 7. Mapping Data untuk View
             $result = $data->map(function ($item) {
+                // Hitung Progress
                 $prog = $item->JUMLAH_NOP > 0 ? round(($item->SUDAH_DIPROSES / $item->JUMLAH_NOP) * 100, 1) : 0;
+
+                // --- LOGIC PENENTUAN STATUS SDT ---
+                $now   = \Carbon\Carbon::now();
+                $start = $item->TGL_MULAI ? \Carbon\Carbon::parse($item->TGL_MULAI)->startOfDay() : null;
+                $end   = $item->TGL_SELESAI ? \Carbon\Carbon::parse($item->TGL_SELESAI)->endOfDay() : null;
+
+                $statusLabel = 'AKTIF'; // Default jika null atau error
+
+                if ($start && $now->lt($start)) {
+                    // Jika hari ini < Tgl Mulai
+                    $statusLabel = 'DRAFT';
+                } elseif ($end && $now->gt($end)) {
+                    // Jika hari ini > Tgl Selesai
+                    $statusLabel = 'SELESAI';
+                } else {
+                    // Jika di dalam rentang (atau Tgl Selesai null dianggap aktif terus)
+                    $statusLabel = 'AKTIF';
+                }
+                // ----------------------------------
+
                 return [
                     'ID'            => $item->ID,
                     'NAMA_SDT'      => $item->NAMA_SDT,
                     'TGL_MULAI'     => $item->TGL_MULAI ? date('d M Y', strtotime($item->TGL_MULAI)) : '-',
                     'TGL_SELESAI'   => $item->TGL_SELESAI ? date('d M Y', strtotime($item->TGL_SELESAI)) : '-',
                     'JUMLAH_NOP'    => number_format($item->JUMLAH_NOP),
-                    'STATUS_SDT'    => $item->STATUS_SDT ?: 'AKTIF',
+
+                    // Gunakan variabel hasil logic di atas
+                    'STATUS_SDT'    => $statusLabel,
+
                     'PROGRESS'      => $prog,
                     'DETAIL_PROG'   => number_format($item->SUDAH_DIPROSES) . " / " . number_format($item->JUMLAH_NOP),
                 ];
