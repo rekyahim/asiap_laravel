@@ -12,7 +12,9 @@
     @endphp
 
     <style>
-        /* ========== Design Tokens & Scaling ========== */
+        /* =====================================================================
+           1. DESIGN TOKENS & SCALING
+           ===================================================================== */
         :root {
             --bg: #f5f7fb;
             --card: #fff;
@@ -33,7 +35,9 @@
             --td: clamp(10px, 1.3vw, 14px);
         }
 
-        /* ========== Layout & Card ========== */
+        /* =====================================================================
+           2. LAYOUT & CARD STYLES
+           ===================================================================== */
         .page-sdt-detail {
             margin-top: 4px;
             background: var(--bg);
@@ -66,7 +70,9 @@
             font-size: clamp(1rem, 1.1vw + .85rem, 1.25rem);
         }
 
-        /* ========== Buttons ========== */
+        /* =====================================================================
+           3. BUTTONS
+           ===================================================================== */
         .btn-ghost {
             background: #fff;
             border: 1px solid var(--line);
@@ -130,7 +136,9 @@
             padding: .25rem .5rem;
         }
 
-        /* ========== KPI GRID ========== */
+        /* =====================================================================
+           4. KPI DASHBOARD GRID
+           ===================================================================== */
         .kpis {
             display: flex;
             flex-direction: column;
@@ -186,7 +194,9 @@
             border-radius: 999px;
         }
 
-        /* ========== TABLE BASE STYLES ========== */
+        /* =====================================================================
+           5. TABLE STYLES (DEFAULT / DESKTOP)
+           ===================================================================== */
         .table-wrap {
             border: 1px solid var(--line);
             border-radius: 14px;
@@ -202,33 +212,29 @@
             table-layout: fixed;
         }
 
+        /* --- Setting Lebar Kolom Desktop --- */
         .col-no {
             width: 50px;
         }
 
+        .col-nop {
+            width: 220px;
+        }
+
         .col-nama {
-            width: 25%;
+            width: 200px;
         }
 
         .col-date {
-            width: 13%;
-        }
-
-        .col-nop {
-            width: 29%;
+            width: 100px;
         }
 
         .col-status {
-            width: 9%;
-        }
-
-        .col-prog {
-            width: 15%;
+            width: 100px;
         }
 
         .col-aksi {
-            width: 15%;
-            min-width: 200px;
+            width: 110px;
         }
 
         .tbl thead th {
@@ -285,6 +291,14 @@
             text-align: center;
         }
 
+        /* NOP Desktop: Satu Baris (Nowrap) */
+        .tbl tbody td.col-nop {
+            white-space: nowrap !important;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
         .tbl tbody tr:nth-child(even) {
             background: #fcfdff;
         }
@@ -297,7 +311,9 @@
             font-family: ui-monospace, Menlo, monospace;
         }
 
-        /* ========== Components ========== */
+        /* =====================================================================
+           6. COMPONENTS (CHIPS & BADGES)
+           ===================================================================== */
         .chip {
             display: inline-flex;
             align-items: center;
@@ -326,7 +342,9 @@
             font-weight: 700;
             letter-spacing: 0.3px;
             display: inline-block;
-            white-space: nowrap;
+            white-space: normal;
+            text-align: center;
+            line-height: 1.3;
         }
 
         .bg-soft-blue {
@@ -357,8 +375,8 @@
         }
 
         /* =====================================================================
-                           MOBILE RESPONSIVE FIXES (PAGINATION + NOP)
-                           ===================================================================== */
+           7. MOBILE RESPONSIVE FIXES (CARD VIEW)
+           ===================================================================== */
         @media (max-width: 768px) {
             .page-sdt-detail {
                 margin-top: 0;
@@ -384,7 +402,7 @@
                 width: 100%;
             }
 
-            /* Reset Table untuk Mobile Card View */
+            /* Reset Table untuk Mobile */
             .table-wrap {
                 border: none;
                 background: transparent;
@@ -412,20 +430,23 @@
                 box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
             }
 
+            /* --- Layout Baris Tabel di Mobile --- */
             .tbl tbody td {
                 display: flex;
                 justify-content: space-between;
+                /* Label Kiri, Isi Kanan */
                 align-items: flex-start;
+                /* Rata atas biar rapi */
                 text-align: right !important;
                 padding: 8px 0;
                 border-bottom: 1px dashed #f1f5f9;
                 width: 100% !important;
                 box-sizing: border-box;
                 height: auto;
-                /* FIX NOP: Agar angka panjang turun ke bawah */
-                word-break: break-all;
-                overflow-wrap: break-word;
                 white-space: normal;
+                /* Global wrap enabled */
+                gap: 15px;
+                /* Jarak antara Label dan Isi */
             }
 
             .tbl tbody td:last-child {
@@ -435,18 +456,50 @@
                 margin-top: 5px;
             }
 
+            /* Label (Kolom Kiri) */
             .tbl tbody td::before {
                 content: attr(data-label);
                 font-size: 0.75rem;
                 font-weight: 700;
                 text-transform: uppercase;
                 color: var(--muted);
-                margin-right: 15px;
                 text-align: left;
                 min-width: 90px;
                 flex-shrink: 0;
+                margin-top: 3px;
             }
 
+            /* --- FIX KHUSUS NOP DI MOBILE (FINAL) ---
+               1. overflow-wrap: anywhere; (Pecah string panjang tanpa spasi seperti NOP)
+               2. Hapus max-width agar tidak dipaksa sempit
+               3. Gunakan font clamp agar responsif
+            */
+            .tbl tbody td[data-label="NOP"] {
+                white-space: normal !important;
+                overflow-wrap: anywhere;
+                /* KUNCI PERBAIKAN */
+                word-break: break-word;
+                /* Fallback */
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: clamp(0.75rem, 4vw, 0.9rem) !important;
+                letter-spacing: -0.3px;
+                text-align: right;
+                width: 100% !important;
+                /* Gunakan lebar penuh */
+                max-width: 100% !important;
+                /* Reset batasan lama */
+            }
+
+            /* --- BADGE STATUS --- */
+            .tbl tbody td .badge-soft {
+                white-space: normal !important;
+                text-align: right;
+                display: inline-block;
+                max-width: 100%;
+                line-height: 1.4;
+            }
+
+            /* --- NAMA WP --- */
             .col-nama {
                 font-weight: 700;
                 color: var(--accent);
@@ -462,8 +515,7 @@
                 display: none;
             }
 
-            /* ================= PAGINATION BOOTSTRAP 5 FIX ================= */
-            /* 1. Reset text alignment wrapper */
+            /* --- PAGINATION --- */
             div.dataTables_wrapper div.dataTables_length,
             div.dataTables_wrapper div.dataTables_filter,
             div.dataTables_wrapper div.dataTables_info,
@@ -472,7 +524,6 @@
                 justify-content: center;
             }
 
-            /* 2. Style Info (Showing 1 to X...) */
             div.dataTables_wrapper div.dataTables_info {
                 white-space: normal;
                 margin-bottom: 12px;
@@ -480,24 +531,19 @@
                 color: var(--muted);
             }
 
-            /* 3. Container Pagination */
             div.dataTables_wrapper div.dataTables_paginate {
                 margin-top: 5px !important;
                 display: flex;
                 justify-content: center !important;
             }
 
-            /* 4. MAGIC FIX: Target UL Pagination milik Bootstrap */
             div.dataTables_wrapper div.dataTables_paginate ul.pagination {
                 flex-wrap: wrap !important;
-                /* Agar tombol turun ke bawah */
                 justify-content: center !important;
                 margin: 0;
                 gap: 5px;
-                /* Jarak antar tombol */
             }
 
-            /* 5. Styling Tombol per Item */
             div.dataTables_wrapper div.dataTables_paginate ul.pagination li.page-item .page-link {
                 border-radius: 6px;
                 padding: 0.4rem 0.75rem;
@@ -647,11 +693,11 @@
                                 <th class="col-no">No</th>
                                 <th width="200px">NOP</th>
                                 <th>Tahun</th>
-                                <th>Nama WP</th>
-                                <th>Penyampaian</th>
+                                <th width="110px">Nama WP</th>
+                                <th width="120px">Penyampaian</th>
                                 <th>Status OP</th>
                                 <th>Status WP</th>
-                                <th class="text-end">Aksi</th>
+                                <th class="text-end" width="80px">Aksi</th>
                             </tr>
                         </thead>
                         <tbody></tbody> {{-- BIARKAN KOSONG --}}

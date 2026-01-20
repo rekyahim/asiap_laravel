@@ -144,7 +144,7 @@ class PetugasSdtController extends Controller
             $query = DtSdt::where('ID_SDT', $id)
                 ->where('PETUGAS_SDT', $user_id)
                 ->with(['latestStatus', 'sdt']) // Eager Load biar cepat
-                ->select('DT_SDT.*'); // Select spesifik table utama agar tidak bentrok ID
+                ->select('dt_sdt.*'); // Select spesifik table utama agar tidak bentrok ID
 
             return DataTables::eloquent($query)
                 ->addIndexColumn()
@@ -169,7 +169,7 @@ class PetugasSdtController extends Controller
                 ->addColumn('status_penyampaian', function ($row) {
                     $status = $row->latestStatus->STATUS_PENYAMPAIAN ?? null;
                     if ($status == '1') return '<span class="badge-soft bg-soft-green"><i class="bi bi-check-circle"></i> TERSAMPAIKAN</span>';
-                    if ($status === '0' || $status === 0) return '<span class="badge-soft bg-soft-red"><i class="bi bi-x-circle"></i> TIDAK</span>';
+                    if ($status === '0' || $status === 0) return '<span class="badge-soft bg-soft-red"><i class="bi bi-x-circle"></i> TIDAK TERSAMPAIKAN</span>';
                     return '<span class="badge-soft bg-soft-gray">BELUM</span>';
                 })
                 ->addColumn('status_op_html', function ($row) {
@@ -183,28 +183,45 @@ class PetugasSdtController extends Controller
                     return '<span class="badge-soft bg-soft-gray">' . ($map[$val] ?? '-') . '</span>';
                 })
                 ->addColumn('aksi', function ($row) {
-                    // Logika Expired (Menggunakan Carbon)
-                    $now = Carbon::now();
+                    $now = \Carbon\Carbon::now();
                     $isExpired = false;
 
-                    $statusCreated = $row->latestStatus->created_at ?? null;
-                    $tglSelesai = $row->sdt->TGL_SELESAI ?? null;
-                    $tglMulai = $row->sdt->TGL_MULAI ?? null;
+                    // 1. Ambil Data Tanggal SDT (Parent)
+                    // startOfDay = 00:00:00, endOfDay = 23:59:59
+                    $tglMulai   = $row->sdt->TGL_MULAI ? \Carbon\Carbon::parse($row->sdt->TGL_MULAI)->startOfDay() : null;
+                    $tglSelesai = $row->sdt->TGL_SELESAI ? \Carbon\Carbon::parse($row->sdt->TGL_SELESAI)->endOfDay() : null;
 
-                    // Cek Expired 6 jam setelah status dibuat / Tanggal selesai lewat / Belum mulai
-                    if (($statusCreated && Carbon::parse($statusCreated)->addHours(6)->isPast()) ||
-                        ($tglSelesai && Carbon::parse($tglSelesai)->addHours(6)->isPast()) ||
-                        ($tglMulai && $now->lt(Carbon::parse($tglMulai)->startOfDay()))
-                    ) {
+                    // 2. Ambil Waktu Input Terakhir Baris Ini (jika ada)
+                    $statusCreated = $row->latestStatus->created_at ?? null;
+
+                    // --- LOGIC PENENTUAN EXPIRED ---
+
+                    if ($tglMulai && $now->lt($tglMulai)) {
+                        // KASUS 1: DRAFT (Belum Mulai) -> Terkunci
                         $isExpired = true;
+                    } elseif ($tglSelesai && $now->gt($tglSelesai)) {
+                        // KASUS 2: SELESAI (Sudah Lewat) -> Terkunci
+                        $isExpired = true;
+                    } else {
+                        // KASUS 3: AKTIF (Sedang Berjalan)
+                        // Di sini kita cek aturan 6 jam:
+                        // Jika data sudah pernah diinput (statusCreated ada) DAN sudah lewat 6 jam -> Terkunci
+                        if ($statusCreated && \Carbon\Carbon::parse($statusCreated)->addHours(6)->isPast()) {
+                            $isExpired = true;
+                        }
+                        // Jika belum pernah diinput, atau belum 6 jam -> Masih False (Bisa Edit)
                     }
 
-                    // Buat Tombol
+                    // --- RENDER TOMBOL ---
+
+                    // Tombol Detail (Mata) - Selalu muncul
                     $btnDetail = '<a href="' . route('petugas.sdt.show', ['id' => $row->ID]) . '" class="btn-ghost btn-compact me-1"><i class="bi bi-eye"></i></a>';
 
                     if ($isExpired) {
+                        // Jika Expired (Draft, Selesai, atau Aktif > 6 jam) -> Gembok
                         $btnUpdate = '<span class="btn-disabled btn-compact"><i class="bi bi-lock-fill"></i></span>';
                     } else {
+                        // Jika Aktif dan (Belum input OR Input < 6 jam) -> Pensil
                         $btnUpdate = '<a href="' . route('petugas.sdt.edit', ['id' => $row->ID]) . '" class="btn-blue btn-compact"><i class="bi bi-pencil"></i></a>';
                     }
 
