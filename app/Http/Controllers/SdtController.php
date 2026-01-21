@@ -165,18 +165,22 @@ class SdtController extends Controller
 
             $errors = [];
             if ($missing) {
+
                 $errors['petugas_not_found'][] = implode(", ", $missing);
             }
 
             if ($wrongRole) {
+
                 $errors['petugas_wrong_role'][] = implode(", ", $wrongRole);
             }
 
             if ($notUpper) {
+
                 $errors['not_uppercase'] = $notUpper;
             }
 
             if ($errors) {
+
                 throw ValidationException::withMessages($errors)->errorBag('import');
             }
         }

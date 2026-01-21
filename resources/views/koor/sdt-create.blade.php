@@ -124,6 +124,7 @@
                         'petugas_not_found' => 'Nama Petugas Tidak Ditemukan di Sistem',
                         'petugas_wrong_role' => 'Nama Petugas Bukan dengan Hak Akses "Petugas"',
                         'petugas_not_uppercase' => 'Format Nama Petugas Wajib Huruf Kapital',
+                        'not_uppercase' => 'Format Nama Petugas Wajib Huruf Kapital',
                         'row_errors' => 'Kesalahan Data',
                     ];
 

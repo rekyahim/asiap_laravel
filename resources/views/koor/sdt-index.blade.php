@@ -37,8 +37,8 @@
 
 
         /* .app-card:hover {
-                box-shadow: 0 10px 24px rgba(0, 0, 0, .08), 0 3px 10px rgba(0, 0, 0, .05)
-            } */
+                    box-shadow: 0 10px 24px rgba(0, 0, 0, .08), 0 3px 10px rgba(0, 0, 0, .05)
+                } */
 
         .stat-row {
             display: flex;
