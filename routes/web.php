@@ -285,7 +285,7 @@ Route::middleware(AuthOnly::class)->group(function () {
 
         Route::get('/riwayat/{id}/detail', [RiwayatController::class, 'detailRow'])
             ->whereNumber('id')->name('riwayat.detail');
-
+        Route::post('/riwayat-data', [RiwayatController::class, 'riwayatData'])->name('riwayat.list-data');
         /*
         |--------------------------------------------------------------------------
         | API PENGGUNA

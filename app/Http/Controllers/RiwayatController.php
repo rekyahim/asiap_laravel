@@ -1,9 +1,11 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\Pengguna;
 use App\Models\Sdt;
+use App\Models\Pengguna;
 use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables;
 
 class RiwayatController extends Controller
 {
@@ -20,13 +22,13 @@ class RiwayatController extends Controller
         $isBapenda    = ($kdUnit == 1);
 
         // Hanya koordinator (1) yang dibatasi
-        $needFiltering = ! ($isSuperAdmin || $isAdmin || $isBapenda);
+        $needFiltering = !($isSuperAdmin || $isAdmin || $isBapenda);
 
         // ================================
         // LIST TAHUN (urut ASC supaya rapi)
         // ================================
         $years = Sdt::withInactive()
-            ->when($needFiltering, fn($q) => $q->where('KD_UNIT', $kdUnit))
+            ->when($needFiltering, fn ($q) => $q->where('KD_UNIT', $kdUnit))
             ->whereNotNull('TGL_MULAI')
             ->selectRaw('YEAR(TGL_MULAI) AS y')
             ->distinct()
@@ -37,8 +39,8 @@ class RiwayatController extends Controller
         // LIST RIWAYAT SDT (ID kecil → besar)
         // ================================
         $rows = Sdt::query()
-            ->when($needFiltering, fn($q) => $q->where('KD_UNIT', $kdUnit))
-            ->when($year, fn($q) => $q->whereYear('TGL_MULAI', $year))
+            ->when($needFiltering, fn ($q) => $q->where('KD_UNIT', $kdUnit))
+            ->when($year, fn ($q) => $q->whereYear('TGL_MULAI', $year))
             ->withCount('details')
             ->orderBy('ID', 'asc')
             ->paginate(10, ['ID', 'NAMA_SDT', 'TGL_MULAI', 'TGL_SELESAI', 'STATUS']);
@@ -72,7 +74,7 @@ class RiwayatController extends Controller
             ])
             ->first();
 
-        if (! $row) {
+        if (!$row) {
             return response()->json([
                 'error'   => true,
                 'message' => 'Data tidak ditemukan',
@@ -158,5 +160,57 @@ class RiwayatController extends Controller
 
             'evidence_html'      => $evidenceHtml,
         ]);
+    }
+    public function riwayatData(Request $request)
+    {
+        if ($request->ajax()) {
+            $user = \App\Models\Pengguna::find(session('auth_uid'));
+            $kdUnit = $user->KD_UNIT ?? null;
+
+            // Query Dasar
+            $query = Sdt::query()
+                ->select(['sdt.*'])
+                ->withCount('details');
+
+            // Filter Unit (Sama seperti index)
+            if ($kdUnit !== null && $kdUnit != 1) {
+                $query->where('KD_UNIT', $kdUnit);
+            }
+
+            // Filter Tahun (Dari Dropdown)
+            if ($request->has('year') && $request->year != '') {
+                $query->whereYear('TGL_MULAI', $request->year);
+            }
+
+            return DataTables::of($query)
+                ->addIndexColumn() // DT_RowIndex
+                ->editColumn('TGL_MULAI', function ($row) {
+                    return $row->TGL_MULAI ? $row->TGL_MULAI->format('Y-m-d') : '-';
+                })
+                ->editColumn('TGL_SELESAI', function ($row) {
+                    return $row->TGL_SELESAI ? $row->TGL_SELESAI->format('Y-m-d') : '-';
+                })
+                ->addColumn('action', function ($row) {
+                    // Tombol Aksi: Lihat Detail & Export
+                    $urlShow   = route('sdt.show', $row->ID);
+                    $urlExport = route('sdt.export', $row->ID); // Pastikan route ini ada
+
+                    $btnShow = '<a href="' . $urlShow . '" class="btn btn-secondary btn-icon" title="Lihat Detail">
+                                <i class="bi bi-eye"></i>
+                            </a>';
+
+                    $btnExport = '<a href="' . $urlExport . '" class="btn btn-success btn-icon" title="Export SDT">
+                                <i class="bi bi-file-earmark-excel"></i>
+                              </a>';
+
+                    return '<div class="aksi-btns d-flex align-items-center gap-2">' .
+                        $btnShow . $btnExport .
+                        '</div>';
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+
+        abort(404);
     }
 }
