@@ -685,14 +685,24 @@
                     fetch(url, {
                             method: 'POST',
                             headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json' // Tambahkan ini agar Laravel yakin merespon JSON
                             },
                             body: fd
                         })
-                        .then(r => {
-                            console.log(r);
-                            if (!r.ok) throw new Error('HTTP ' + r.status);
-                            return r.text();
+                        .then(async r => {
+                            // 1. Parse respons JSON terlebih dahulu (baik sukses maupun error)
+                            const data = await r.json().catch(() => null);
+
+                            // 2. Cek jika status HTTP bukan 200-299 (misal: 422)
+                            if (!r.ok) {
+                                // Ambil pesan error dari backend ('msg'), atau gunakan fallback
+                                const errorMsg = (data && data.msg) ? data.msg :
+                                    'Terjadi kesalahan (' + r.status + ')';
+                                throw new Error(errorMsg);
+                            }
+
+                            return data;
                         })
                         .then(() => {
                             Swal.fire({
@@ -704,11 +714,12 @@
                             table.ajax.reload(); // Reload DataTables
                         })
                         .catch((err) => {
-                            //console.error(err);
+                            // 3. Tampilkan pesan error yang sudah kita tangkap di atas
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal',
-                                text: err.msg ?? 'Silakan coba lagi.'
+                                // Gunakan err.message karena JavaScript Error object menyimpan pesan di properti .message
+                                text: err.message ?? 'Silakan coba lagi.'
                             });
                         });
                 });
