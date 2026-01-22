@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\LogOptions;
+use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\Models\Activity;
+use Illuminate\Database\Eloquent\Builder;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class Sdt extends Model
@@ -207,5 +208,14 @@ class Sdt extends Model
 
         $this->STATUS = 1;
         return $this->save();
+    }
+
+    public function checkpenyampaiansdt($sdt_id)
+    {
+        return DB::table($this->table . ' as sdt')
+            ->join('dt_sdt', 'dt_sdt.ID_SDT', '=', 'sdt.ID')
+            ->join('status_penyampaian', 'status_penyampaian.ID_DT_SDT', '=', 'dt_sdt.ID')
+            ->select('status_penyampaian.*')
+            ->where('sdt.ID', $sdt_id)->first();
     }
 }

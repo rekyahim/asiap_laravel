@@ -209,7 +209,15 @@ Route::middleware(AuthOnly::class)->group(function () {
                 [\App\Http\Controllers\SdtController::class, 'updateRowPetugas']
             )->name('sdt.row.update-petugas');
 
+            // SEBELUMNYA (Mungkin seperti ini)
+            // Route::get('/', [SdtController::class, 'index'])->name('index');
+
+            // UBAH MENJADI:
             Route::get('/', [SdtController::class, 'index'])->name('index');
+
+            // 2. Route BARU khusus DataTables (POST) yang tetap mengarah ke Controller Index
+            Route::post('/list-data', [SdtController::class, 'index'])->name('list-data');
+
             Route::get('/create', [SdtController::class, 'create'])->name('create');
             Route::post('/', [SdtController::class, 'store'])->name('store');
 

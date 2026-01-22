@@ -11,6 +11,7 @@ use Illuminate\Validation\Rule;
 use App\Services\AsiapApiService;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Validation\ValidationException;
 
 class SdtController extends Controller
@@ -22,34 +23,73 @@ class SdtController extends Controller
         $this->asiap = $asiap;
     }
 
-    public function index(Request $r)
+    public function index(Request $request)
     {
+        if ($request->ajax()) {
+            $user   = \App\Models\Pengguna::find(session('auth_uid'));
+            $kdUnit = $user->KD_UNIT ?? null;
 
-        $user   = \App\Models\Pengguna::find(session('auth_uid'));
-        $kdUnit = $user->KD_UNIT ?? null;
+            // Query dasar
+            $query = Sdt::query()
+                ->select(['sdt.*']) // Select all agar accessor model bekerja
+                ->withCount('details');
 
-        $q    = trim((string) $r->query('q', ''));
-        $list = Sdt::query()
-            ->select(['ID', 'NAMA_SDT', 'TGL_MULAI', 'TGL_SELESAI'])
-            ->withCount('details')
+            // Filter Unit (Sama seperti logika lama)
+            if ($kdUnit !== null && $kdUnit != 1) {
+                $query->where('KD_UNIT', $kdUnit);
+            }
 
-            ->when(
-                $q !== '',
-                fn ($qq) =>
-                $qq->where('NAMA_SDT', 'like', "%{$q}%")
-            )
+            return DataTables::of($query)
+                ->addIndexColumn() // Untuk nomor urut (DT_RowIndex)
+                ->editColumn('TGL_MULAI', function ($row) {
+                    return $row->TGL_MULAI ? $row->TGL_MULAI->format('Y-m-d') : '-';
+                })
+                ->editColumn('TGL_SELESAI', function ($row) {
+                    return $row->TGL_SELESAI ? $row->TGL_SELESAI->format('Y-m-d') : '-';
+                })
+                ->addColumn('action', function ($row) {
+                    // Logika tombol Delete (Disabled jika sudah disampaikan)
+                    // Asumsi: 'sudah_disampaikan' adalah accessor di Model Sdt
+                    $disabled = $row->sudah_disampaikan ? 'disabled' : '';
 
-            ->when(
-                $kdUnit !== null && $kdUnit != 1,
-                fn ($qq) =>
-                $qq->where('KD_UNIT', $kdUnit)
-            )
+                    // Kita bangun HTML tombolnya di sini agar view bersih
+                    $btnManual = '<button type="button" class="btn btn-success btn-icon btn-add-manual"
+                                    data-id="' . $row->ID . '" data-nama="' . $row->NAMA_SDT . '"
+                                    data-bs-toggle="modal" data-bs-target="#modalPetugasManual"
+                                    title="Tambah Petugas Manual">
+                                    <i class="bi bi-person-plus"></i>
+                                  </button>';
 
-            ->orderBy('ID')
-            ->paginate(10)
-            ->withQueryString();
+                    $btnEdit = '<button type="button" class="btn btn-primary btn-icon btn-edit"
+                                    data-id="' . $row->ID . '" data-nama="' . $row->NAMA_SDT . '"
+                                    data-bs-toggle="modal" data-bs-target="#modalEdit"
+                                    title="Edit">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>';
 
-        return view('koor.sdt-index', compact('list', 'q'));
+                    $urlDetail = route('sdt.detail', $row->ID);
+                    $btnDetail = '<button type="button" class="btn btn-secondary btn-icon btn-detail"
+                                    data-url="' . $urlDetail . '" data-bs-toggle="modal"
+                                    data-bs-target="#modalDetail" title="Lihat Detail">
+                                    <i class="bi bi-eye"></i>
+                                  </button>';
+
+                    $urlDelete = route('sdt.destroy', $row->ID);
+                    $btnDelete = '<button type="button" class="btn btn-danger btn-icon btn-delete"
+                                    data-id="' . $row->ID . '" data-nama="' . $row->NAMA_SDT . '"
+                                    data-url="' . $urlDelete . '" title="Hapus" ' . $disabled . '>
+                                    <i class="bi bi-trash"></i>
+                                  </button>';
+
+                    return '<div class="aksi-btns d-flex align-items-center gap-2">' .
+                        $btnManual . $btnEdit . $btnDetail . $btnDelete .
+                        '</div>';
+                })
+                ->rawColumns(['action']) // Render HTML di kolom action
+                ->make(true);
+        }
+
+        return view('koor.sdt-index');
     }
 
     public function create()
@@ -415,10 +455,10 @@ class SdtController extends Controller
         //$userId = (int) $r->NAMA_PETUGAS;
 
         /*
-    |--------------------------------------------------------------------------
-    | VALIDASI PETUGAS
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | VALIDASI PETUGAS
+        |--------------------------------------------------------------------------
+        */
         $petugas = \App\Models\Pengguna::where('ID', $userId)
             ->whereHas(
                 'hakakses',
@@ -435,10 +475,10 @@ class SdtController extends Controller
         }
 
         /*
-    |--------------------------------------------------------------------------
-    | CEK DUPLIKAT NOP + TAHUN
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | CEK DUPLIKAT NOP + TAHUN
+        |--------------------------------------------------------------------------
+        */
         $exists = DtSdt::where('ID_SDT', $id)
             ->where('STATUS', 1)
             ->where('NOP', $nop)
@@ -453,11 +493,11 @@ class SdtController extends Controller
         }
 
         /*
-    |--------------------------------------------------------------------------
-    | AMBIL DATA SPPT DARI API
-    |--------------------------------------------------------------------------
-    | ⚠️ API gagal → STOP → TIDAK ADA LOG
-    */
+        |--------------------------------------------------------------------------
+        | AMBIL DATA SPPT DARI API
+        |--------------------------------------------------------------------------
+        | ⚠️ API gagal → STOP → TIDAK ADA LOG
+        */
         try {
             $resp = $this->asiapCurlPost(env('ASIAP_URL_DETAIL'), [
                 'nop'   => $nop,
@@ -480,10 +520,10 @@ class SdtController extends Controller
         }
 
         /*
-    |--------------------------------------------------------------------------
-    | CREATE DT_SDT (LENGKAP)
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | CREATE DT_SDT (LENGKAP)
+        |--------------------------------------------------------------------------
+        */
         $created = DtSdt::create([
             'ID_SDT'            => $id,
             'STATUS'            => 1,
@@ -516,10 +556,10 @@ class SdtController extends Controller
         ]);
 
         /*
-    |--------------------------------------------------------------------------
-    | LOG — 1 AKSI = 1 LOG
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | LOG — 1 AKSI = 1 LOG
+        |--------------------------------------------------------------------------
+        */
         activity('sdt')
             ->event('created') // ✅ WAJIB
             ->performedOn($created)
@@ -733,11 +773,16 @@ class SdtController extends Controller
     }
     public function destroy($id)
     {
+
         $user = \App\Models\Pengguna::find(session('auth_uid'));
         $sdt  = Sdt::with('details.statusPenyampaian')->findOrFail($id);
+        $Md_sdt = new Sdt;
+
+        $checkpenyampaiansdt = $Md_sdt->checkPenyampaianSdt($id);
+
 
         // ================= VALIDASI BISNIS =================
-        if ($sdt->sudah_disampaikan) {
+        if ($checkpenyampaiansdt) {
             return response()->json([
                 'ok'  => false,
                 'msg' => 'SDT tidak dapat dihapus karena sudah memiliki data penyampaian.',
